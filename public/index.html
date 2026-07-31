@@ -195,11 +195,27 @@ function renderGrid() {
         <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>
         <h3 class="font-headline-md text-[16px] md:text-[18px] text-primary mb-1">${p.name}</h3>
         <p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>
-        <button class="text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all">SİPARİŞE EKLE</button>
+        <button class="add-to-cart-btn text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">SİPARİŞE EKLE</button>
       </div>
     </div>
   `).join('');
-}
+
+  grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addToCart({
+        productId: btn.dataset.id,
+        name: btn.dataset.name,
+        price: Number(btn.dataset.price),
+        size: btn.dataset.size || null,
+        extras: [],
+        qty: 1,
+      });
+      const original = btn.textContent;
+      btn.textContent = 'SEPETE EKLENDİ ✓';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  });
 
 async function init() {
   try {
