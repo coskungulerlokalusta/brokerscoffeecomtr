@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Brokers Coffee | Toryum AVM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="/js/tailwind-config.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hero-gradient { background: linear-gradient(to right, rgba(250,249,246,1) 30%, rgba(250,249,246,0) 100%); }
+  @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(250,249,246,1) 20%, rgba(250,249,246,0.4) 100%); } }
+  .cat-tab.active { background: #271310; color: #fff; }
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+
+<!-- Header -->
+<header class="w-full top-0 sticky z-50 bg-background/95 backdrop-blur-md shadow-sm shadow-primary/5">
+<nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base max-w-container-max mx-auto">
+<a href="/" class="font-display-lg text-[24px] text-primary tracking-tighter">Brokers Coffee</a>
+<div class="hidden md:flex items-center gap-8 font-label-sm text-label-sm uppercase tracking-widest">
+<a href="/#menu" class="text-primary border-b border-tertiary-container pb-1">Menü</a>
+<a href="/#lokasyon" class="text-on-surface-variant hover:text-primary transition-colors">Lokasyon</a>
+<a href="/#hakkimizda" class="text-on-surface-variant hover:text-primary transition-colors">Hakkımızda</a>
+</div>
+<div class="flex items-center gap-5">
+<a href="/cart.html" class="relative text-primary">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span data-cart-badge class="hidden absolute -top-2 -right-2 bg-tertiary-container text-on-tertiary-fixed text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+</a>
+<a href="/profile.html" class="text-primary"><span class="material-symbols-outlined">account_circle</span></a>
+</div>
+</nav>
+</header>
+
+<main>
+<!-- Hero -->
+<section class="relative w-full h-[520px] md:h-[600px] flex items-center overflow-hidden">
+<img class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?q=80&w=1600&auto=format&fit=crop" alt="Brokers Coffee barista"/>
+<div class="absolute inset-0 hero-gradient"></div>
+<div class="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="max-w-lg">
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-widest mb-3 block">Toryum AVM · 1. Kat</span>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-4">Günün Ritüeli, Kapına Kadar.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8">Taze demlenmiş kahveler, el yapımı kruvasanlar — ister mağazadan al, ister adresine gelsin.</p>
+<div class="flex gap-4 flex-wrap">
+<a href="#menu" class="px-8 py-3 bg-primary text-on-primary font-bold text-label-sm uppercase tracking-widest hover:bg-primary-container transition-colors">Menüyü Keşfet</a>
+<a href="#lokasyon" class="px-8 py-3 border border-primary text-primary font-bold text-label-sm uppercase tracking-widest hover:bg-surface-container transition-colors">Bize Ulaş</a>
+</div>
+</div>
+</div>
+</section>
+
+<!-- About Us -->
+<section id="hakkimizda" class="py-20 md:py-28 bg-surface-container-low">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row items-center gap-16">
+<div class="w-full md:w-1/2 order-2 md:order-1">
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-widest mb-3 block">Hikayemiz</span>
+<h2 class="font-display-lg text-[32px] md:text-[40px] text-primary mb-6">Her Fincanda Bir Ritüel.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6">Brokers Coffee, Toryum AVM'de küçük bir tezgahtan doğdu: tek derdimiz, İstanbul'un hızına yakalanmadan iyi bir fincan kahve içmenin mümkün olduğunu göstermekti. Bugün özenle seçilmiş çekirdeklerimiz, günlük taze pişen kruvasanlarımız ve deneyimli baristalarımızla aynı sadelikle devam ediyoruz.</p>
+<a href="#menu" class="inline-flex items-center gap-2 font-body-md text-primary font-bold group">
+Menümüzü Keşfedin
+<span class="material-symbols-outlined transition-transform duration-300 group-hover:translate-x-1">arrow_right_alt</span>
+</a>
+</div>
+<div class="w-full md:w-1/2 order-1 md:order-2 grid grid-cols-2 gap-4">
+<div class="aspect-square bg-surface-container overflow-hidden mt-8">
+<img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=800&auto=format&fit=crop" alt="Barista kahve hazırlıyor"/>
+</div>
+<div class="aspect-square bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop" alt="Kahve dükkanı iç mekan"/>
+</div>
+</div>
+</div>
+
+<!-- Value props -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">eco</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Özenle Seçilmiş Çekirdekler</h3>
+<p class="font-body-md text-on-surface-variant">Her parti kahvemiz, kavurma tazeliği için düzenli aralıklarla yenileniyor.</p>
+</div>
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">bakery_dining</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Günlük Taze Fırın</h3>
+<p class="font-body-md text-on-surface-variant">Kruvasanlarımız her gün sipariş üzerine, taze pişirilir.</p>
+</div>
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">local_shipping</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Kapına Kadar</h3>
+<p class="font-body-md text-on-surface-variant">Toryum AVM çevresine hızlı teslimat, 750 TL üzeri kurye ücretsiz.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Menu -->
+<section id="menu" class="py-20 md:py-28">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+<div>
+<h2 class="font-display-lg text-[32px] md:text-[40px] text-primary mb-2">Online Menü</h2>
+<p class="font-body-md text-on-surface-variant max-w-md">Sıcak/soğuk kahvelerimiz ve el yapımı kruvasanlarımızdan seçiminizi yapın.</p>
+</div>
+</div>
+
+<!-- Category tabs -->
+<div id="cat-tabs" class="flex gap-3 flex-wrap mb-12"></div>
+
+<!-- Product grid -->
+<div id="product-grid" class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
+<p class="col-span-full text-on-surface-variant">Menü yükleniyor...</p>
+</div>
+</div>
+</section>
+
+<!-- About / Location -->
+<section id="lokasyon" class="py-24 bg-primary text-secondary-fixed overflow-hidden relative">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto flex flex-col md:flex-row items-center gap-16 relative z-10">
+<div class="w-full md:w-1/2">
+<h2 class="font-display-lg text-[32px] md:text-display-lg mb-6 text-secondary-fixed">Bizi Ziyaret Edin</h2>
+<p class="font-body-lg text-body-lg text-secondary-fixed/80 mb-2">Toryum AVM, 1. Kat</p>
+<p class="font-body-md text-secondary-fixed/70 mb-8">Her gün 10:30 - 21:30 arası sipariş alıyoruz. 750 TL üzeri siparişlerde kurye ücreti bizden.</p>
+<a href="https://wa.me/" class="inline-flex px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">WhatsApp'tan Yaz</a>
+</div>
+<div class="w-full md:w-1/2 grid grid-cols-2 gap-4">
+<div class="aspect-square bg-primary-container overflow-hidden">
+<img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=800&auto=format&fit=crop" alt="Kahve çekirdekleri"/>
+</div>
+<div class="aspect-square bg-primary-container mt-8 overflow-hidden">
+<img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=800&auto=format&fit=crop" alt="Filtre kahve demleme"/>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-primary text-secondary-fixed mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-12 max-w-container-max mx-auto gap-gutter">
+<div class="flex flex-col items-center md:items-start gap-4">
+<div class="font-display-lg text-[28px] text-secondary-fixed tracking-tighter">Brokers Coffee</div>
+<p class="font-label-sm text-label-sm text-secondary-fixed/60 uppercase tracking-widest">© 2026 Brokers Coffee. Toryum AVM.</p>
+</div>
+<div class="flex gap-8 items-center flex-wrap justify-center">
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">Gizlilik Politikası</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">Kullanım Koşulları</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">İletişim</a>
+</div>
+</div>
+</footer>
+
+<script src="/js/cart.js"></script>
+<script>
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=800&auto=format&fit=crop';
+let allProducts = [];
+let activeCategory = 'Hepsi';
+
+function formatPriceLabel(sizes) {
+  if (!sizes || !sizes.length) return '';
+  if (sizes.length === 1) return `₺${sizes[0].price.toFixed(0)}`;
+  return `₺${sizes[0].price.toFixed(0)}'den başlıyor`;
+}
+
+function renderTabs(categories) {
+  const wrap = document.getElementById('cat-tabs');
+  const cats = ['Hepsi', ...categories];
+  wrap.innerHTML = cats.map(c =>
+    `<button class="cat-tab ${c === activeCategory ? 'active' : ''} px-5 py-2 rounded-full border border-outline-variant text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant transition-colors" data-cat="${c}">${c}</button>`
+  ).join('');
+  wrap.querySelectorAll('.cat-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.cat;
+      renderTabs(categories);
+      renderGrid();
+    });
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById('product-grid');
+  const filtered = activeCategory === 'Hepsi'
+    ? allProducts
+    : allProducts.filter(p => (p.subcategory || p.category) === activeCategory);
+
+  grid.innerHTML = filtered.slice(0, 12).map(p => `
+    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2" onclick="location.href='/product.html?id=${p.id}'">
+      <div class="aspect-[4/5] overflow-hidden mb-4 bg-surface-container-low">
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${FALLBACK_IMG}" alt="${p.name}"/>
+      </div>
+      <div class="text-center">
+        <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>
+        <h3 class="font-headline-md text-[16px] md:text-[18px] text-primary mb-1">${p.name}</h3>
+        <p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>
+        <button class="text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all">SİPARİŞE EKLE</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function init() {
+  try {
+    const [productsRes, categoriesRes] = await Promise.all([
+      fetch('/api/products'),
+      fetch('/api/categories'),
+    ]);
+    allProducts = await productsRes.json();
+    const categories = await categoriesRes.json();
+    renderTabs(categories);
+    renderGrid();
+  } catch (e) {
+    document.getElementById('product-grid').innerHTML = '<p class="col-span-full text-on-surface-variant">Menü yüklenemedi, lütfen sayfayı yenileyin.</p>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
