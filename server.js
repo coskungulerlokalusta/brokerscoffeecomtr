@@ -1,14 +1,22 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
+
+const adminRoutes = require('./backend/routes/admin');
+const orderRoutes = require('./backend/routes/orders');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/api/admin', adminRoutes);
+app.use('/api/orders', orderRoutes);
 
 function loadProducts() {
   const raw = fs.readFileSync(path.join(__dirname, 'data', 'products.json'), 'utf-8');
