@@ -6,6 +6,10 @@ const settings = require('../utils/settings');
 const integrations = require('../utils/integrations');
 const rewardStore = require('../utils/rewardStore');
 const redemptionStore = require('../utils/redemptionStore');
+const campaignStore = require('../utils/campaignStore');
+const aiAssistant = require('../utils/aiAssistant');
+const whatsapp = require('../utils/whatsapp');
+const customerAuth = require('../utils/customerAuth');
 const crypto = require('crypto');
 
 const COOKIE_OPTS = {
@@ -156,6 +160,63 @@ router.post('/redemptions/:id/fulfill', adminAuth.requireAuth, (req, res) => {
   const r = redemptionStore.markFulfilled(req.params.id);
   if (!r) return res.status(404).json({ error: 'Kayıt bulunamadı' });
   res.json(r);
+});
+
+// Kampanya yönetimi
+router.get('/campaigns', adminAuth.requireAuth, (req, res) => {
+  res.json(campaignStore.loadCampaigns());
+});
+router.post('/campaigns', adminAuth.requireAuth, (req, res) => {
+  const { title, description, type, value, startDate, endDate } = req.body;
+  if (!title) return res.status(400).json({ error: 'Kampanya adı gerekli' });
+  res.status(201).json(campaignStore.createCampaign({ title, description, type, value, startDate, endDate }));
+});
+router.put('/campaigns/:id', adminAuth.requireAuth, (req, res) => {
+  const campaign = campaignStore.updateCampaign(req.params.id, req.body);
+  if (!campaign) return res.status(404).json({ error: 'Kampanya bulunamadı' });
+  res.json(campaign);
+});
+router.delete('/campaigns/:id', adminAuth.requireAuth, (req, res) => {
+  const ok = campaignStore.deleteCampaign(req.params.id);
+  if (!ok) return res.status(404).json({ error: 'Kampanya bulunamadı' });
+  res.json({ ok: true });
+});
+
+// AI ile personele duyuru mesajı taslağı oluştur (henüz göndermez, sadece metin döner)
+router.post('/campaigns/:id/draft-message', adminAuth.requireAuth, async (req, res) => {
+  const campaign = campaignStore.loadCampaigns().find((c) => c.id === req.params.id);
+  if (!campaign) return res.status(404).json({ error: 'Kampanya bulunamadı' });
+  try {
+    const message = await aiAssistant.draftStaffCampaignMessage(campaign);
+    res.json({ message });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Onaylanan mesajı tüm personele WhatsApp'tan gönder
+router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Mesaj metni gerekli' });
+
+  const campaign = campaignStore.loadCampaigns().find((c) => c.id === req.params.id);
+  if (!campaign) return res.status(404).json({ error: 'Kampanya bulunamadı' });
+
+  const staffMembers = customerAuth.loadCustomers().filter((c) => c.isStaff);
+  if (!staffMembers.length) return res.status(400).json({ error: 'Kayıtlı personel yok' });
+
+  const results = [];
+  for (const staff of staffMembers) {
+    try {
+      await whatsapp.sendTextMessage(staff.phone, message);
+      results.push({ phone: staff.phone, ok: true });
+    } catch (err) {
+      results.push({ phone: staff.phone, ok: false, error: err.message });
+    }
+  }
+
+  campaignStore.updateCampaign(campaign.id, { staffNotifiedAt: new Date().toISOString() });
+  res.json({ results });
 });
 
 module.exports = router;

@@ -51,6 +51,7 @@
 <button data-section="products" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">☕ Ürün Yönetimi</button>
 <button data-section="staff" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👥 Personel Ayarları</button>
 <button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
+<button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
 <button data-section="integrations" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🔌 Entegrasyonlar</button>
 </div>
 </nav>
@@ -152,6 +153,55 @@
 <button type="button" id="reward-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
 </div>
 </form>
+</div>
+</div>
+
+<div id="section-campaigns" class="admin-panel hidden">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-2xl text-[#0d1b3d]">Kampanyalar</h2>
+<button id="add-campaign-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Kampanya Ekle</button>
+</div>
+<p class="text-sm text-[#827472] mb-4">Kampanya oluşturunca personele WhatsApp'tan AI destekli, doğal bir duyuru gönderebilirsin (WhatsApp ve AI Asistan entegrasyonları aktif olmalı).</p>
+<div id="campaigns-list" class="flex flex-col gap-3"></div>
+</div>
+
+<div id="campaign-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-sm">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Kampanya</h3>
+<form id="campaign-form" class="flex flex-col gap-3">
+<input type="hidden" id="campaign-id"/>
+<input required id="campaign-title" placeholder="Kampanya Adı (örn. 2. Kahve 10 TL)" class="border border-[#d3c3c0] rounded px-3 py-2"/>
+<textarea id="campaign-description" placeholder="Açıklama / kurallar" class="border border-[#d3c3c0] rounded px-3 py-2" rows="2"></textarea>
+<div class="flex gap-2">
+<select id="campaign-type" class="border border-[#d3c3c0] rounded px-3 py-2 flex-1">
+<option value="percentage">Yüzde İndirim</option>
+<option value="fixed_price_second_item">2. Ürün Sabit Fiyat</option>
+<option value="other">Diğer</option>
+</select>
+<input id="campaign-value" type="number" placeholder="Değer" class="border border-[#d3c3c0] rounded px-3 py-2 w-28"/>
+</div>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="campaign-active" checked/> Aktif</label>
+<div class="flex gap-2 mt-2">
+<button type="submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Kaydet</button>
+<button type="button" id="campaign-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
+</div>
+</form>
+</div>
+</div>
+
+<div id="notify-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-sm">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Personele Duyuru</h3>
+<div id="notify-loading" class="text-sm text-[#827472]">AI mesaj taslağı hazırlıyor...</div>
+<div id="notify-content" class="hidden">
+<textarea id="notify-message" class="border border-[#d3c3c0] rounded px-3 py-2 w-full text-sm" rows="5"></textarea>
+<p id="notify-error" class="text-red-600 text-sm mt-2 hidden"></p>
+<p id="notify-result" class="text-emerald-600 text-sm mt-2 hidden"></p>
+<div class="flex gap-2 mt-3">
+<button id="notify-send-btn" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Tüm Personele Gönder</button>
+<button id="notify-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Kapat</button>
+</div>
+</div>
 </div>
 </div>
 
@@ -454,6 +504,12 @@ const INTEGRATION_CONFIG = {
       { key: 'header', label: 'Gönderici Başlığı (Header)', type: 'text' },
     ],
   },
+  anthropic: {
+    title: 'AI Asistan (Kampanya Mesajı Yazımı)',
+    fields: [
+      { key: 'apiKey', label: 'Anthropic API Key', type: 'secret' },
+    ],
+  },
   multinet: {
     title: 'Multinet Yemek Kartı',
     fields: [
@@ -645,6 +701,136 @@ async function loadRedemptions() {
   });
 }
 
+// ---- Kampanyalar ----
+const campaignModal = document.getElementById('campaign-modal');
+const notifyModal = document.getElementById('notify-modal');
+let currentCampaignId = null;
+
+function openCampaignModal(campaign) {
+  document.getElementById('campaign-form').reset();
+  if (campaign) {
+    document.getElementById('campaign-id').value = campaign.id;
+    document.getElementById('campaign-title').value = campaign.title;
+    document.getElementById('campaign-description').value = campaign.description || '';
+    document.getElementById('campaign-type').value = campaign.type;
+    document.getElementById('campaign-value').value = campaign.value;
+    document.getElementById('campaign-active').checked = campaign.active;
+  } else {
+    document.getElementById('campaign-id').value = '';
+  }
+  campaignModal.classList.remove('hidden');
+}
+
+document.getElementById('add-campaign-btn').addEventListener('click', () => openCampaignModal(null));
+document.getElementById('campaign-cancel').addEventListener('click', () => campaignModal.classList.add('hidden'));
+
+async function loadCampaigns() {
+  const res = await fetch('/api/admin/campaigns');
+  if (!res.ok) return;
+  const campaigns = await res.json();
+  const list = document.getElementById('campaigns-list');
+  if (!campaigns.length) { list.innerHTML = '<p class="text-[#827472]">Henüz kampanya yok.</p>'; return; }
+  list.innerHTML = campaigns.map(c => `
+    <div class="bg-white rounded-lg shadow-sm p-4">
+      <div class="flex items-start justify-between mb-2">
+        <div>
+          <p class="font-semibold text-[#0d1b3d]">${c.title} ${c.active ? '' : '<span class="text-xs text-red-500">(pasif)</span>'}</p>
+          <p class="text-xs text-[#827472]">${c.description || ''}</p>
+          ${c.staffNotifiedAt ? `<p class="text-xs text-emerald-600 mt-1">Personele duyuruldu: ${new Date(c.staffNotifiedAt).toLocaleString('tr-TR')}</p>` : ''}
+        </div>
+        <div class="flex gap-1 flex-shrink-0">
+          <button data-id="${c.id}" class="edit-campaign-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
+          <button data-id="${c.id}" class="delete-campaign-btn text-xs font-semibold text-red-600 px-2">Sil</button>
+        </div>
+      </div>
+      <button data-id="${c.id}" class="notify-staff-btn text-xs font-bold uppercase tracking-widest bg-emerald-600 text-white px-3 py-2 rounded">📱 Personele WhatsApp'tan Duyur</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.edit-campaign-btn').forEach(btn => {
+    btn.addEventListener('click', () => openCampaignModal(campaigns.find(c => c.id === btn.dataset.id)));
+  });
+  list.querySelectorAll('.delete-campaign-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Bu kampanyayı silmek istediğine emin misin?')) return;
+      await fetch(`/api/admin/campaigns/${btn.dataset.id}`, { method: 'DELETE' });
+      loadCampaigns();
+    });
+  });
+  list.querySelectorAll('.notify-staff-btn').forEach(btn => {
+    btn.addEventListener('click', () => openNotifyModal(btn.dataset.id));
+  });
+}
+
+document.getElementById('campaign-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('campaign-id').value;
+  const payload = {
+    title: document.getElementById('campaign-title').value,
+    description: document.getElementById('campaign-description').value,
+    type: document.getElementById('campaign-type').value,
+    value: Number(document.getElementById('campaign-value').value) || 0,
+    active: document.getElementById('campaign-active').checked,
+  };
+  const url = id ? `/api/admin/campaigns/${id}` : '/api/admin/campaigns';
+  await fetch(url, {
+    method: id ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  campaignModal.classList.add('hidden');
+  loadCampaigns();
+});
+
+async function openNotifyModal(campaignId) {
+  currentCampaignId = campaignId;
+  notifyModal.classList.remove('hidden');
+  document.getElementById('notify-loading').classList.remove('hidden');
+  document.getElementById('notify-content').classList.add('hidden');
+  document.getElementById('notify-result').classList.add('hidden');
+  document.getElementById('notify-error').classList.add('hidden');
+
+  const res = await fetch(`/api/admin/campaigns/${campaignId}/draft-message`, { method: 'POST' });
+  const data = await res.json();
+  document.getElementById('notify-loading').classList.add('hidden');
+
+  if (!res.ok) {
+    document.getElementById('notify-content').classList.remove('hidden');
+    document.getElementById('notify-message').value = '';
+    document.getElementById('notify-error').textContent = data.error || 'AI taslak oluşturamadı, mesajı elle yazabilirsin.';
+    document.getElementById('notify-error').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('notify-content').classList.remove('hidden');
+  document.getElementById('notify-message').value = data.message;
+}
+
+document.getElementById('notify-cancel').addEventListener('click', () => notifyModal.classList.add('hidden'));
+
+document.getElementById('notify-send-btn').addEventListener('click', async () => {
+  const message = document.getElementById('notify-message').value;
+  const errorEl = document.getElementById('notify-error');
+  const resultEl = document.getElementById('notify-result');
+  errorEl.classList.add('hidden');
+  resultEl.classList.add('hidden');
+
+  const res = await fetch(`/api/admin/campaigns/${currentCampaignId}/notify-staff`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Gönderilemedi';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  const successCount = data.results.filter(r => r.ok).length;
+  resultEl.textContent = `${successCount}/${data.results.length} personele gönderildi.`;
+  resultEl.classList.remove('hidden');
+  loadCampaigns();
+});
+
 async function loadOrders() {
   const res = await fetch('/api/admin/orders');
   if (!res.ok) return;
@@ -694,6 +880,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadIntegrations();
     loadRewardsAdmin();
     loadRedemptions();
+    loadCampaigns();
   }
 })();
 </script>
