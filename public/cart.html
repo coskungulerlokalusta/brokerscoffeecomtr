@@ -5,10 +5,12 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Sepetim | Brokers Coffee</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
   body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
   h1, h2 { font-family: 'Playfair Display', serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  @media (max-width: 768px) { body { padding-bottom: 72px; } }
 </style>
 </head>
 <body class="min-h-screen">
@@ -16,7 +18,6 @@
 <header class="bg-white sticky top-0 z-10 border-b border-[#e3e2e0]">
 <div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
 <a href="/" class="font-bold text-lg text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
-<a href="/" class="text-sm text-[#735c00]">← Menüye Dön</a>
 </div>
 </header>
 
@@ -35,6 +36,27 @@
 
 <p id="empty-msg" class="text-[#827472] hidden">Sepetiniz boş. <a href="/" class="text-[#735c00] underline">Menüye göz atın</a>.</p>
 </main>
+
+<!-- Mobil uygulama tarzı alt gezinme -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e3e2e0] flex items-stretch justify-around" style="padding-bottom: env(safe-area-inset-bottom);">
+<a href="/" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472]">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Ana Sayfa</span>
+</a>
+<a href="/#menu" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472]">
+<span class="material-symbols-outlined text-[22px]">restaurant_menu</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Menü</span>
+</a>
+<a href="/cart.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#0d1b3d] relative">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+<span data-cart-badge-mobile class="hidden absolute top-1 right-[calc(50%-18px)] bg-[#c9a227] text-[#241a00] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Sepet</span>
+</a>
+<a href="/account.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472]">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Hesabım</span>
+</a>
+</nav>
 
 <script src="/js/cart.js"></script>
 <script>
@@ -87,10 +109,22 @@ function render() {
   });
 }
 
+function syncMobileCartBadge() {
+  const badge = document.querySelector('[data-cart-badge-mobile]');
+  if (badge) {
+    const count = cartCount();
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+}
+document.addEventListener('DOMContentLoaded', syncMobileCartBadge);
+const origSaveCart = saveCart;
+saveCart = function(cart) { origSaveCart(cart); syncMobileCartBadge(); };
+
 render();
 </script>
 
-<a href="https://wa.me/905326424738?text=Merhaba%2C%20sipari%C5%9F%20vermek%20istiyorum" target="_blank" rel="noopener" class="fixed z-40 bottom-6 right-5 w-14 h-14 rounded-full bg-[#25D366] shadow-lg flex items-center justify-center hover:scale-105 transition-transform" aria-label="WhatsApp'tan yaz">
+<a href="https://wa.me/905326424738?text=Merhaba%2C%20sipari%C5%9F%20vermek%20istiyorum" target="_blank" rel="noopener" class="fixed z-40 bottom-24 md:bottom-6 right-5 w-14 h-14 rounded-full bg-[#25D366] shadow-lg flex items-center justify-center hover:scale-105 transition-transform" aria-label="WhatsApp'tan yaz">
 <svg viewBox="0 0 32 32" class="w-8 h-8" fill="white"><path d="M16.001 3C9.373 3 4 8.373 4 15c0 2.386.688 4.611 1.875 6.489L4 29l7.719-1.837A11.94 11.94 0 0 0 16.001 27C22.628 27 28 21.627 28 15S22.628 3 16.001 3zm6.964 16.876c-.293.822-1.452 1.508-2.373 1.703-.632.133-1.457.238-4.236-.91-3.554-1.469-5.84-5.058-6.017-5.293-.17-.235-1.442-1.92-1.442-3.66 0-1.74.912-2.596 1.235-2.951.323-.355.706-.444.941-.444.235 0 .47.002.676.012.216.01.507-.082.793.605.293.703.998 2.428 1.086 2.604.088.176.147.382.03.617-.117.235-.176.382-.352.588-.176.206-.371.46-.53.618-.176.176-.36.367-.155.719.206.352.914 1.508 1.963 2.443 1.35 1.204 2.488 1.577 2.84 1.753.352.176.558.147.764-.088.206-.235.881-1.03 1.117-1.383.235-.353.47-.294.793-.176.323.117 2.047.966 2.399 1.142.352.176.587.264.674.412.088.147.088.851-.205 1.673z"/></svg>
 </a>
 </body>
