@@ -348,15 +348,32 @@ async function loadProducts() {
     list.innerHTML = '<p class="text-[#827472]">Henüz ürün yok.</p>';
     return;
   }
-  list.innerHTML = products.map(p => `
-    <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
-      <img src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
-      <div class="flex-1 min-w-0">
-        <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
-        <p class="text-xs text-[#827472]">${p.subcategory || p.category} · ₺${p.basePrice}</p>
+
+  // Kategoriye göre grupla
+  const groups = {};
+  products.forEach(p => {
+    const key = p.subcategory || p.category;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  });
+
+  list.className = 'flex flex-col gap-6';
+  list.innerHTML = Object.keys(groups).sort().map(category => `
+    <div>
+      <h3 class="text-sm font-bold uppercase tracking-widest text-[#735c00] mb-2">${category} <span class="text-[#827472] font-normal normal-case">(${groups[category].length})</span></h3>
+      <div class="grid md:grid-cols-2 gap-3">
+        ${groups[category].map(p => `
+          <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
+            <img src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
+              <p class="text-xs text-[#827472]">₺${p.basePrice}</p>
+            </div>
+            <button data-id="${p.id}" class="edit-product-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
+            <button data-id="${p.id}" class="delete-product-btn text-xs font-semibold text-red-600 px-2">Sil</button>
+          </div>
+        `).join('')}
       </div>
-      <button data-id="${p.id}" class="edit-product-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
-      <button data-id="${p.id}" class="delete-product-btn text-xs font-semibold text-red-600 px-2">Sil</button>
     </div>
   `).join('');
 
