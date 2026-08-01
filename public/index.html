@@ -276,11 +276,14 @@ function renderFeatured(products) {
         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
       </div>
       <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
-      <p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>
+      ${p.sizes.length > 1
+        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`).join('')}</select>`
+        : `<p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>`}
       <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
     </div>
   `).join('');
   wireAddToCart(wrap);
+  wireSizeSelects(wrap);
 }
 
 function renderTabs(categories) {
@@ -294,6 +297,30 @@ function renderTabs(categories) {
       activeCategory = btn.dataset.cat;
       renderTabs(categories);
       renderGrid();
+    });
+  });
+}
+
+function sizeSelectorHtml(p) {
+  if (p.sizes.length <= 1) {
+    return `<p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>`;
+  }
+  const options = p.sizes.map((s, i) =>
+    `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`
+  ).join('');
+  return `<select class="size-select text-xs border border-outline-variant rounded px-2 py-1.5 mb-2 bg-white" data-product-id="${p.id}" onclick="event.stopPropagation()">${options}</select>`;
+}
+
+function wireSizeSelects(scope) {
+  scope.querySelectorAll('.size-select').forEach(select => {
+    select.addEventListener('change', () => {
+      const productId = select.dataset.productId;
+      const btn = scope.querySelector(`.add-to-cart-btn[data-id="${productId}"]`);
+      if (!btn) return;
+      const product = allProducts.find(p => p.id === productId);
+      const size = product.sizes[Number(select.value)];
+      btn.dataset.price = size.price;
+      btn.dataset.size = size.label || '';
     });
   });
 }
@@ -312,12 +339,13 @@ function renderGrid() {
       <div class="text-center">
         <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>
         <h3 class="font-headline-md text-[16px] md:text-[18px] text-primary mb-1">${p.name}</h3>
-        <p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>
-        <button class="add-to-cart-btn text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">SİPARİŞE EKLE</button>
+        ${sizeSelectorHtml(p)}
+        <button class="add-to-cart-btn text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all block mx-auto" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">SİPARİŞE EKLE</button>
       </div>
     </div>
   `).join('');
   wireAddToCart(grid);
+  wireSizeSelects(grid);
 }
 
 async function init() {
