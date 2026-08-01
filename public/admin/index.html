@@ -601,11 +601,14 @@ function fieldInputHtml(provider, field, currentValue, isSet) {
 }
 
 function isProviderConnected(provider, cfg, values) {
-  if (cfg.envOnly) {
-    return cfg.envVarNames.some(() => values.envConnected);
-  }
-  const requiredKeys = cfg.fields.filter(f => f.type !== 'select').map(f => f.key);
-  return values.enabled && requiredKeys.every(k => values[k + 'Set'] || (values.envFields || []).includes(k) || (values[k] && k === 'environment'));
+  if (cfg.envOnly) return !!values.envConnected;
+  if (!values.enabled) return false;
+  const requiredFields = cfg.fields.filter(f => f.type !== 'select');
+  return requiredFields.every(f => {
+    if ((values.envFields || []).includes(f.key)) return true;
+    if (f.type === 'secret') return !!values[f.key + 'Set'];
+    return !!values[f.key];
+  });
 }
 
 async function loadIntegrations() {
