@@ -1,4 +1,5 @@
 const express = require('express');
+require('express-async-errors'); // async route hatalarını otomatik yakalar, sunucu çökmesini önler
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -93,8 +94,29 @@ async function seedIfEmpty() {
   }
 }
 
+// Genel hata yakalayıcı — hiçbir hata sunucuyu çökertmesin, düzgün 500 dönsün
+app.use((err, req, res, next) => {
+  console.error('İstek hatası:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Sunucu hatası, lütfen tekrar deneyin.' });
+});
+
+// Son çare güvenlik ağı: beklenmeyen bir hata sunucuyu asla tamamen çökertmesin
+process.on('unhandledRejection', (err) => {
+  console.error('Yakalanmamış promise hatası:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Yakalanmamış hata:', err);
+});
+
 seedIfEmpty().then(() => {
   app.listen(PORT, () => {
     console.log(`Brokers Coffee sunucusu ${PORT} portunda çalışıyor`);
   });
+
+  // Zamanlanmış/yayılmış mesajları her dakika kontrol edip zamanı gelenleri gönderir
+  const messageQueue = require('./backend/utils/messageQueue');
+  setInterval(() => {
+    messageQueue.processDue().catch((err) => console.error('Mesaj kuyruğu hatası:', err.message));
+  }, 60 * 1000);
 });

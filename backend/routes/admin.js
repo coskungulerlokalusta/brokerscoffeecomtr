@@ -10,6 +10,7 @@ const campaignStore = require('../utils/campaignStore');
 const aiAssistant = require('../utils/aiAssistant');
 const whatsapp = require('../utils/whatsapp');
 const customerAuth = require('../utils/customerAuth');
+const messageQueue = require('../utils/messageQueue');
 const crypto = require('crypto');
 
 const COOKIE_OPTS = {
@@ -101,9 +102,46 @@ router.get('/customers', adminAuth.requireAuth, async (req, res) => {
     phone: c.phone,
     isStaff: c.isStaff,
     storeName: c.storeName || null,
+    loyaltyPoints: c.loyaltyPoints || 0,
     createdAt: c.createdAt,
   }));
   res.json(customers);
+});
+
+// Genel mesaj taslağı oluştur (kampanya dışı)
+router.post('/messages/draft', adminAuth.requireAuth, async (req, res) => {
+  const { context } = req.body;
+  if (!context) return res.status(400).json({ error: 'Bağlam metni gerekli' });
+  try {
+    const message = await aiAssistant.draftGenericMessage(context);
+    res.json({ message });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Seçilen üyelere mesaj gönder — hemen veya bir zaman aralığına yayarak
+router.post('/messages/send', adminAuth.requireAuth, async (req, res) => {
+  const { recipientIds, message, channel, windowMinutes } = req.body;
+  if (!recipientIds || !recipientIds.length || !message) {
+    return res.status(400).json({ error: 'Alıcı ve mesaj gerekli' });
+  }
+  const allCustomers = await customerAuth.loadCustomers();
+  const recipients = allCustomers.filter((c) => recipientIds.includes(c.id));
+  if (!recipients.length) return res.status(400).json({ error: 'Alıcı bulunamadı' });
+
+  const items = await messageQueue.enqueueBatch({
+    recipients,
+    message,
+    channel: channel === 'sms' ? 'sms' : 'whatsapp',
+    windowMinutes: Number(windowMinutes) || 0,
+  });
+  res.status(201).json({ queued: items.length });
+});
+
+// Mesaj kuyruğunu görüntüle (son gönderilenler/bekleyenler)
+router.get('/messages/queue', adminAuth.requireAuth, async (req, res) => {
+  res.json(await messageQueue.loadRecent());
 });
 
 router.get('/integrations', adminAuth.requireAuth, async (req, res) => {

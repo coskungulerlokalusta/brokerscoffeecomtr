@@ -13,6 +13,7 @@
   .sidebar-link { color: #504442; }
   .sidebar-link.active-section { background: #0d1b3d; color: #fff; }
   .sidebar-link:hover:not(.active-section) { background: #f4f3f1; }
+  .member-filter-btn.active-filter { background: #0d1b3d; color: #fff; }
 </style>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
@@ -53,6 +54,7 @@
 <button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
 <button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
 <button data-section="site-content" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🖼️ Site Görselleri</button>
+<button data-section="members" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👤 Üyeler &amp; Mesajlaşma</button>
 <button data-section="integrations" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🔌 Entegrasyonlar</button>
 </div>
 </nav>
@@ -203,6 +205,71 @@
 <button id="notify-send-btn" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Tüm Personele Gönder</button>
 <button id="notify-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Kapat</button>
 </div>
+</div>
+</div>
+</div>
+
+<div id="section-members" class="admin-panel hidden">
+<h2 class="text-2xl text-[#0d1b3d] mb-4">Üyeler &amp; Mesajlaşma</h2>
+
+<div class="flex items-center justify-between mb-4">
+<div class="flex gap-2">
+<button data-filter="all" class="member-filter-btn active-filter px-4 py-2 rounded-full border border-[#d3c3c0] text-xs font-semibold uppercase tracking-widest">Tümü</button>
+<button data-filter="customer" class="member-filter-btn px-4 py-2 rounded-full border border-[#d3c3c0] text-xs font-semibold uppercase tracking-widest">Müşteri</button>
+<button data-filter="staff" class="member-filter-btn px-4 py-2 rounded-full border border-[#d3c3c0] text-xs font-semibold uppercase tracking-widest">Personel</button>
+</div>
+<button id="open-message-btn" class="bg-[#0d1b3d] text-white text-xs font-semibold uppercase tracking-widest px-4 py-2.5 rounded" disabled>📨 Seçilenlere Mesaj Gönder (0)</button>
+</div>
+
+<div class="flex items-center gap-2 mb-3">
+<label class="flex items-center gap-1.5 text-xs font-semibold text-[#504442]"><input type="checkbox" id="select-all-members"/> Tümünü Seç</label>
+</div>
+
+<div id="members-list" class="flex flex-col gap-2 mb-8"></div>
+
+<h3 class="text-lg text-[#0d1b3d] mb-3">Mesaj Geçmişi / Kuyruğu</h3>
+<div id="message-queue-list" class="flex flex-col gap-2"></div>
+</div>
+
+<div id="message-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Mesaj Gönder</h3>
+<p id="message-recipient-count" class="text-sm text-[#827472] mb-3"></p>
+
+<div class="mb-3">
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">AI ile Taslak (opsiyonel)</label>
+<div class="flex gap-2">
+<input id="ai-context-input" placeholder="Örn: yeni kampanyayı duyur, hoş geldin mesajı..." class="border border-[#d3c3c0] rounded px-3 py-2 text-sm flex-1"/>
+<button id="ai-draft-btn" type="button" class="border border-[#d3c3c0] rounded px-3 text-xs font-semibold whitespace-nowrap">✨ Yaz</button>
+</div>
+</div>
+
+<textarea id="message-text-input" placeholder="Mesaj metni..." class="border border-[#d3c3c0] rounded px-3 py-2 w-full text-sm mb-3" rows="4"></textarea>
+
+<div class="flex gap-2 mb-3">
+<label class="flex items-center gap-1.5 text-sm"><input type="radio" name="msg-channel" value="whatsapp" checked/> WhatsApp</label>
+<label class="flex items-center gap-1.5 text-sm"><input type="radio" name="msg-channel" value="sms"/> SMS (NetGSM)</label>
+</div>
+
+<div class="mb-3">
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Gönderim</label>
+<select id="send-timing-select" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full">
+<option value="0">Hemen gönder (hepsine aynı anda)</option>
+<option value="15">15 dakikaya yay</option>
+<option value="30">30 dakikaya yay</option>
+<option value="60">1 saate yay</option>
+<option value="120">2 saate yay</option>
+<option value="360">6 saate yay</option>
+<option value="1440">24 saate yay</option>
+</select>
+</div>
+
+<p id="message-error" class="text-red-600 text-sm mb-2 hidden"></p>
+<p id="message-success" class="text-emerald-600 text-sm mb-2 hidden"></p>
+
+<div class="flex gap-2">
+<button id="message-send-btn" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Gönder</button>
+<button id="message-cancel-btn" type="button" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
 </div>
 </div>
 </div>
@@ -1050,6 +1117,162 @@ async function loadStaffList() {
   `).join('');
 }
 
+// ---- Üyeler & Mesajlaşma ----
+let allMembers = [];
+let memberFilter = 'all';
+let selectedMemberIds = new Set();
+
+async function loadMembers() {
+  const res = await fetch('/api/admin/customers');
+  if (!res.ok) return;
+  allMembers = await res.json();
+  renderMembers();
+}
+
+function renderMembers() {
+  const list = document.getElementById('members-list');
+  const filtered = allMembers.filter(m => {
+    if (memberFilter === 'customer') return !m.isStaff;
+    if (memberFilter === 'staff') return m.isStaff;
+    return true;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<p class="text-[#827472] text-sm">Henüz üye yok.</p>';
+    updateSelectedCount();
+    return;
+  }
+
+  list.innerHTML = filtered.map(m => `
+    <label class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 cursor-pointer text-sm">
+      <input type="checkbox" class="member-checkbox" value="${m.id}" ${selectedMemberIds.has(m.id) ? 'checked' : ''}/>
+      <div class="flex-1">
+        <span class="font-semibold text-[#0d1b3d]">${m.name}</span>
+        <span class="text-[#827472]"> — ${m.phone}</span>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-widest ${m.isStaff ? 'text-[#0d1b3d]' : 'text-[#735c00]'}">${m.isStaff ? (m.storeName || 'Personel') : 'Müşteri'}</span>
+    </label>
+  `).join('');
+
+  list.querySelectorAll('.member-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedMemberIds.add(cb.value);
+      else selectedMemberIds.delete(cb.value);
+      updateSelectedCount();
+    });
+  });
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const btn = document.getElementById('open-message-btn');
+  btn.textContent = `📨 Seçilenlere Mesaj Gönder (${selectedMemberIds.size})`;
+  btn.disabled = selectedMemberIds.size === 0;
+}
+
+document.querySelectorAll('.member-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.member-filter-btn').forEach(b => b.classList.remove('active-filter'));
+    btn.classList.add('active-filter');
+    memberFilter = btn.dataset.filter;
+    renderMembers();
+  });
+});
+
+document.getElementById('select-all-members').addEventListener('change', (e) => {
+  const filtered = allMembers.filter(m => {
+    if (memberFilter === 'customer') return !m.isStaff;
+    if (memberFilter === 'staff') return m.isStaff;
+    return true;
+  });
+  if (e.target.checked) {
+    filtered.forEach(m => selectedMemberIds.add(m.id));
+  } else {
+    filtered.forEach(m => selectedMemberIds.delete(m.id));
+  }
+  renderMembers();
+});
+
+const messageModal = document.getElementById('message-modal');
+
+document.getElementById('open-message-btn').addEventListener('click', () => {
+  document.getElementById('message-recipient-count').textContent = `${selectedMemberIds.size} kişiye gönderilecek`;
+  document.getElementById('message-text-input').value = '';
+  document.getElementById('ai-context-input').value = '';
+  document.getElementById('message-error').classList.add('hidden');
+  document.getElementById('message-success').classList.add('hidden');
+  messageModal.classList.remove('hidden');
+});
+
+document.getElementById('message-cancel-btn').addEventListener('click', () => messageModal.classList.add('hidden'));
+
+document.getElementById('ai-draft-btn').addEventListener('click', async () => {
+  const context = document.getElementById('ai-context-input').value;
+  const errorEl = document.getElementById('message-error');
+  errorEl.classList.add('hidden');
+  if (!context) return;
+  const res = await fetch('/api/admin/messages/draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ context }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Taslak oluşturulamadı';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  document.getElementById('message-text-input').value = data.message;
+});
+
+document.getElementById('message-send-btn').addEventListener('click', async () => {
+  const message = document.getElementById('message-text-input').value;
+  const errorEl = document.getElementById('message-error');
+  const successEl = document.getElementById('message-success');
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+  if (!message) { errorEl.textContent = 'Mesaj metni gerekli'; errorEl.classList.remove('hidden'); return; }
+
+  const res = await fetch('/api/admin/messages/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipientIds: Array.from(selectedMemberIds),
+      message,
+      channel: document.querySelector('input[name="msg-channel"]:checked').value,
+      windowMinutes: document.getElementById('send-timing-select').value,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Gönderilemedi';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  successEl.textContent = `${data.queued} mesaj kuyruğa eklendi.`;
+  successEl.classList.remove('hidden');
+  loadMessageQueue();
+  setTimeout(() => messageModal.classList.add('hidden'), 1500);
+});
+
+async function loadMessageQueue() {
+  const res = await fetch('/api/admin/messages/queue');
+  if (!res.ok) return;
+  const queue = await res.json();
+  const list = document.getElementById('message-queue-list');
+  if (!queue.length) { list.innerHTML = '<p class="text-[#827472] text-sm">Henüz mesaj gönderilmedi.</p>'; return; }
+  const statusColors = { bekliyor: 'text-amber-600', gonderildi: 'text-emerald-600', hata: 'text-red-600' };
+  list.innerHTML = queue.slice(0, 30).map(m => `
+    <div class="bg-white rounded-lg shadow-sm p-3 flex items-center justify-between text-sm">
+      <div class="flex-1 min-w-0">
+        <span class="font-semibold text-[#0d1b3d]">${m.recipientName}</span>
+        <span class="text-[#827472]"> — ${m.channel === 'sms' ? 'SMS' : 'WhatsApp'} — ${new Date(m.sendAt).toLocaleString('tr-TR')}</span>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-widest ${statusColors[m.status] || ''}">${m.status}</span>
+    </div>
+  `).join('');
+}
+
 async function loadOrders() {
   const res = await fetch('/api/admin/orders');
   if (!res.ok) return;
@@ -1102,6 +1325,8 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadCampaigns();
     loadSiteImages();
     loadStaffList();
+    loadMembers();
+    loadMessageQueue();
   }
 })();
 </script>

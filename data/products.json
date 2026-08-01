@@ -72,11 +72,11 @@
     "subcategory": null,
     "sizes": [
       {
-        "label": null,
+        "label": "Tek",
         "price": 120
       },
       {
-        "label": null,
+        "label": "Double",
         "price": 145
       }
     ],
@@ -90,11 +90,11 @@
     "subcategory": null,
     "sizes": [
       {
-        "label": null,
+        "label": "Tek",
         "price": 135
       },
       {
-        "label": null,
+        "label": "Double",
         "price": 155
       }
     ],
@@ -108,11 +108,11 @@
     "subcategory": null,
     "sizes": [
       {
-        "label": null,
+        "label": "Tek",
         "price": 135
       },
       {
-        "label": null,
+        "label": "Double",
         "price": 155
       }
     ],
@@ -126,11 +126,11 @@
     "subcategory": null,
     "sizes": [
       {
-        "label": null,
+        "label": "Tek",
         "price": 135
       },
       {
-        "label": null,
+        "label": "Double",
         "price": 155
       }
     ],
@@ -144,11 +144,11 @@
     "subcategory": null,
     "sizes": [
       {
-        "label": null,
+        "label": "Tek",
         "price": 135
       },
       {
-        "label": null,
+        "label": "Double",
         "price": 155
       }
     ],

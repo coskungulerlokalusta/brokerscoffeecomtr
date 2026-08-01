@@ -65,4 +65,12 @@ function testConnection() {
   return callClaude('Sadece "ok" yaz, başka hiçbir şey yazma.');
 }
 
-module.exports = { draftStaffCampaignMessage, testConnection };
+// Genel amaçlı mesaj taslağı — kampanya dışı, serbest bağlamlı duyurular için
+async function draftGenericMessage(context) {
+  const prompt = `Bir kahve dükkanının (Brokers Coffee) yöneticisi müşterilerine/personeline WhatsApp'tan kısa, sıcak, samimi bir mesaj göndermek istiyor. Aşağıdaki bağlama göre 2-3 cümlelik doğal bir mesaj yaz. Sadece mesaj metnini yaz, başka açıklama ekleme.
+
+Bağlam: ${context}`;
+  return callClaude(prompt);
+}
+
+module.exports = { draftStaffCampaignMessage, draftGenericMessage, testConnection };
