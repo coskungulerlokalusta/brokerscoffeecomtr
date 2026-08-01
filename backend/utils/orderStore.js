@@ -1,43 +1,41 @@
-const fs = require('fs');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const kv = require('./kvStore');
 
-const ORDERS_FILE = path.join(__dirname, '..', '..', 'data', 'orders.json');
+const KEY = 'orders';
 
-function loadOrders() {
-  if (!fs.existsSync(ORDERS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf-8'));
+async function loadOrders() {
+  return kv.getJSON(KEY, []);
 }
 
-function saveOrders(orders) {
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+async function saveOrders(orders) {
+  return kv.setJSON(KEY, orders);
 }
 
-function createOrder(data) {
-  const orders = loadOrders();
+async function createOrder(data) {
+  const orders = await loadOrders();
   const order = {
     id: uuidv4(),
     items: data.items,
     customerName: data.customerName,
     phone: data.phone,
-    deliveryType: data.deliveryType, // 'gel-al' | 'kurye'
+    deliveryType: data.deliveryType,
     address: data.address || null,
     total: data.total,
-    paymentStatus: 'bekliyor', // bekliyor | odendi | iade
-    orderStatus: 'yeni', // yeni | hazirlaniyor | hazir | teslim-edildi | iptal
+    paymentStatus: 'bekliyor',
+    orderStatus: 'yeni',
     createdAt: new Date().toISOString(),
   };
   orders.unshift(order);
-  saveOrders(orders);
+  await saveOrders(orders);
   return order;
 }
 
-function updateOrderStatus(id, orderStatus) {
-  const orders = loadOrders();
+async function updateOrderStatus(id, orderStatus) {
+  const orders = await loadOrders();
   const order = orders.find((o) => o.id === id);
   if (!order) return null;
   order.orderStatus = orderStatus;
-  saveOrders(orders);
+  await saveOrders(orders);
   return order;
 }
 

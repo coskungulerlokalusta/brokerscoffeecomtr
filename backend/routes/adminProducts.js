@@ -30,12 +30,12 @@ const upload = multer({
 });
 
 // Tüm ürünleri listele (admin görünümü)
-router.get('/', adminAuth.requireAuth, (req, res) => {
-  res.json(productStore.loadProducts());
+router.get('/', adminAuth.requireAuth, async (req, res) => {
+  res.json(await productStore.loadProducts());
 });
 
 // Yeni ürün oluştur (resim opsiyonel)
-router.post('/', adminAuth.requireAuth, upload.single('image'), (req, res) => {
+router.post('/', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, category, subcategory, description, sizes } = req.body;
     if (!name || !category) return res.status(400).json({ error: 'Ürün adı ve kategori gerekli' });
@@ -49,7 +49,7 @@ router.post('/', adminAuth.requireAuth, upload.single('image'), (req, res) => {
     if (!parsedSizes.length) return res.status(400).json({ error: 'En az bir fiyat girilmeli' });
 
     const image = req.file ? `/uploads/products/${req.file.filename}` : null;
-    const product = productStore.createProduct({ name, category, subcategory, sizes: parsedSizes, description, image });
+    const product = await productStore.createProduct({ name, category, subcategory, sizes: parsedSizes, description, image });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -57,7 +57,7 @@ router.post('/', adminAuth.requireAuth, upload.single('image'), (req, res) => {
 });
 
 // Ürün güncelle (resim opsiyonel — gönderilirse eskisinin yerine geçer)
-router.put('/:id', adminAuth.requireAuth, upload.single('image'), (req, res) => {
+router.put('/:id', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, category, subcategory, description, sizes } = req.body;
     const updates = {};
@@ -74,7 +74,7 @@ router.put('/:id', adminAuth.requireAuth, upload.single('image'), (req, res) => 
     }
     if (req.file) updates.image = `/uploads/products/${req.file.filename}`;
 
-    const product = productStore.updateProduct(req.params.id, updates);
+    const product = await productStore.updateProduct(req.params.id, updates);
     if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
     res.json(product);
   } catch (err) {
@@ -83,8 +83,8 @@ router.put('/:id', adminAuth.requireAuth, upload.single('image'), (req, res) => 
 });
 
 // Ürün sil
-router.delete('/:id', adminAuth.requireAuth, (req, res) => {
-  const ok = productStore.deleteProduct(req.params.id);
+router.delete('/:id', adminAuth.requireAuth, async (req, res) => {
+  const ok = await productStore.deleteProduct(req.params.id);
   if (!ok) return res.status(404).json({ error: 'Ürün bulunamadı' });
   res.json({ ok: true });
 });

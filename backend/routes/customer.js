@@ -12,7 +12,6 @@ const COOKIE_OPTS = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
-// Adım 1: Telefona doğrulama kodu gönder
 router.post('/request-otp', async (req, res) => {
   const { phone } = req.body;
   if (!phone || phone.replace(/\D/g, '').length < 10) {
@@ -25,14 +24,11 @@ router.post('/request-otp', async (req, res) => {
     await netgsm.sendSms(normalized, `Brokers Coffee dogrulama kodunuz: ${code}`);
     res.json({ ok: true });
   } catch (err) {
-    // NetGSM henüz kurulmadıysa geliştirme/test amaçlı kodu response'ta döndürmeyiz;
-    // ama admin'e net hata döneriz.
     res.status(502).json({ error: 'SMS gönderilemedi: ' + err.message });
   }
 });
 
-// Adım 2: Kodu doğrula, üye ol / giriş yap
-router.post('/verify-otp', (req, res) => {
+router.post('/verify-otp', async (req, res) => {
   const { phone, code, name, isStaff, staffCode } = req.body;
   if (!phone || !code) return res.status(400).json({ error: 'Telefon ve kod gerekli' });
 
@@ -40,10 +36,10 @@ router.post('/verify-otp', (req, res) => {
   const isValid = otpStore.verifyCode(normalized, code);
   if (!isValid) return res.status(400).json({ error: 'Kod hatalı veya süresi dolmuş' });
 
-  const existing = customerAuth.findByPhone(normalized);
+  const existing = await customerAuth.findByPhone(normalized);
   let staffFlag = false;
   if (!existing && isStaff) {
-    const currentSettings = settings.loadSettings();
+    const currentSettings = await settings.loadSettings();
     if (staffCode !== currentSettings.staffSignupCode) {
       return res.status(400).json({ error: 'Personel kodu hatalı' });
     }
@@ -51,7 +47,7 @@ router.post('/verify-otp', (req, res) => {
   }
 
   try {
-    const { token, customer } = customerAuth.registerOrLogin({ phone: normalized, name, isStaff: staffFlag });
+    const { token, customer } = await customerAuth.registerOrLogin({ phone: normalized, name, isStaff: staffFlag });
     res.cookie('customer_session', token, COOKIE_OPTS);
     res.json({ id: customer.id, name: customer.name, isStaff: customer.isStaff, isNew: !existing });
   } catch (err) {
@@ -59,15 +55,15 @@ router.post('/verify-otp', (req, res) => {
   }
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const token = req.cookies && req.cookies.customer_session;
-  if (token) customerAuth.logout(token);
+  if (token) await customerAuth.logout(token);
   res.clearCookie('customer_session');
   res.json({ ok: true });
 });
 
-router.get('/me', customerAuth.requireAuth, (req, res) => {
-  const currentSettings = settings.loadSettings();
+router.get('/me', customerAuth.requireAuth, async (req, res) => {
+  const currentSettings = await settings.loadSettings();
   res.json({
     id: req.customer.id,
     name: req.customer.name,

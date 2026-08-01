@@ -1,41 +1,39 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const kv = require('./kvStore');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'rewards.json');
+const KEY = 'rewards';
 
-function loadRewards() {
-  if (!fs.existsSync(FILE)) return [];
-  return JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+async function loadRewards() {
+  return kv.getJSON(KEY, []);
 }
 
-function saveRewards(rewards) {
-  fs.writeFileSync(FILE, JSON.stringify(rewards, null, 2), 'utf-8');
+async function saveRewards(rewards) {
+  return kv.setJSON(KEY, rewards);
 }
 
-function createReward({ title, pointsCost, description }) {
-  const rewards = loadRewards();
+async function createReward({ title, pointsCost, description }) {
+  const rewards = await loadRewards();
   const reward = { id: crypto.randomUUID(), title, pointsCost: Number(pointsCost), description: description || '', active: true };
   rewards.push(reward);
-  saveRewards(rewards);
+  await saveRewards(rewards);
   return reward;
 }
 
-function updateReward(id, updates) {
-  const rewards = loadRewards();
+async function updateReward(id, updates) {
+  const rewards = await loadRewards();
   const reward = rewards.find((r) => r.id === id);
   if (!reward) return null;
   Object.assign(reward, updates);
-  saveRewards(rewards);
+  await saveRewards(rewards);
   return reward;
 }
 
-function deleteReward(id) {
-  const rewards = loadRewards();
+async function deleteReward(id) {
+  const rewards = await loadRewards();
   const idx = rewards.findIndex((r) => r.id === id);
   if (idx === -1) return false;
   rewards.splice(idx, 1);
-  saveRewards(rewards);
+  await saveRewards(rewards);
   return true;
 }
 

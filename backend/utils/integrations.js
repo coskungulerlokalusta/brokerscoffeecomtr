@@ -1,7 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+const kv = require('./kvStore');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'integrations.json');
+const KEY = 'integrations';
 
 const DEFAULTS = {
   iyzico: { enabled: false, apiKey: '', secretKey: '', environment: 'sandbox' },
@@ -25,9 +24,7 @@ const SECRET_FIELDS = {
   metropol: ['apiKey'],
 };
 
-// Ortam değişkeni (environment variable) eşlemesi — Hostinger panelinden girilenler
-// hiçbir zaman silinmez (dosya tabanlı depolamanın aksine, deploy'lardan etkilenmez).
-// Bir alan için ortam değişkeni tanımlıysa, panel/dosya değerinin ÖNÜNE geçer.
+// Ortam değişkeni eşlemesi — tanımlıysa panel/DB değerinin önüne geçer, deploy'lardan etkilenmez
 const ENV_MAP = {
   iyzico: { apiKey: 'IYZICO_API_KEY', secretKey: 'IYZICO_SECRET_KEY' },
   whatsapp: { phoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID', accessToken: 'WHATSAPP_ACCESS_TOKEN', verifyToken: 'WHATSAPP_VERIFY_TOKEN' },
@@ -50,17 +47,12 @@ function applyEnvOverrides(provider, config) {
       anyEnvSet = true;
     }
   });
-  // Bir sağlayıcı için ortam değişkeni tanımlıysa, panelde ayrıca "Aktif" işaretlenmese bile aktif say
   if (anyEnvSet) result.enabled = true;
   return result;
 }
 
-function load() {
-  if (!fs.existsSync(FILE)) {
-    save(DEFAULTS);
-    return DEFAULTS;
-  }
-  const stored = JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+async function load() {
+  const stored = (await kv.getJSON(KEY, null)) || {};
   const merged = {};
   Object.keys(DEFAULTS).forEach((provider) => {
     merged[provider] = { ...DEFAULTS[provider], ...(stored[provider] || {}) };
@@ -68,8 +60,8 @@ function load() {
   return merged;
 }
 
-function save(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2), 'utf-8');
+async function save(data) {
+  return kv.setJSON(KEY, data);
 }
 
 function mask(value) {
@@ -78,9 +70,8 @@ function mask(value) {
   return '••••' + value.slice(-4);
 }
 
-// Admin panelde göstermek için: gerçek değerleri değil, maskelenmiş halini döner
-function loadMasked() {
-  const data = load();
+async function loadMasked() {
+  const data = await load();
   const masked = {};
   Object.keys(data).forEach((provider) => {
     const withEnv = applyEnvOverrides(provider, data[provider]);
@@ -89,21 +80,18 @@ function loadMasked() {
       masked[provider][field] = mask(withEnv[field]);
       masked[provider][field + 'Set'] = !!withEnv[field];
     });
-    // Ortam değişkeninden gelen alanları işaretle (panelde "salt okunur" göstermek için)
     const envMap = ENV_MAP[provider] || {};
     masked[provider].envFields = Object.keys(envMap).filter((f) => !!process.env[envMap[f]]);
   });
   return masked;
 }
 
-// Güncelleme: boş/maskeli gönderilen alanlar mevcut değeri korur, sadece yeni girilenler değişir
-function updateProvider(provider, updates) {
-  const data = load();
+async function updateProvider(provider, updates) {
+  const data = await load();
   if (!data[provider]) throw new Error('Bilinmeyen entegrasyon: ' + provider);
   const secretFields = SECRET_FIELDS[provider] || [];
   Object.keys(updates).forEach((key) => {
     if (secretFields.includes(key)) {
-      // Maskeli/boş değer geldiyse mevcut secret'ı koru
       if (updates[key] && !updates[key].startsWith('••••')) {
         data[provider][key] = updates[key];
       }
@@ -111,13 +99,13 @@ function updateProvider(provider, updates) {
       data[provider][key] = updates[key];
     }
   });
-  save(data);
+  await save(data);
   return data[provider];
 }
 
-// Gerçek (maskelenmemiş) değerleri sadece sunucu içi kullanım için döner — asla API response'ta göndermeyin
-function getProviderCredentials(provider) {
-  return applyEnvOverrides(provider, load()[provider]);
+async function getProviderCredentials(provider) {
+  const data = await load();
+  return applyEnvOverrides(provider, data[provider]);
 }
 
 module.exports = { load, loadMasked, updateProvider, getProviderCredentials };

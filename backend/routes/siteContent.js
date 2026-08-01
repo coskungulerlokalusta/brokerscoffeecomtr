@@ -27,15 +27,15 @@ const upload = multer({
 });
 
 // Herkese açık: mevcut site görsellerini getir
-router.get('/', (req, res) => {
-  res.json(siteContent.load());
+router.get('/', async (req, res) => {
+  res.json(await siteContent.load());
 });
 
 // Admin: bir görsel alanını güncelle (key: heroImg, aboutImg1, aboutImg2, locationImg1, locationImg2)
-router.post('/:key', adminAuth.requireAuth, upload.single('image'), (req, res) => {
+router.post('/:key', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Resim dosyası gerekli' });
   try {
-    const data = siteContent.setImage(req.params.key, `/uploads/site/${req.file.filename}`);
+    const data = await siteContent.setImage(req.params.key, `/uploads/site/${req.file.filename}`);
     res.json(data);
   } catch (err) {
     res.status(400).json({ error: err.message });

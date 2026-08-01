@@ -1,25 +1,23 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const kv = require('./kvStore');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'campaigns.json');
+const KEY = 'campaigns';
 
-function loadCampaigns() {
-  if (!fs.existsSync(FILE)) return [];
-  return JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+async function loadCampaigns() {
+  return kv.getJSON(KEY, []);
 }
 
-function saveCampaigns(campaigns) {
-  fs.writeFileSync(FILE, JSON.stringify(campaigns, null, 2), 'utf-8');
+async function saveCampaigns(campaigns) {
+  return kv.setJSON(KEY, campaigns);
 }
 
-function createCampaign({ title, description, type, value, startDate, endDate }) {
-  const campaigns = loadCampaigns();
+async function createCampaign({ title, description, type, value, startDate, endDate }) {
+  const campaigns = await loadCampaigns();
   const campaign = {
     id: crypto.randomUUID(),
     title,
     description: description || '',
-    type: type || 'percentage', // 'percentage' | 'fixed_price_second_item' | 'other'
+    type: type || 'percentage',
     value: Number(value) || 0,
     active: true,
     startDate: startDate || null,
@@ -28,25 +26,25 @@ function createCampaign({ title, description, type, value, startDate, endDate })
     createdAt: new Date().toISOString(),
   };
   campaigns.unshift(campaign);
-  saveCampaigns(campaigns);
+  await saveCampaigns(campaigns);
   return campaign;
 }
 
-function updateCampaign(id, updates) {
-  const campaigns = loadCampaigns();
+async function updateCampaign(id, updates) {
+  const campaigns = await loadCampaigns();
   const campaign = campaigns.find((c) => c.id === id);
   if (!campaign) return null;
   Object.assign(campaign, updates);
-  saveCampaigns(campaigns);
+  await saveCampaigns(campaigns);
   return campaign;
 }
 
-function deleteCampaign(id) {
-  const campaigns = loadCampaigns();
+async function deleteCampaign(id) {
+  const campaigns = await loadCampaigns();
   const idx = campaigns.findIndex((c) => c.id === id);
   if (idx === -1) return false;
   campaigns.splice(idx, 1);
-  saveCampaigns(campaigns);
+  await saveCampaigns(campaigns);
   return true;
 }
 

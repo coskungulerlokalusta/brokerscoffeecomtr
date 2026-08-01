@@ -2,31 +2,31 @@
 const https = require('https');
 const integrations = require('./integrations');
 
-function callClaude(prompt) {
+async function callClaude(prompt) {
+  const creds = await integrations.getProviderCredentials('anthropic');
+  if (!creds || !creds.enabled || !creds.apiKey) {
+    throw new Error('AI Asistan entegrasyonu aktif değil (Anthropic API key eksik)');
+  }
+
+  const body = JSON.stringify({
+    model: 'claude-sonnet-4-5',
+    max_tokens: 400,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const options = {
+    hostname: 'api.anthropic.com',
+    path: '/v1/messages',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': creds.apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Length': Buffer.byteLength(body),
+    },
+  };
+
   return new Promise((resolve, reject) => {
-    const creds = integrations.getProviderCredentials('anthropic');
-    if (!creds || !creds.enabled || !creds.apiKey) {
-      return reject(new Error('AI Asistan entegrasyonu aktif değil (Anthropic API key eksik)'));
-    }
-
-    const body = JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 400,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': creds.apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body),
-      },
-    };
-
     const req = https.request(options, (res) => {
       let raw = '';
       res.on('data', (chunk) => (raw += chunk));

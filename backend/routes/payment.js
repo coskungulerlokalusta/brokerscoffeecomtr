@@ -19,27 +19,24 @@ router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
     return res.status(400).json({ error: 'Eksik kart bilgisi' });
   }
 
-  // Toplamı sunucu tarafında ürün fiyatlarından hesapla (müşteriden gelen tutara güvenme)
   let subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
   let discountPercent = 0;
   if (req.customer && req.customer.isStaff) {
-    discountPercent = settings.loadSettings().staffDiscountPercent;
+    const currentSettings = await settings.loadSettings();
+    discountPercent = currentSettings.staffDiscountPercent;
   }
   const total = Math.round((subtotal * (1 - discountPercent / 100)) * 100) / 100;
 
-  const order = orderStore.createOrder({ items, customerName, phone, deliveryType, address, total });
+  const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total });
   order.customerId = req.customer ? req.customer.id : null;
-  {
-    const orders = orderStore.loadOrders();
-    const idx = orders.findIndex((o) => o.id === order.id);
-    if (idx !== -1) { orders[idx] = order; orderStore.saveOrders(orders); }
-  }
   if (discountPercent > 0) {
     order.staffDiscountPercent = discountPercent;
     order.subtotalBeforeDiscount = subtotal;
-    const orders = orderStore.loadOrders();
+  }
+  {
+    const orders = await orderStore.loadOrders();
     const idx = orders.findIndex((o) => o.id === order.id);
-    if (idx !== -1) { orders[idx] = order; orderStore.saveOrders(orders); }
+    if (idx !== -1) { orders[idx] = order; await orderStore.saveOrders(orders); }
   }
 
   try {
@@ -79,17 +76,16 @@ router.post('/callback', async (req, res) => {
     const result = await paynet.completeTdsPayment({ sessionId: session_id, tokenId: token_id });
     const success = result.is_succeed === true;
     if (orderId) {
-      orderStore.updateOrderStatus(orderId, success ? 'yeni' : 'iptal');
-      // Ödeme durumunu da işaretle
-      const orders = orderStore.loadOrders();
+      const orders = await orderStore.loadOrders();
       const order = orders.find((o) => o.id === orderId);
       if (order) {
+        order.orderStatus = success ? 'yeni' : 'iptal';
         order.paymentStatus = success ? 'odendi' : 'basarisiz';
-        orderStore.saveOrders(orders);
+        await orderStore.saveOrders(orders);
         if (success && order.customerId) {
-          const pointsPerTL = settings.loadSettings().pointsPerTL;
-          const earned = Math.floor(order.total / pointsPerTL);
-          if (earned > 0) customerAuth.addPoints(order.customerId, earned);
+          const currentSettings = await settings.loadSettings();
+          const earned = Math.floor(order.total / currentSettings.pointsPerTL);
+          if (earned > 0) await customerAuth.addPoints(order.customerId, earned);
         }
       }
     }

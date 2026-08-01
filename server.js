@@ -4,6 +4,10 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 
+const productStore = require('./backend/utils/productStore');
+const adminAuth = require('./backend/utils/adminAuth');
+const kv = require('./backend/utils/kvStore');
+
 const adminRoutes = require('./backend/routes/admin');
 const orderRoutes = require('./backend/routes/orders');
 const paymentRoutes = require('./backend/routes/payment');
@@ -30,14 +34,9 @@ app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/site-content', siteContentRoutes);
 
-function loadProducts() {
-  const raw = fs.readFileSync(path.join(__dirname, 'data', 'products.json'), 'utf-8');
-  return JSON.parse(raw);
-}
-
 // Tüm ürünleri getir (opsiyonel ?category= filtresi ile)
-app.get('/api/products', (req, res) => {
-  const products = loadProducts();
+app.get('/api/products', async (req, res) => {
+  const products = await productStore.loadProducts();
   const { category } = req.query;
   if (category) {
     const filtered = products.filter(
@@ -49,20 +48,53 @@ app.get('/api/products', (req, res) => {
 });
 
 // Kategori listesini getir
-app.get('/api/categories', (req, res) => {
-  const products = loadProducts();
+app.get('/api/categories', async (req, res) => {
+  const products = await productStore.loadProducts();
   const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
   res.json(cats);
 });
 
 // Tek ürün getir
-app.get('/api/products/:id', (req, res) => {
-  const products = loadProducts();
+app.get('/api/products/:id', async (req, res) => {
+  const products = await productStore.loadProducts();
   const product = products.find((p) => p.id === req.params.id);
   if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
   res.json(product);
 });
 
-app.listen(PORT, () => {
-  console.log(`Brokers Coffee sunucusu ${PORT} portunda çalışıyor`);
+// İlk çalıştırmada: MySQL boşsa, repo içindeki başlangıç verilerini (gerçek menü,
+// admin kullanıcısı) bir kereliğine aktarır. Sonraki her deploy'da MySQL'deki
+// gerçek veri korunur, bu tohumlama tekrar çalışmaz.
+async function seedIfEmpty() {
+  try {
+    const existingProducts = await kv.getJSON('products', null);
+    if (!existingProducts) {
+      const seedPath = path.join(__dirname, 'data', 'products.json');
+      if (fs.existsSync(seedPath)) {
+        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf-8'));
+        await kv.setJSON('products', seed);
+        console.log(`Başlangıç menüsü aktarıldı: ${seed.length} ürün`);
+      }
+    }
+
+    const existingAdmins = await kv.getJSON('admin_users', null);
+    if (!existingAdmins) {
+      const seedPath = path.join(__dirname, 'data', 'admin-users.json');
+      if (fs.existsSync(seedPath)) {
+        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf-8'));
+        if (seed.length) {
+          await kv.setJSON('admin_users', seed);
+          console.log('Başlangıç admin kullanıcısı aktarıldı');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Tohumlama sırasında hata (MySQL bağlantısını kontrol edin):', err.message);
+  }
+}
+
+seedIfEmpty().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Brokers Coffee sunucusu ${PORT} portunda çalışıyor`);
+  });
 });

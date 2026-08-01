@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const kv = require('./kvStore');
 
-const PRODUCTS_FILE = path.join(__dirname, '..', '..', 'data', 'products.json');
+const KEY = 'products';
 
 function slugify(name) {
   const trmap = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' };
@@ -12,17 +11,16 @@ function slugify(name) {
   return s || crypto.randomUUID().slice(0, 8);
 }
 
-function loadProducts() {
-  if (!fs.existsSync(PRODUCTS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf-8'));
+async function loadProducts() {
+  return kv.getJSON(KEY, []);
 }
 
-function saveProducts(products) {
-  fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2), 'utf-8');
+async function saveProducts(products) {
+  return kv.setJSON(KEY, products);
 }
 
-function createProduct({ name, category, subcategory, sizes, description, image }) {
-  const products = loadProducts();
+async function createProduct({ name, category, subcategory, sizes, description, image }) {
+  const products = await loadProducts();
   let id = slugify(name);
   let suffix = 1;
   while (products.find((p) => p.id === id)) {
@@ -39,28 +37,28 @@ function createProduct({ name, category, subcategory, sizes, description, image 
     image: image || null,
   };
   products.push(product);
-  saveProducts(products);
+  await saveProducts(products);
   return product;
 }
 
-function updateProduct(id, updates) {
-  const products = loadProducts();
+async function updateProduct(id, updates) {
+  const products = await loadProducts();
   const product = products.find((p) => p.id === id);
   if (!product) return null;
   Object.assign(product, updates);
   if (updates.sizes && updates.sizes.length) {
     product.basePrice = updates.sizes[0].price;
   }
-  saveProducts(products);
+  await saveProducts(products);
   return product;
 }
 
-function deleteProduct(id) {
-  const products = loadProducts();
+async function deleteProduct(id) {
+  const products = await loadProducts();
   const idx = products.findIndex((p) => p.id === id);
   if (idx === -1) return false;
   products.splice(idx, 1);
-  saveProducts(products);
+  await saveProducts(products);
   return true;
 }
 

@@ -1,24 +1,21 @@
-const fs = require('fs');
-const path = require('path');
+const kv = require('./kvStore');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'site-content.json');
-
+const KEY = 'site_content';
 const KEYS = ['heroImg', 'aboutImg1', 'aboutImg2', 'locationImg1', 'locationImg2'];
 
-function load() {
-  if (!fs.existsSync(FILE)) return {};
-  return JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+async function load() {
+  return kv.getJSON(KEY, {});
 }
 
-function save(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2), 'utf-8');
+async function save(data) {
+  return kv.setJSON(KEY, data);
 }
 
-function setImage(key, imagePath) {
+async function setImage(key, imagePath) {
   if (!KEYS.includes(key)) throw new Error('Bilinmeyen görsel alanı: ' + key);
-  const data = load();
+  const data = await load();
   data[key] = imagePath;
-  save(data);
+  await save(data);
   return data;
 }
 

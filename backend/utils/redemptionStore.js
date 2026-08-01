@@ -1,20 +1,18 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const kv = require('./kvStore');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'redemptions.json');
+const KEY = 'redemptions';
 
-function loadRedemptions() {
-  if (!fs.existsSync(FILE)) return [];
-  return JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+async function loadRedemptions() {
+  return kv.getJSON(KEY, []);
 }
 
-function saveRedemptions(redemptions) {
-  fs.writeFileSync(FILE, JSON.stringify(redemptions, null, 2), 'utf-8');
+async function saveRedemptions(redemptions) {
+  return kv.setJSON(KEY, redemptions);
 }
 
-function createRedemption({ customerId, customerName, rewardTitle, pointsCost }) {
-  const redemptions = loadRedemptions();
+async function createRedemption({ customerId, customerName, rewardTitle, pointsCost }) {
+  const redemptions = await loadRedemptions();
   const redemption = {
     id: crypto.randomUUID(),
     code: crypto.randomBytes(3).toString('hex').toUpperCase(),
@@ -26,16 +24,16 @@ function createRedemption({ customerId, customerName, rewardTitle, pointsCost })
     createdAt: new Date().toISOString(),
   };
   redemptions.unshift(redemption);
-  saveRedemptions(redemptions);
+  await saveRedemptions(redemptions);
   return redemption;
 }
 
-function markFulfilled(id) {
-  const redemptions = loadRedemptions();
+async function markFulfilled(id) {
+  const redemptions = await loadRedemptions();
   const r = redemptions.find((x) => x.id === id);
   if (!r) return null;
   r.fulfilled = true;
-  saveRedemptions(redemptions);
+  await saveRedemptions(redemptions);
   return r;
 }
 

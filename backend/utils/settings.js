@@ -1,33 +1,32 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
+const kv = require('./kvStore');
 
-const SETTINGS_FILE = path.join(__dirname, '..', '..', 'data', 'settings.json');
+const KEY = 'settings';
 
 const DEFAULTS = {
   staffDiscountPercent: 20,
   staffBannerText: 'Personel indirimi: Aldığınız ürünler %{percent} indirimli.',
   staffSignupCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
-  pointsPerTL: 10, // Her X TL harcamada 1 puan kazanılır
+  pointsPerTL: 10,
 };
 
-function loadSettings() {
-  if (!fs.existsSync(SETTINGS_FILE)) {
-    saveSettings(DEFAULTS);
+async function loadSettings() {
+  const stored = await kv.getJSON(KEY, null);
+  if (!stored) {
+    await kv.setJSON(KEY, DEFAULTS);
     return DEFAULTS;
   }
-  const stored = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
   return { ...DEFAULTS, ...stored };
 }
 
-function saveSettings(settings) {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+async function saveSettings(settings) {
+  return kv.setJSON(KEY, settings);
 }
 
-function updateSettings(partial) {
-  const current = loadSettings();
+async function updateSettings(partial) {
+  const current = await loadSettings();
   const updated = { ...current, ...partial };
-  saveSettings(updated);
+  await saveSettings(updated);
   return updated;
 }
 
