@@ -14,7 +14,7 @@
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
 
-<header class="bg-[#271310] text-white px-6 py-4 flex items-center justify-between">
+<header class="bg-[#0d1b3d] text-white px-6 py-4 flex items-center justify-between">
 <h1 class="text-xl">Brokers Coffee — Yönetim</h1>
 <div class="flex items-center gap-4 text-sm">
 <span id="username-display" class="text-white/70"></span>
@@ -25,14 +25,14 @@
 
 <div id="pw-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 <div class="bg-white rounded-lg p-6 w-full max-w-sm">
-<h3 class="font-semibold text-[#271310] mb-4">Şifre Değiştir</h3>
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Şifre Değiştir</h3>
 <form id="pw-form" class="flex flex-col gap-3">
 <input id="current-pw" type="password" placeholder="Mevcut şifre" required class="border border-[#d3c3c0] rounded px-3 py-2"/>
 <input id="new-pw" type="password" placeholder="Yeni şifre (en az 8 karakter)" required minlength="8" class="border border-[#d3c3c0] rounded px-3 py-2"/>
 <p id="pw-error" class="text-red-600 text-sm hidden"></p>
 <p id="pw-success" class="text-emerald-600 text-sm hidden">Şifre güncellendi.</p>
 <div class="flex gap-2 mt-2">
-<button type="submit" class="flex-1 bg-[#271310] text-white rounded py-2 text-sm font-semibold">Kaydet</button>
+<button type="submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2 text-sm font-semibold">Kaydet</button>
 <button type="button" id="pw-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2 text-sm">Vazgeç</button>
 </div>
 </form>
@@ -41,7 +41,7 @@
 
 <main class="max-w-5xl mx-auto px-6 py-8">
 <div class="flex items-center justify-between mb-6">
-<h2 class="text-2xl text-[#271310]">Siparişler</h2>
+<h2 class="text-2xl text-[#0d1b3d]">Siparişler</h2>
 <button id="refresh-btn" class="text-sm text-[#735c00] font-semibold">↻ Yenile</button>
 </div>
 
@@ -92,16 +92,16 @@ function renderOrders(orders) {
       <div class="bg-white rounded-lg shadow-sm p-5">
         <div class="flex items-start justify-between mb-2">
           <div>
-            <p class="font-semibold text-[#271310]">${o.customerName} · ${o.phone}</p>
+            <p class="font-semibold text-[#0d1b3d]">${o.customerName} · ${o.phone}</p>
             <p class="text-xs text-[#827472]">${formatDate(o.createdAt)} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${o.address ? ' · ' + o.address : ''}</p>
           </div>
           <span class="status-badge ${statusInfo.color}">${statusInfo.label}</span>
         </div>
         <p class="text-sm text-[#504442] mb-3">${itemsText}</p>
         <div class="flex items-center justify-between">
-          <p class="font-bold text-[#271310]">₺${o.total.toFixed(2)}</p>
+          <p class="font-bold text-[#0d1b3d]">₺${o.total.toFixed(2)}</p>
           <div class="flex gap-2">
-            ${nextStatus ? `<button data-id="${o.id}" data-status="${nextStatus}" class="advance-btn text-xs font-semibold uppercase tracking-widest border border-[#271310] text-[#271310] rounded px-3 py-1.5 hover:bg-[#271310] hover:text-white transition-colors">${STATUS_LABELS[nextStatus].label} Yap</button>` : ''}
+            ${nextStatus ? `<button data-id="${o.id}" data-status="${nextStatus}" class="advance-btn text-xs font-semibold uppercase tracking-widest border border-[#0d1b3d] text-[#0d1b3d] rounded px-3 py-1.5 hover:bg-[#0d1b3d] hover:text-white transition-colors">${STATUS_LABELS[nextStatus].label} Yap</button>` : ''}
             ${o.orderStatus !== 'iptal' && o.orderStatus !== 'teslim-edildi' ? `<button data-id="${o.id}" data-status="iptal" class="advance-btn text-xs font-semibold uppercase tracking-widest border border-red-300 text-red-700 rounded px-3 py-1.5 hover:bg-red-50 transition-colors">İptal Et</button>` : ''}
           </div>
         </div>

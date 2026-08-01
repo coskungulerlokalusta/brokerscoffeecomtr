@@ -9,9 +9,13 @@
 <script src="/js/tailwind-config.js"></script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  .hero-gradient { background: linear-gradient(to right, rgba(250,249,246,1) 30%, rgba(250,249,246,0) 100%); }
-  @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(250,249,246,1) 20%, rgba(250,249,246,0.4) 100%); } }
-  .cat-tab.active { background: #271310; color: #fff; }
+  .hero-gradient { background: linear-gradient(to right, rgba(13,27,61,0.95) 25%, rgba(13,27,61,0.35) 100%); }
+  @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(13,27,61,0.97) 25%, rgba(13,27,61,0.5) 100%); } }
+  .cat-tab.active { background: #0d1b3d; color: #fff; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  body { padding-bottom: 0; }
+  @media (max-width: 768px) { body { padding-bottom: 72px; } }
 </style>
 </head>
 <body class="bg-background text-on-background font-body-md overflow-x-hidden">
@@ -21,6 +25,7 @@
 <nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base max-w-container-max mx-auto">
 <a href="/" class="font-display-lg text-[24px] text-primary tracking-tighter">Brokers Coffee</a>
 <div class="hidden md:flex items-center gap-8 font-label-sm text-label-sm uppercase tracking-widest">
+<a href="/#one-cikanlar" class="text-on-surface-variant hover:text-primary transition-colors">Öne Çıkanlar</a>
 <a href="/#menu" class="text-primary border-b border-tertiary-container pb-1">Menü</a>
 <a href="/#lokasyon" class="text-on-surface-variant hover:text-primary transition-colors">Lokasyon</a>
 <a href="/#hakkimizda" class="text-on-surface-variant hover:text-primary transition-colors">Hakkımızda</a>
@@ -30,25 +35,35 @@
 <span class="material-symbols-outlined">shopping_bag</span>
 <span data-cart-badge class="hidden absolute -top-2 -right-2 bg-tertiary-container text-on-tertiary-fixed text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
 </a>
-<a href="/profile.html" class="text-primary"><span class="material-symbols-outlined">account_circle</span></a>
+<a href="/admin/login.html" class="text-primary hidden md:block"><span class="material-symbols-outlined">account_circle</span></a>
 </div>
 </nav>
 </header>
 
 <main>
 <!-- Hero -->
-<section class="relative w-full h-[520px] md:h-[600px] flex items-center overflow-hidden">
+<section class="relative w-full h-[480px] md:h-[600px] flex items-center overflow-hidden">
 <img class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?q=80&w=1600&auto=format&fit=crop" alt="Brokers Coffee barista"/>
 <div class="absolute inset-0 hero-gradient"></div>
 <div class="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
 <div class="max-w-lg">
-<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-widest mb-3 block">Toryum AVM · 1. Kat</span>
-<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-4">Günün Ritüeli, Kapına Kadar.</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant mb-8">Taze demlenmiş kahveler, el yapımı kruvasanlar — ister mağazadan al, ister adresine gelsin.</p>
+<span class="font-label-sm text-label-sm text-tertiary-fixed uppercase tracking-widest mb-3 block">Toryum AVM · 1. Kat</span>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-white mb-4">Günün Ritüeli, Kapına Kadar.</h1>
+<p class="font-body-lg text-body-lg text-white/80 mb-8">Taze demlenmiş kahveler, el yapımı kruvasanlar — ister mağazadan al, ister adresine gelsin.</p>
 <div class="flex gap-4 flex-wrap">
-<a href="#menu" class="px-8 py-3 bg-primary text-on-primary font-bold text-label-sm uppercase tracking-widest hover:bg-primary-container transition-colors">Menüyü Keşfet</a>
-<a href="#lokasyon" class="px-8 py-3 border border-primary text-primary font-bold text-label-sm uppercase tracking-widest hover:bg-surface-container transition-colors">Bize Ulaş</a>
+<a href="#menu" class="px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">Menüyü Keşfet</a>
+<a href="#lokasyon" class="px-8 py-3 border border-white text-white font-bold text-label-sm uppercase tracking-widest hover:bg-white/10 transition-colors">Bize Ulaş</a>
 </div>
+</div>
+</div>
+</section>
+
+<!-- Öne Çıkanlar -->
+<section id="one-cikanlar" class="py-14 md:py-20 bg-white">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<h2 class="font-display-lg text-[26px] md:text-[32px] text-primary mb-6">Öne Çıkanlar</h2>
+<div id="featured-scroll" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<p class="text-on-surface-variant">Yükleniyor...</p>
 </div>
 </div>
 </section>
@@ -108,7 +123,7 @@ Menümüzü Keşfedin
 </div>
 
 <!-- Category tabs -->
-<div id="cat-tabs" class="flex gap-3 flex-wrap mb-12"></div>
+<div id="cat-tabs" class="flex gap-3 flex-wrap mb-12 overflow-x-auto no-scrollbar"></div>
 
 <!-- Product grid -->
 <div id="product-grid" class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
@@ -153,6 +168,27 @@ Menümüzü Keşfedin
 </div>
 </footer>
 
+<!-- Mobil uygulama tarzı alt gezinme -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-surface-container-high flex items-stretch justify-around" style="padding-bottom: env(safe-area-inset-bottom);">
+<a href="/" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-primary">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Ana Sayfa</span>
+</a>
+<a href="/#menu" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">restaurant_menu</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Menü</span>
+</a>
+<a href="/cart.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant relative">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+<span data-cart-badge-mobile class="hidden absolute top-1 right-[calc(50%-18px)] bg-tertiary-container text-on-tertiary-fixed text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Sepet</span>
+</a>
+<a href="/admin/login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Hesabım</span>
+</a>
+</nav>
+
 <script src="/js/cart.js"></script>
 <script>
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=800&auto=format&fit=crop';
@@ -165,11 +201,46 @@ function formatPriceLabel(sizes) {
   return `₺${sizes[0].price.toFixed(0)}'den başlıyor`;
 }
 
+function wireAddToCart(scope) {
+  scope.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addToCart({
+        productId: btn.dataset.id,
+        name: btn.dataset.name,
+        price: Number(btn.dataset.price),
+        size: btn.dataset.size || null,
+        extras: [],
+        qty: 1,
+      });
+      const original = btn.textContent;
+      btn.textContent = 'EKLENDİ ✓';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  });
+}
+
+function renderFeatured(products) {
+  const wrap = document.getElementById('featured-scroll');
+  const featured = products.slice(0, 8);
+  wrap.innerHTML = featured.map(p => `
+    <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer">
+      <div class="aspect-square overflow-hidden mb-3 rounded-lg bg-surface-container-low">
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${FALLBACK_IMG}" alt="${p.name}"/>
+      </div>
+      <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
+      <p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>
+      <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
+    </div>
+  `).join('');
+  wireAddToCart(wrap);
+}
+
 function renderTabs(categories) {
   const wrap = document.getElementById('cat-tabs');
   const cats = ['Hepsi', ...categories];
   wrap.innerHTML = cats.map(c =>
-    `<button class="cat-tab ${c === activeCategory ? 'active' : ''} px-5 py-2 rounded-full border border-outline-variant text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant transition-colors" data-cat="${c}">${c}</button>`
+    `<button class="cat-tab ${c === activeCategory ? 'active' : ''} px-5 py-2 rounded-full border border-outline-variant text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant transition-colors whitespace-nowrap" data-cat="${c}">${c}</button>`
   ).join('');
   wrap.querySelectorAll('.cat-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -187,7 +258,7 @@ function renderGrid() {
     : allProducts.filter(p => (p.subcategory || p.category) === activeCategory);
 
   grid.innerHTML = filtered.slice(0, 12).map(p => `
-    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2" onclick="location.href='/product.html?id=${p.id}'">
+    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2">
       <div class="aspect-[4/5] overflow-hidden mb-4 bg-surface-container-low">
         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${FALLBACK_IMG}" alt="${p.name}"/>
       </div>
@@ -199,23 +270,8 @@ function renderGrid() {
       </div>
     </div>
   `).join('');
-
-  grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      addToCart({
-        productId: btn.dataset.id,
-        name: btn.dataset.name,
-        price: Number(btn.dataset.price),
-        size: btn.dataset.size || null,
-        extras: [],
-        qty: 1,
-      });
-      const original = btn.textContent;
-      btn.textContent = 'SEPETE EKLENDİ ✓';
-      setTimeout(() => { btn.textContent = original; }, 1200);
-    });
-  });
+  wireAddToCart(grid);
+}
 
 async function init() {
   try {
@@ -225,12 +281,25 @@ async function init() {
     ]);
     allProducts = await productsRes.json();
     const categories = await categoriesRes.json();
+    renderFeatured(allProducts);
     renderTabs(categories);
     renderGrid();
   } catch (e) {
     document.getElementById('product-grid').innerHTML = '<p class="col-span-full text-on-surface-variant">Menü yüklenemedi, lütfen sayfayı yenileyin.</p>';
   }
 }
+
+function syncMobileCartBadge() {
+  const badge = document.querySelector('[data-cart-badge-mobile]');
+  if (badge) {
+    const count = cartCount();
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+}
+document.addEventListener('DOMContentLoaded', syncMobileCartBadge);
+const origSaveCart = saveCart;
+saveCart = function(cart) { origSaveCart(cart); syncMobileCartBadge(); };
 
 init();
 </script>

@@ -15,22 +15,22 @@
 
 <header class="bg-white sticky top-0 z-10 border-b border-[#e3e2e0]">
 <div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
-<a href="/" class="font-bold text-lg text-[#271310]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
+<a href="/" class="font-bold text-lg text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
 <a href="/" class="text-sm text-[#735c00]">← Menüye Dön</a>
 </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-5 py-8">
-<h1 class="text-2xl text-[#271310] mb-6">Sepetim</h1>
+<h1 class="text-2xl text-[#0d1b3d] mb-6">Sepetim</h1>
 
 <div id="cart-items" class="flex flex-col gap-4 mb-6"></div>
 
 <div id="cart-summary" class="bg-white rounded-lg shadow-sm p-5 hidden">
-<div class="flex justify-between items-center text-lg font-bold text-[#271310] mb-4">
+<div class="flex justify-between items-center text-lg font-bold text-[#0d1b3d] mb-4">
 <span>Toplam</span>
 <span id="cart-total">₺0</span>
 </div>
-<a href="/checkout.html" class="block text-center bg-[#271310] text-white font-semibold uppercase tracking-widest text-sm py-3 rounded hover:bg-[#3e2723] transition-colors">Ödemeye Geç</a>
+<a href="/checkout.html" class="block text-center bg-[#0d1b3d] text-white font-semibold uppercase tracking-widest text-sm py-3 rounded hover:bg-[#16285c] transition-colors">Ödemeye Geç</a>
 </div>
 
 <p id="empty-msg" class="text-[#827472] hidden">Sepetiniz boş. <a href="/" class="text-[#735c00] underline">Menüye göz atın</a>.</p>
@@ -56,13 +56,13 @@ function render() {
   itemsEl.innerHTML = cart.map((item, i) => `
     <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
       <div>
-        <p class="font-semibold text-[#271310]">${item.name}${item.size ? ' <span class="text-xs text-[#827472] font-normal">(' + item.size + ')</span>' : ''}</p>
+        <p class="font-semibold text-[#0d1b3d]">${item.name}${item.size ? ' <span class="text-xs text-[#827472] font-normal">(' + item.size + ')</span>' : ''}</p>
         <p class="text-sm text-[#827472]">₺${item.price.toFixed(0)}</p>
       </div>
       <div class="flex items-center gap-3">
-        <button data-i="${i}" data-delta="-1" class="qty-btn w-7 h-7 rounded-full border border-[#d3c3c0] text-[#271310]">−</button>
+        <button data-i="${i}" data-delta="-1" class="qty-btn w-7 h-7 rounded-full border border-[#d3c3c0] text-[#0d1b3d]">−</button>
         <span class="w-5 text-center">${item.qty}</span>
-        <button data-i="${i}" data-delta="1" class="qty-btn w-7 h-7 rounded-full border border-[#d3c3c0] text-[#271310]">+</button>
+        <button data-i="${i}" data-delta="1" class="qty-btn w-7 h-7 rounded-full border border-[#d3c3c0] text-[#0d1b3d]">+</button>
         <button data-i="${i}" class="remove-btn text-red-500 text-xs ml-2">Sil</button>
       </div>
     </div>
