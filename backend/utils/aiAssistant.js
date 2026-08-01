@@ -60,4 +60,9 @@ Detay: ${campaign.type === 'percentage' ? campaign.value + '% indirim' : campaig
   return callClaude(prompt);
 }
 
-module.exports = { draftStaffCampaignMessage };
+// Kimlik bilgilerini test eder — minik bir istek gönderir
+function testConnection() {
+  return callClaude('Sadece "ok" yaz, başka hiçbir şey yazma.');
+}
+
+module.exports = { draftStaffCampaignMessage, testConnection };

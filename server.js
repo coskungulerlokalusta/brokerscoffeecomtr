@@ -10,6 +10,7 @@ const paymentRoutes = require('./backend/routes/payment');
 const customerRoutes = require('./backend/routes/customer');
 const adminProductRoutes = require('./backend/routes/adminProducts');
 const rewardsRoutes = require('./backend/routes/rewards');
+const siteContentRoutes = require('./backend/routes/siteContent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/account', customerRoutes);
 app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/rewards', rewardsRoutes);
+app.use('/api/site-content', siteContentRoutes);
 
 function loadProducts() {
   const raw = fs.readFileSync(path.join(__dirname, 'data', 'products.json'), 'utf-8');

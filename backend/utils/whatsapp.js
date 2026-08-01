@@ -56,4 +56,34 @@ function sendTextMessage(phone, message) {
   });
 }
 
-module.exports = { sendTextMessage };
+// Kimlik bilgilerini test eder — telefon numarası bilgisini sorgular, mesaj göndermez
+function testConnection() {
+  return new Promise((resolve, reject) => {
+    const creds = integrations.getProviderCredentials('whatsapp');
+    if (!creds || !creds.phoneNumberId || !creds.accessToken) {
+      return reject(new Error('Telefon Numarası ID / Access Token eksik'));
+    }
+    const options = {
+      hostname: 'graph.facebook.com',
+      path: `/v19.0/${creds.phoneNumberId}?fields=display_phone_number,verified_name`,
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + creds.accessToken },
+    };
+    const req = https.request(options, (res) => {
+      let raw = '';
+      res.on('data', (chunk) => (raw += chunk));
+      res.on('end', () => {
+        const data = JSON.parse(raw || '{}');
+        if (res.statusCode === 200) {
+          resolve(`Bağlantı başarılı: ${data.verified_name || ''} (${data.display_phone_number || ''})`);
+        } else {
+          reject(new Error(data.error ? data.error.message : 'Bağlantı başarısız'));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+module.exports = { sendTextMessage, testConnection };

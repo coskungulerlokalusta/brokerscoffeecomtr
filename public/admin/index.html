@@ -52,6 +52,7 @@
 <button data-section="staff" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👥 Personel Ayarları</button>
 <button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
 <button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
+<button data-section="site-content" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🖼️ Site Görselleri</button>
 <button data-section="integrations" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🔌 Entegrasyonlar</button>
 </div>
 </nav>
@@ -203,6 +204,12 @@
 </div>
 </div>
 </div>
+</div>
+
+<div id="section-site-content" class="admin-panel hidden">
+<h2 class="text-2xl text-[#0d1b3d] mb-4">Site Görselleri</h2>
+<p class="text-sm text-[#827472] mb-4">Ana sayfadaki fotoğrafları buradan değiştirebilirsin. Yeni resim yükleyince anında güncellenir.</p>
+<div id="site-images-list" class="grid md:grid-cols-2 gap-4"></div>
 </div>
 
 <div id="section-orders" class="admin-panel">
@@ -572,15 +579,22 @@ async function loadIntegrations() {
     return `
       <div class="bg-white rounded-lg shadow-sm p-5">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
+            <span class="status-badge ${values.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}">${values.enabled ? 'Aktif' : 'Pasif'}</span>
+          </div>
           <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
             <input type="checkbox" id="${provider}-enabled" ${values.enabled ? 'checked' : ''}/>
-            <span class="${values.enabled ? 'text-emerald-600' : 'text-[#827472]'}">${values.enabled ? 'Aktif' : 'Pasif'}</span>
+            <span>${values.enabled ? 'Aktif Et' : 'Pasif'}</span>
           </label>
         </div>
         <div class="grid md:grid-cols-2 gap-3 mb-3">${fieldsHtml}</div>
-        <button data-provider="${provider}" class="save-integration-btn text-xs font-semibold uppercase tracking-widest bg-[#0d1b3d] text-white px-4 py-2 rounded">Kaydet</button>
-        <span data-saved-msg="${provider}" class="hidden text-emerald-600 text-xs ml-2">Kaydedildi ✓</span>
+        <div class="flex items-center gap-3">
+          <button data-provider="${provider}" class="save-integration-btn text-xs font-semibold uppercase tracking-widest bg-[#0d1b3d] text-white px-4 py-2 rounded">Kaydet</button>
+          <button data-provider="${provider}" class="test-integration-btn text-xs font-semibold uppercase tracking-widest border border-[#0d1b3d] text-[#0d1b3d] px-4 py-2 rounded">🔌 Bağlantıyı Test Et</button>
+          <span data-saved-msg="${provider}" class="hidden text-emerald-600 text-xs">Kaydedildi ✓</span>
+        </div>
+        <p data-test-result="${provider}" class="hidden text-xs mt-2 font-medium"></p>
       </div>
     `;
   }).join('');
@@ -602,6 +616,27 @@ async function loadIntegrations() {
         const msg = document.querySelector(`[data-saved-msg="${provider}"]`);
         msg.classList.remove('hidden');
         setTimeout(() => loadIntegrations(), 1200);
+      }
+    });
+  });
+
+  list.querySelectorAll('.test-integration-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const provider = btn.dataset.provider;
+      const resultEl = document.querySelector(`[data-test-result="${provider}"]`);
+      resultEl.classList.remove('hidden', 'text-emerald-600', 'text-red-600');
+      resultEl.textContent = 'Test ediliyor...';
+      resultEl.classList.add('text-[#827472]');
+
+      const res = await fetch(`/api/admin/integrations/${provider}/test`, { method: 'POST' });
+      const data = await res.json();
+      resultEl.classList.remove('text-[#827472]');
+      if (res.ok && data.ok) {
+        resultEl.classList.add('text-emerald-600');
+        resultEl.textContent = '✅ ' + data.message;
+      } else {
+        resultEl.classList.add('text-red-600');
+        resultEl.textContent = '❌ ' + (data.error || 'Test başarısız');
       }
     });
   });
@@ -831,6 +866,55 @@ document.getElementById('notify-send-btn').addEventListener('click', async () =>
   loadCampaigns();
 });
 
+// ---- Site Görselleri ----
+const SITE_IMAGE_LABELS = {
+  heroImg: 'Ana Sayfa Kapak Görseli',
+  aboutImg1: 'Hakkımızda Görsel 1',
+  aboutImg2: 'Hakkımızda Görsel 2',
+  locationImg1: 'Lokasyon Görsel 1',
+  locationImg2: 'Lokasyon Görsel 2',
+};
+
+async function loadSiteImages() {
+  const res = await fetch('/api/site-content');
+  const data = await res.json();
+  const list = document.getElementById('site-images-list');
+  list.innerHTML = Object.keys(SITE_IMAGE_LABELS).map(key => `
+    <div class="bg-white rounded-lg shadow-sm p-4">
+      <p class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-2">${SITE_IMAGE_LABELS[key]}</p>
+      <img id="preview-${key}" src="${data[key] || ''}" class="w-full aspect-video object-cover rounded mb-3 bg-gray-100 ${data[key] ? '' : 'hidden'}"/>
+      <input type="file" data-key="${key}" accept="image/jpeg,image/png,image/webp" class="site-image-input text-sm w-full"/>
+      <p data-status="${key}" class="text-xs mt-1 hidden"></p>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.site-image-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const key = input.dataset.key;
+      const file = input.files[0];
+      if (!file) return;
+      const statusEl = document.querySelector(`[data-status="${key}"]`);
+      statusEl.textContent = 'Yükleniyor...';
+      statusEl.className = 'text-xs mt-1 text-[#827472]';
+
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`/api/site-content/${key}`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        statusEl.textContent = data.error || 'Hata oluştu';
+        statusEl.className = 'text-xs mt-1 text-red-600';
+        return;
+      }
+      const preview = document.getElementById(`preview-${key}`);
+      preview.src = data[key];
+      preview.classList.remove('hidden');
+      statusEl.textContent = 'Güncellendi ✓';
+      statusEl.className = 'text-xs mt-1 text-emerald-600';
+    });
+  });
+}
+
 async function loadOrders() {
   const res = await fetch('/api/admin/orders');
   if (!res.ok) return;
@@ -881,6 +965,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadRewardsAdmin();
     loadRedemptions();
     loadCampaigns();
+    loadSiteImages();
   }
 })();
 </script>

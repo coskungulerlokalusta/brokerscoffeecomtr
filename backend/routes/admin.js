@@ -219,4 +219,23 @@ router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, re
   res.json({ results });
 });
 
+// Entegrasyon bağlantısını gerçekten test et (kaydedilmiş bilgilerle)
+router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, res) => {
+  const provider = req.params.provider;
+  const testers = {
+    netgsm: () => require('../utils/netgsm').testConnection(),
+    whatsapp: () => require('../utils/whatsapp').testConnection(),
+    anthropic: () => require('../utils/aiAssistant').testConnection(),
+  };
+  if (!testers[provider]) {
+    return res.status(400).json({ error: 'Bu sağlayıcı için otomatik bağlantı testi henüz yok.' });
+  }
+  try {
+    const result = await testers[provider]();
+    res.json({ ok: true, message: typeof result === 'string' ? result : 'Bağlantı başarılı.' });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 module.exports = router;
