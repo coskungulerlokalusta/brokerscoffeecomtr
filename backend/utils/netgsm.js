@@ -45,28 +45,11 @@ function sendSms(phone, message) {
   });
 }
 
-// Kimlik bilgilerini test eder (SMS harcamadan) — bakiye sorgulama servisini kullanır
-function testConnection() {
-  return new Promise((resolve, reject) => {
-    const creds = integrations.getProviderCredentials('netgsm');
-    if (!creds || !creds.username || !creds.password) {
-      return reject(new Error('Kullanıcı adı/şifre eksik'));
-    }
-    const params = new URLSearchParams({ usercode: creds.username, password: creds.password });
-    https.get(`https://api.netgsm.com.tr/balance/list/get?${params.toString()}`, (res) => {
-      let raw = '';
-      res.on('data', (chunk) => (raw += chunk));
-      res.on('end', () => {
-        const trimmed = raw.trim();
-        // Hata kodları "3 haneli sayı" ile başlar (30, 40, 50, 51, 70 vb.), başarılıysa bakiye döner
-        if (/^\d+([.,]\d+)?\s/.test(trimmed) || /^\d+([.,]\d+)?$/.test(trimmed)) {
-          resolve('Bağlantı başarılı. Bakiye: ' + trimmed);
-        } else {
-          reject(new Error('Kullanıcı adı/şifre hatalı veya hesap sorunu (' + trimmed + ')'));
-        }
-      });
-    }).on('error', reject);
-  });
+// Kimlik bilgilerini test eder: verilen numaraya gerçek bir test SMS'i gönderir
+function testConnection(testPhone) {
+  if (!testPhone) return Promise.reject(new Error('Test için bir telefon numarası gerekli'));
+  return sendSms(testPhone, 'Brokers Coffee: NetGSM baglantisi basariyla kuruldu.')
+    .then(() => 'Test SMS gönderildi, telefonunu kontrol et.');
 }
 
 module.exports = { sendSms, testConnection };

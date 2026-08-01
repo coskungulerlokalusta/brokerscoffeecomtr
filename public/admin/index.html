@@ -624,11 +624,23 @@ async function loadIntegrations() {
     btn.addEventListener('click', async () => {
       const provider = btn.dataset.provider;
       const resultEl = document.querySelector(`[data-test-result="${provider}"]`);
+
+      let body = {};
+      if (provider === 'netgsm') {
+        const phone = prompt('Test SMS\'inin gönderileceği telefon numarasını gir (örn. 05xxxxxxxxx):');
+        if (!phone) return;
+        body.testPhone = phone;
+      }
+
       resultEl.classList.remove('hidden', 'text-emerald-600', 'text-red-600');
       resultEl.textContent = 'Test ediliyor...';
       resultEl.classList.add('text-[#827472]');
 
-      const res = await fetch(`/api/admin/integrations/${provider}/test`, { method: 'POST' });
+      const res = await fetch(`/api/admin/integrations/${provider}/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const data = await res.json();
       resultEl.classList.remove('text-[#827472]');
       if (res.ok && data.ok) {

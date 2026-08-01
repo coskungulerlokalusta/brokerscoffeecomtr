@@ -223,7 +223,7 @@ router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, re
 router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, res) => {
   const provider = req.params.provider;
   const testers = {
-    netgsm: () => require('../utils/netgsm').testConnection(),
+    netgsm: () => require('../utils/netgsm').testConnection(req.body.testPhone),
     whatsapp: () => require('../utils/whatsapp').testConnection(),
     anthropic: () => require('../utils/aiAssistant').testConnection(),
   };
