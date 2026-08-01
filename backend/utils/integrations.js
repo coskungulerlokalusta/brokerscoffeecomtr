@@ -25,6 +25,36 @@ const SECRET_FIELDS = {
   metropol: ['apiKey'],
 };
 
+// Ortam değişkeni (environment variable) eşlemesi — Hostinger panelinden girilenler
+// hiçbir zaman silinmez (dosya tabanlı depolamanın aksine, deploy'lardan etkilenmez).
+// Bir alan için ortam değişkeni tanımlıysa, panel/dosya değerinin ÖNÜNE geçer.
+const ENV_MAP = {
+  iyzico: { apiKey: 'IYZICO_API_KEY', secretKey: 'IYZICO_SECRET_KEY' },
+  whatsapp: { phoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID', accessToken: 'WHATSAPP_ACCESS_TOKEN', verifyToken: 'WHATSAPP_VERIFY_TOKEN' },
+  netgsm: { username: 'NETGSM_USERNAME', password: 'NETGSM_PASSWORD', header: 'NETGSM_HEADER' },
+  anthropic: { apiKey: 'ANTHROPIC_API_KEY' },
+  multinet: { merchantId: 'MULTINET_MERCHANT_ID', apiKey: 'MULTINET_API_KEY' },
+  pluxee: { merchantId: 'PLUXEE_MERCHANT_ID', apiKey: 'PLUXEE_API_KEY' },
+  ticket: { merchantId: 'TICKET_MERCHANT_ID', apiKey: 'TICKET_API_KEY' },
+  metropol: { merchantId: 'METROPOL_MERCHANT_ID', apiKey: 'METROPOL_API_KEY' },
+};
+
+function applyEnvOverrides(provider, config) {
+  const map = ENV_MAP[provider] || {};
+  const result = { ...config };
+  let anyEnvSet = false;
+  Object.keys(map).forEach((field) => {
+    const envVal = process.env[map[field]];
+    if (envVal) {
+      result[field] = envVal;
+      anyEnvSet = true;
+    }
+  });
+  // Bir sağlayıcı için ortam değişkeni tanımlıysa, panelde ayrıca "Aktif" işaretlenmese bile aktif say
+  if (anyEnvSet) result.enabled = true;
+  return result;
+}
+
 function load() {
   if (!fs.existsSync(FILE)) {
     save(DEFAULTS);
@@ -53,11 +83,15 @@ function loadMasked() {
   const data = load();
   const masked = {};
   Object.keys(data).forEach((provider) => {
-    masked[provider] = { ...data[provider] };
+    const withEnv = applyEnvOverrides(provider, data[provider]);
+    masked[provider] = { ...withEnv };
     (SECRET_FIELDS[provider] || []).forEach((field) => {
-      masked[provider][field] = mask(data[provider][field]);
-      masked[provider][field + 'Set'] = !!data[provider][field];
+      masked[provider][field] = mask(withEnv[field]);
+      masked[provider][field + 'Set'] = !!withEnv[field];
     });
+    // Ortam değişkeninden gelen alanları işaretle (panelde "salt okunur" göstermek için)
+    const envMap = ENV_MAP[provider] || {};
+    masked[provider].envFields = Object.keys(envMap).filter((f) => !!process.env[envMap[f]]);
   });
   return masked;
 }
@@ -83,7 +117,7 @@ function updateProvider(provider, updates) {
 
 // Gerçek (maskelenmemiş) değerleri sadece sunucu içi kullanım için döner — asla API response'ta göndermeyin
 function getProviderCredentials(provider) {
-  return load()[provider];
+  return applyEnvOverrides(provider, load()[provider]);
 }
 
 module.exports = { load, loadMasked, updateProvider, getProviderCredentials };

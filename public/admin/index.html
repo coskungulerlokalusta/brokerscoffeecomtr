@@ -574,12 +574,23 @@ async function loadIntegrations() {
   list.innerHTML = Object.keys(INTEGRATION_CONFIG).map(provider => {
     const cfg = INTEGRATION_CONFIG[provider];
     const values = data[provider] || {};
-    const fieldsHtml = cfg.fields.map(f => `
-      <div>
-        <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">${f.label}</label>
-        ${fieldInputHtml(provider, f, values[f.key], values[f.key + 'Set'])}
-      </div>
-    `).join('');
+    const fieldsHtml = cfg.fields.map(f => {
+      const fromEnv = (values.envFields || []).includes(f.key);
+      if (fromEnv) {
+        return `
+          <div>
+            <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">${f.label}</label>
+            <div class="border border-emerald-200 bg-emerald-50 rounded px-3 py-2 text-sm text-emerald-700">🔒 Ortam değişkeninden geliyor (Hostinger panelinde tanımlı)</div>
+          </div>
+        `;
+      }
+      return `
+        <div>
+          <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">${f.label}</label>
+          ${fieldInputHtml(provider, f, values[f.key], values[f.key + 'Set'])}
+        </div>
+      `;
+    }).join('');
 
     return `
       <div class="bg-white rounded-lg shadow-sm p-5">
