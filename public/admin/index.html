@@ -67,14 +67,8 @@
 <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">İndirim Oranı (%)</label>
 <input id="staff-discount-input" type="number" min="0" max="100" class="w-full border border-[#d3c3c0] rounded px-3 py-2"/>
 </div>
-<div>
-<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Personel Kayıt Kodu</label>
-<div class="flex gap-2">
-<input id="staff-code-display" readonly class="w-full border border-[#d3c3c0] rounded px-3 py-2 bg-gray-50 font-mono"/>
-<button id="regen-code-btn" type="button" class="border border-[#d3c3c0] rounded px-3 text-xs font-semibold whitespace-nowrap">Yenile</button>
 </div>
-</div>
-</div>
+<p class="text-xs text-[#827472] mb-4">Not: Personel artık kod girmiyor, üye olurken sadece mağaza adını yazıyor.</p>
 <div class="mb-4">
 <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Banner Metni (personel girişinde görür, {percent} = indirim oranı)</label>
 <input id="staff-banner-input" class="w-full border border-[#d3c3c0] rounded px-3 py-2"/>
@@ -82,6 +76,9 @@
 <button id="save-settings-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded">Kaydet</button>
 <span id="settings-saved-msg" class="hidden text-emerald-600 text-sm ml-3">Kaydedildi ✓</span>
 </div>
+
+<h3 class="text-lg text-[#0d1b3d] mb-3">Kayıtlı Personel</h3>
+<div id="staff-list" class="flex flex-col gap-2"></div>
 </div>
 
 <div id="section-products" class="admin-panel hidden">
@@ -196,6 +193,10 @@
 <div id="notify-loading" class="text-sm text-[#827472]">AI mesaj taslağı hazırlıyor...</div>
 <div id="notify-content" class="hidden">
 <textarea id="notify-message" class="border border-[#d3c3c0] rounded px-3 py-2 w-full text-sm" rows="5"></textarea>
+<div class="flex gap-2 mt-2">
+<label class="flex items-center gap-1.5 text-sm"><input type="radio" name="notify-channel" value="whatsapp" checked/> WhatsApp</label>
+<label class="flex items-center gap-1.5 text-sm"><input type="radio" name="notify-channel" value="sms"/> SMS (NetGSM)</label>
+</div>
 <p id="notify-error" class="text-red-600 text-sm mt-2 hidden"></p>
 <p id="notify-result" class="text-emerald-600 text-sm mt-2 hidden"></p>
 <div class="flex gap-2 mt-3">
@@ -314,7 +315,6 @@ async function loadSettings() {
   const s = await res.json();
   document.getElementById('staff-discount-input').value = s.staffDiscountPercent;
   document.getElementById('staff-banner-input').value = s.staffBannerText;
-  document.getElementById('staff-code-display').value = s.staffSignupCode;
 }
 
 document.getElementById('save-settings-btn').addEventListener('click', async () => {
@@ -330,14 +330,6 @@ document.getElementById('save-settings-btn').addEventListener('click', async () 
     const msg = document.getElementById('settings-saved-msg');
     msg.classList.remove('hidden');
     setTimeout(() => msg.classList.add('hidden'), 2000);
-  }
-});
-
-document.getElementById('regen-code-btn').addEventListener('click', async () => {
-  const res = await fetch('/api/admin/settings/regenerate-staff-code', { method: 'POST' });
-  if (res.ok) {
-    const s = await res.json();
-    document.getElementById('staff-code-display').value = s.staffSignupCode;
   }
 });
 
@@ -977,7 +969,7 @@ document.getElementById('notify-send-btn').addEventListener('click', async () =>
   const res = await fetch(`/api/admin/campaigns/${currentCampaignId}/notify-staff`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, channel: document.querySelector('input[name="notify-channel"]:checked').value }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -1040,6 +1032,24 @@ async function loadSiteImages() {
   });
 }
 
+async function loadStaffList() {
+  const res = await fetch('/api/admin/customers');
+  if (!res.ok) return;
+  const customers = await res.json();
+  const staff = customers.filter(c => c.isStaff);
+  const list = document.getElementById('staff-list');
+  if (!staff.length) { list.innerHTML = '<p class="text-[#827472] text-sm">Henüz personel üyeliği yok.</p>'; return; }
+  list.innerHTML = staff.map(c => `
+    <div class="bg-white rounded-lg shadow-sm p-3 flex items-center justify-between text-sm">
+      <div>
+        <span class="font-semibold text-[#0d1b3d]">${c.name}</span>
+        <span class="text-[#827472]"> — ${c.phone}</span>
+      </div>
+      <span class="text-xs font-semibold uppercase tracking-widest text-[#735c00]">${c.storeName || 'Mağaza belirtilmemiş'}</span>
+    </div>
+  `).join('');
+}
+
 async function loadOrders() {
   const res = await fetch('/api/admin/orders');
   if (!res.ok) return;
@@ -1091,6 +1101,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadRedemptions();
     loadCampaigns();
     loadSiteImages();
+    loadStaffList();
   }
 })();
 </script>

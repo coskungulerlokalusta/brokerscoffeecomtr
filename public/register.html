@@ -28,7 +28,7 @@
 <form id="phone-form" class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
 <input required id="phone" type="tel" placeholder="Telefon (05xx xxx xx xx)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
 <div id="staff-code-wrap" class="hidden">
-<input id="staff-code" placeholder="Personel Kodu" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
+<input id="staff-code" placeholder="Mağaza Adı" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
 </div>
 <p id="phone-error" class="text-red-600 text-sm hidden"></p>
 <button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Kod Gönder</button>
@@ -100,7 +100,7 @@ document.getElementById('verify-form').addEventListener('submit', async (e) => {
     code: document.getElementById('otp-code').value,
     name: document.getElementById('name-input').value,
     isStaff: selectedType === 'staff',
-    staffCode: document.getElementById('staff-code').value,
+    storeName: document.getElementById('staff-code').value,
   };
 
   const res = await fetch('/api/account/verify-otp', {

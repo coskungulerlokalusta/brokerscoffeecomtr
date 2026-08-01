@@ -36,7 +36,7 @@ async function findById(id) {
   return customers.find((c) => c.id === id);
 }
 
-async function registerOrLogin({ phone, name, isStaff }) {
+async function registerOrLogin({ phone, name, isStaff, storeName }) {
   const normalized = normalizePhone(phone);
   const customers = await loadCustomers();
   let customer = customers.find((c) => c.phone === normalized);
@@ -48,6 +48,7 @@ async function registerOrLogin({ phone, name, isStaff }) {
       name,
       phone: normalized,
       isStaff: !!isStaff,
+      storeName: isStaff ? (storeName || null) : null,
       loyaltyPoints: 0,
       createdAt: new Date().toISOString(),
     };

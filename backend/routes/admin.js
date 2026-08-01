@@ -100,6 +100,7 @@ router.get('/customers', adminAuth.requireAuth, async (req, res) => {
     name: c.name,
     phone: c.phone,
     isStaff: c.isStaff,
+    storeName: c.storeName || null,
     createdAt: c.createdAt,
   }));
   res.json(customers);
@@ -199,7 +200,7 @@ router.post('/campaigns/:id/draft-message', adminAuth.requireAuth, async (req, r
 });
 
 router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, res) => {
-  const { message } = req.body;
+  const { message, channel } = req.body; // channel: 'whatsapp' | 'sms'
   if (!message) return res.status(400).json({ error: 'Mesaj metni gerekli' });
 
   const campaigns = await campaignStore.loadCampaigns();
@@ -210,10 +211,15 @@ router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, re
   const staffMembers = allCustomers.filter((c) => c.isStaff);
   if (!staffMembers.length) return res.status(400).json({ error: 'Kayıtlı personel yok' });
 
+  const netgsm = require('../utils/netgsm');
   const results = [];
   for (const staff of staffMembers) {
     try {
-      await whatsapp.sendTextMessage(staff.phone, message);
+      if (channel === 'sms') {
+        await netgsm.sendSms(staff.phone, message);
+      } else {
+        await whatsapp.sendTextMessage(staff.phone, message);
+      }
       results.push({ phone: staff.phone, ok: true });
     } catch (err) {
       results.push({ phone: staff.phone, ok: false, error: err.message });

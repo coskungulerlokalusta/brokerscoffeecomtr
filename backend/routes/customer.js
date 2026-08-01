@@ -29,7 +29,7 @@ router.post('/request-otp', async (req, res) => {
 });
 
 router.post('/verify-otp', async (req, res) => {
-  const { phone, code, name, isStaff, staffCode } = req.body;
+  const { phone, code, name, isStaff, storeName } = req.body;
   if (!phone || !code) return res.status(400).json({ error: 'Telefon ve kod gerekli' });
 
   const normalized = customerAuth.normalizePhone(phone);
@@ -39,15 +39,19 @@ router.post('/verify-otp', async (req, res) => {
   const existing = await customerAuth.findByPhone(normalized);
   let staffFlag = false;
   if (!existing && isStaff) {
-    const currentSettings = await settings.loadSettings();
-    if (staffCode !== currentSettings.staffSignupCode) {
-      return res.status(400).json({ error: 'Personel kodu hatalı' });
+    if (!storeName || !storeName.trim()) {
+      return res.status(400).json({ error: 'Mağaza adı gerekli' });
     }
     staffFlag = true;
   }
 
   try {
-    const { token, customer } = await customerAuth.registerOrLogin({ phone: normalized, name, isStaff: staffFlag });
+    const { token, customer } = await customerAuth.registerOrLogin({
+      phone: normalized,
+      name,
+      isStaff: staffFlag,
+      storeName: staffFlag ? storeName.trim() : undefined,
+    });
     res.cookie('customer_session', token, COOKIE_OPTS);
     res.json({ id: customer.id, name: customer.name, isStaff: customer.isStaff, isNew: !existing });
   } catch (err) {
