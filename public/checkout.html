@@ -81,11 +81,42 @@ if (!cart.length) {
   document.getElementById('checkout-form').classList.add('hidden');
   document.getElementById('empty-msg').classList.remove('hidden');
 } else {
-  document.getElementById('order-summary').innerHTML = cart.map(i =>
+  renderSummary();
+}
+
+let staffDiscountPercent = 0;
+
+async function checkStaffStatus() {
+  try {
+    const res = await fetch('/api/account/me');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.isStaff) {
+        staffDiscountPercent = data.staffDiscountPercent;
+        renderSummary();
+      }
+    }
+  } catch (e) {}
+}
+
+function renderSummary() {
+  const subtotal = cartTotal();
+  const discount = subtotal * (staffDiscountPercent / 100);
+  const total = subtotal - discount;
+
+  let html = getCart().map(i =>
     `<div class="flex justify-between"><span>${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}</span><span>₺${(i.price * i.qty).toFixed(0)}</span></div>`
   ).join('');
-  document.getElementById('order-total').textContent = '₺' + cartTotal().toFixed(0);
+
+  if (staffDiscountPercent > 0) {
+    html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>Personel İndirimi (%${staffDiscountPercent})</span><span>−₺${discount.toFixed(0)}</span></div>`;
+  }
+
+  document.getElementById('order-summary').innerHTML = html;
+  document.getElementById('order-total').textContent = '₺' + total.toFixed(0);
 }
+
+checkStaffStatus();
 
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio => {
   radio.addEventListener('change', () => {

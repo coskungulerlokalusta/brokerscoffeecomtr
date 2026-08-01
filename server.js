@@ -7,9 +7,13 @@ const fs = require('fs');
 const adminRoutes = require('./backend/routes/admin');
 const orderRoutes = require('./backend/routes/orders');
 const paymentRoutes = require('./backend/routes/payment');
+const customerRoutes = require('./backend/routes/customer');
+const adminProductRoutes = require('./backend/routes/adminProducts');
+const rewardsRoutes = require('./backend/routes/rewards');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set('trust proxy', 1); // Hostinger reverse proxy arkasında doğru IP/protokol algılama için
 
 app.use(cors());
 app.use(express.json());
@@ -20,6 +24,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/account', customerRoutes);
+app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/rewards', rewardsRoutes);
 
 function loadProducts() {
   const raw = fs.readFileSync(path.join(__dirname, 'data', 'products.json'), 'utf-8');

@@ -7,18 +7,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -29,18 +29,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -51,18 +51,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -73,14 +73,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 120.0
+        "price": 120
       },
       {
         "label": null,
-        "price": 145.0
+        "price": 145
       }
     ],
-    "basePrice": 120.0,
+    "basePrice": 120,
     "description": ""
   },
   {
@@ -91,14 +91,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -109,14 +109,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -127,14 +127,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -145,14 +145,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -163,14 +163,14 @@
     "sizes": [
       {
         "label": "30ml",
-        "price": 100.0
+        "price": 100
       },
       {
         "label": "60ml",
-        "price": 125.0
+        "price": 125
       }
     ],
-    "basePrice": 100.0,
+    "basePrice": 100,
     "description": ""
   },
   {
@@ -181,14 +181,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 120.0
+        "price": 120
       },
       {
         "label": null,
-        "price": 140.0
+        "price": 140
       }
     ],
-    "basePrice": 120.0,
+    "basePrice": 120,
     "description": ""
   },
   {
@@ -199,10 +199,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 195.0
+        "price": 195
       }
     ],
-    "basePrice": 195.0,
+    "basePrice": 195,
     "description": ""
   },
   {
@@ -213,10 +213,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 190.0
+        "price": 190
       }
     ],
-    "basePrice": 190.0,
+    "basePrice": 190,
     "description": ""
   },
   {
@@ -227,18 +227,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 195.0
+        "price": 195
       },
       {
         "label": null,
-        "price": 205.0
+        "price": 205
       },
       {
         "label": null,
-        "price": 215.0
+        "price": 215
       }
     ],
-    "basePrice": 195.0,
+    "basePrice": 195,
     "description": ""
   },
   {
@@ -249,18 +249,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 230.0
+        "price": 230
       },
       {
         "label": null,
-        "price": 240.0
+        "price": 240
       },
       {
         "label": null,
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -271,18 +271,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 145.0
+        "price": 145
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -293,18 +293,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 135.0
+        "price": 135
       },
       {
         "label": null,
-        "price": 145.0
+        "price": 145
       },
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 135.0,
+    "basePrice": 135,
     "description": ""
   },
   {
@@ -315,18 +315,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 160.0
+        "price": 160
       },
       {
         "label": null,
-        "price": 170.0
+        "price": 170
       },
       {
         "label": null,
-        "price": 180.0
+        "price": 180
       }
     ],
-    "basePrice": 160.0,
+    "basePrice": 160,
     "description": ""
   },
   {
@@ -337,18 +337,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 210.0
+        "price": 210
       },
       {
         "label": null,
-        "price": 220.0
+        "price": 220
       },
       {
         "label": null,
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -359,18 +359,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 210.0
+        "price": 210
       },
       {
         "label": null,
-        "price": 220.0
+        "price": 220
       },
       {
         "label": null,
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -381,18 +381,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 165.0
+        "price": 165
       },
       {
         "label": null,
-        "price": 175.0
+        "price": 175
       },
       {
         "label": null,
-        "price": 185.0
+        "price": 185
       }
     ],
-    "basePrice": 165.0,
+    "basePrice": 165,
     "description": ""
   },
   {
@@ -403,18 +403,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 220.0
+        "price": 220
       },
       {
         "label": null,
-        "price": 230.0
+        "price": 230
       },
       {
         "label": null,
-        "price": 240.0
+        "price": 240
       }
     ],
-    "basePrice": 220.0,
+    "basePrice": 220,
     "description": ""
   },
   {
@@ -425,18 +425,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 220.0
+        "price": 220
       },
       {
         "label": null,
-        "price": 230.0
+        "price": 230
       },
       {
         "label": null,
-        "price": 240.0
+        "price": 240
       }
     ],
-    "basePrice": 220.0,
+    "basePrice": 220,
     "description": ""
   },
   {
@@ -447,18 +447,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 175.0
+        "price": 175
       },
       {
         "label": null,
-        "price": 185.0
+        "price": 185
       },
       {
         "label": null,
-        "price": 200.0
+        "price": 200
       }
     ],
-    "basePrice": 175.0,
+    "basePrice": 175,
     "description": ""
   },
   {
@@ -469,18 +469,18 @@
     "sizes": [
       {
         "label": null,
-        "price": 175.0
+        "price": 175
       },
       {
         "label": null,
-        "price": 185.0
+        "price": 185
       },
       {
         "label": null,
-        "price": 200.0
+        "price": 200
       }
     ],
-    "basePrice": 175.0,
+    "basePrice": 175,
     "description": ""
   },
   {
@@ -491,14 +491,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 65.0
+        "price": 65
       },
       {
         "label": null,
-        "price": 75.0
+        "price": 75
       }
     ],
-    "basePrice": 65.0,
+    "basePrice": 65,
     "description": ""
   },
   {
@@ -509,10 +509,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 155.0
+        "price": 155
       }
     ],
-    "basePrice": 155.0,
+    "basePrice": 155,
     "description": ""
   },
   {
@@ -523,18 +523,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 260.0
+        "price": 260
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -545,18 +545,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 260.0
+        "price": 260
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -567,18 +567,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 260.0
+        "price": 260
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -589,18 +589,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 260.0
+        "price": 260
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -611,18 +611,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 150.0
+        "price": 150
       },
       {
         "label": "Orta",
-        "price": 160.0
+        "price": 160
       },
       {
         "label": "Büyük",
-        "price": 170.0
+        "price": 170
       }
     ],
-    "basePrice": 150.0,
+    "basePrice": 150,
     "description": ""
   },
   {
@@ -633,18 +633,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 190.0
+        "price": 190
       },
       {
         "label": "Orta",
-        "price": 205.0
+        "price": 205
       },
       {
         "label": "Büyük",
-        "price": 215.0
+        "price": 215
       }
     ],
-    "basePrice": 190.0,
+    "basePrice": 190,
     "description": ""
   },
   {
@@ -655,18 +655,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -677,18 +677,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -699,18 +699,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 160.0
+        "price": 160
       },
       {
         "label": "Orta",
-        "price": 170.0
+        "price": 170
       },
       {
         "label": "Büyük",
-        "price": 180.0
+        "price": 180
       }
     ],
-    "basePrice": 160.0,
+    "basePrice": 160,
     "description": ""
   },
   {
@@ -721,18 +721,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 180.0
+        "price": 180
       },
       {
         "label": "Orta",
-        "price": 195.0
+        "price": 195
       },
       {
         "label": "Büyük",
-        "price": 205.0
+        "price": 205
       }
     ],
-    "basePrice": 180.0,
+    "basePrice": 180,
     "description": ""
   },
   {
@@ -743,18 +743,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -765,18 +765,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -787,18 +787,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -809,18 +809,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -831,18 +831,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -853,18 +853,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -875,18 +875,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -897,18 +897,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -919,18 +919,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -941,18 +941,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 235.0
+        "price": 235
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -963,18 +963,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 235.0
+        "price": 235
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -985,18 +985,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 235.0
+        "price": 235
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -1007,14 +1007,14 @@
     "sizes": [
       {
         "label": null,
-        "price": 235.0
+        "price": 235
       },
       {
         "label": null,
-        "price": 245.0
+        "price": 245
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -1025,18 +1025,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 235.0
+        "price": 235
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -1047,18 +1047,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 235.0
+        "price": 235
       },
       {
         "label": "Orta",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Büyük",
-        "price": 255.0
+        "price": 255
       }
     ],
-    "basePrice": 235.0,
+    "basePrice": 235,
     "description": ""
   },
   {
@@ -1069,18 +1069,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 185.0
+        "price": 185
       },
       {
         "label": "Orta",
-        "price": 195.0
+        "price": 195
       },
       {
         "label": "Büyük",
-        "price": 205.0
+        "price": 205
       }
     ],
-    "basePrice": 185.0,
+    "basePrice": 185,
     "description": ""
   },
   {
@@ -1091,18 +1091,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -1113,18 +1113,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -1135,18 +1135,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 210.0
+        "price": 210
       },
       {
         "label": "Orta",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Büyük",
-        "price": 230.0
+        "price": 230
       }
     ],
-    "basePrice": 210.0,
+    "basePrice": 210,
     "description": ""
   },
   {
@@ -1157,18 +1157,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1179,18 +1179,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1201,18 +1201,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1223,18 +1223,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1245,18 +1245,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1267,18 +1267,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1289,18 +1289,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1311,18 +1311,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 245.0
+        "price": 245
       },
       {
         "label": "Orta",
-        "price": 255.0
+        "price": 255
       },
       {
         "label": "Büyük",
-        "price": 265.0
+        "price": 265
       }
     ],
-    "basePrice": 245.0,
+    "basePrice": 245,
     "description": ""
   },
   {
@@ -1333,18 +1333,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Orta",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 220.0,
+    "basePrice": 220,
     "description": ""
   },
   {
@@ -1355,18 +1355,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 220.0
+        "price": 220
       },
       {
         "label": "Orta",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 220.0,
+    "basePrice": 220,
     "description": ""
   },
   {
@@ -1377,18 +1377,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1399,18 +1399,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1421,18 +1421,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1443,18 +1443,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1465,18 +1465,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1487,18 +1487,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1509,18 +1509,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1531,18 +1531,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1553,18 +1553,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1575,18 +1575,18 @@
     "sizes": [
       {
         "label": "Küçük",
-        "price": 230.0
+        "price": 230
       },
       {
         "label": "Orta",
-        "price": 240.0
+        "price": 240
       },
       {
         "label": "Büyük",
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 230.0,
+    "basePrice": 230,
     "description": ""
   },
   {
@@ -1597,10 +1597,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Roll kruvasan, iç ve üst sütlü çikolata dolgulu"
   },
   {
@@ -1611,10 +1611,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Roll kruvasan, iç ve üst beyaz çikolata dolgulu"
   },
   {
@@ -1625,10 +1625,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Roll kruvasan, iç ve üst Antep fıstıklı çikolata dolgulu"
   },
   {
@@ -1639,10 +1639,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Roll kruvasan, iç ve üst bitter çikolata dolgulu"
   },
   {
@@ -1653,10 +1653,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Roll kruvasan, iç ve üst çilekli çikolata dolgulu"
   },
   {
@@ -1667,10 +1667,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Klasik kruvasan, iç ve üst beyaz çikolata dolgulu"
   },
   {
@@ -1681,10 +1681,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Klasik kruvasan, iç ve üst bitter çikolata dolgulu"
   },
   {
@@ -1695,10 +1695,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Klasik kruvasan, iç ve üst sütlü çikolata dolgulu"
   },
   {
@@ -1709,10 +1709,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Klasik kruvasan, iç ve üst Antep fıstıklı çikolata dolgulu"
   },
   {
@@ -1723,10 +1723,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Klasik kruvasan, iç ve üst çilekli çikolata dolgulu"
   },
   {
@@ -1737,10 +1737,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Küp kruvasan, iç ve üst beyaz çikolata dolgulu"
   },
   {
@@ -1751,10 +1751,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Küp kruvasan, iç ve üst çilekli çikolata dolgulu"
   },
   {
@@ -1765,10 +1765,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Küp kruvasan, iç ve üst Antep fıstıklı çikolata dolgulu"
   },
   {
@@ -1779,10 +1779,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Küp kruvasan, iç ve üst sütlü çikolata dolgulu"
   },
   {
@@ -1793,10 +1793,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 300.0
+        "price": 300
       }
     ],
-    "basePrice": 300.0,
+    "basePrice": 300,
     "description": "Küp kruvasan, iç ve üst bitter çikolata dolgulu"
   },
   {
@@ -1807,10 +1807,10 @@
     "sizes": [
       {
         "label": null,
-        "price": 250.0
+        "price": 250
       }
     ],
-    "basePrice": 250.0,
+    "basePrice": 250,
     "description": "Klasik tereyağlı, çikolata dolgusu yok"
   }
 ]

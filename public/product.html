@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ürün | Brokers Coffee</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
+  h1, h2 { font-family: 'Playfair Display', serif; }
+  .size-option.active { border-color: #0d1b3d; background: #0d1b3d; color: #fff; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="bg-white sticky top-0 z-10 border-b border-[#e3e2e0]">
+<div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+<a href="/" class="font-bold text-lg text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
+<a href="/cart.html" class="relative text-[#0d1b3d]">🛍️ <span data-cart-badge class="hidden absolute -top-2 -right-2 bg-[#c9a227] text-[#241a00] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span></a>
+</div>
+</header>
+
+<main class="max-w-3xl mx-auto px-5 py-8">
+<div id="loading" class="text-[#827472]">Yükleniyor...</div>
+
+<div id="product-content" class="hidden">
+<div class="aspect-square rounded-lg overflow-hidden mb-6 bg-white">
+<img id="product-image" class="w-full h-full object-cover" src="" alt=""/>
+</div>
+
+<span id="product-category" class="text-xs font-bold uppercase tracking-widest text-[#735c00] block mb-2"></span>
+<h1 id="product-name" class="text-2xl text-[#0d1b3d] mb-2"></h1>
+<p id="product-description" class="text-[#504442] mb-6"></p>
+
+<div id="size-section" class="mb-6">
+<h2 class="text-sm font-bold uppercase tracking-widest text-[#504442] mb-3">Boyut Seç</h2>
+<div id="size-options" class="flex gap-3 flex-wrap"></div>
+</div>
+
+<div class="flex items-center gap-4 mb-8">
+<h2 class="text-sm font-bold uppercase tracking-widest text-[#504442]">Adet</h2>
+<div class="flex items-center gap-3">
+<button id="qty-minus" class="w-9 h-9 rounded-full border border-[#d3c3c0] text-[#0d1b3d] text-lg">−</button>
+<span id="qty-display" class="w-6 text-center font-semibold">1</span>
+<button id="qty-plus" class="w-9 h-9 rounded-full border border-[#d3c3c0] text-[#0d1b3d] text-lg">+</button>
+</div>
+</div>
+
+<button id="add-to-cart-btn" class="w-full bg-[#0d1b3d] text-white font-semibold uppercase tracking-widest text-sm py-4 rounded hover:bg-[#16285c] transition-colors">
+Sepete Ekle — <span id="total-price">₺0</span>
+</button>
+</div>
+
+<div id="not-found" class="hidden text-center text-[#827472]">Ürün bulunamadı. <a href="/" class="text-[#735c00] underline">Ana sayfaya dön</a>.</div>
+</main>
+
+<script src="/js/cart.js"></script>
+<script>
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=800&auto=format&fit=crop';
+const params = new URLSearchParams(window.location.search);
+const productId = params.get('id');
+let product = null;
+let selectedSize = null;
+let qty = 1;
+
+function updateTotal() {
+  const price = selectedSize ? selectedSize.price : 0;
+  document.getElementById('total-price').textContent = '₺' + (price * qty).toFixed(0);
+}
+
+function renderSizes() {
+  const wrap = document.getElementById('size-options');
+  if (product.sizes.length === 1 && !product.sizes[0].label) {
+    document.getElementById('size-section').classList.add('hidden');
+    selectedSize = product.sizes[0];
+    updateTotal();
+    return;
+  }
+  wrap.innerHTML = product.sizes.map((s, i) => `
+    <button data-i="${i}" class="size-option border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d]">
+      ${s.label || 'Tek Boy'}<br/><span class="text-xs font-normal">₺${s.price.toFixed(0)}</span>
+    </button>
+  `).join('');
+  wrap.querySelectorAll('.size-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.size-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedSize = product.sizes[Number(btn.dataset.i)];
+      updateTotal();
+    });
+  });
+  wrap.children[0].click();
+}
+
+async function init() {
+  if (!productId) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('not-found').classList.remove('hidden');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/products/${productId}`);
+    if (!res.ok) throw new Error('not found');
+    product = await res.json();
+
+    document.getElementById('product-image').src = product.image || FALLBACK_IMG;
+    document.getElementById('product-image').alt = product.name;
+    document.getElementById('product-category').textContent = product.subcategory || product.category;
+    document.getElementById('product-name').textContent = product.name;
+    document.getElementById('product-description').textContent = product.description || '';
+    if (!product.description) document.getElementById('product-description').classList.add('hidden');
+
+    renderSizes();
+
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('product-content').classList.remove('hidden');
+  } catch (e) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('not-found').classList.remove('hidden');
+  }
+}
+
+document.getElementById('qty-minus').addEventListener('click', () => {
+  qty = Math.max(1, qty - 1);
+  document.getElementById('qty-display').textContent = qty;
+  updateTotal();
+});
+document.getElementById('qty-plus').addEventListener('click', () => {
+  qty += 1;
+  document.getElementById('qty-display').textContent = qty;
+  updateTotal();
+});
+
+document.getElementById('add-to-cart-btn').addEventListener('click', () => {
+  if (!selectedSize) return;
+  addToCart({
+    productId: product.id,
+    name: product.name,
+    price: selectedSize.price,
+    size: selectedSize.label || null,
+    extras: [],
+    qty,
+  });
+  const btn = document.getElementById('add-to-cart-btn');
+  const original = btn.innerHTML;
+  btn.innerHTML = 'SEPETE EKLENDİ ✓';
+  setTimeout(() => { btn.innerHTML = original; }, 1200);
+});
+
+init();
+</script>
+</body>
+</html>

@@ -35,7 +35,7 @@
 <span class="material-symbols-outlined">shopping_bag</span>
 <span data-cart-badge class="hidden absolute -top-2 -right-2 bg-tertiary-container text-on-tertiary-fixed text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
 </a>
-<a href="/admin/login.html" class="text-primary hidden md:block"><span class="material-symbols-outlined">account_circle</span></a>
+<a href="/account.html" class="text-primary hidden md:block"><span class="material-symbols-outlined">account_circle</span></a>
 </div>
 </nav>
 </header>
@@ -139,7 +139,7 @@ Menümüzü Keşfedin
 <h2 class="font-display-lg text-[32px] md:text-display-lg mb-6 text-secondary-fixed">Bizi Ziyaret Edin</h2>
 <p class="font-body-lg text-body-lg text-secondary-fixed/80 mb-2">Toryum AVM, 1. Kat</p>
 <p class="font-body-md text-secondary-fixed/70 mb-8">Her gün 10:30 - 21:30 arası sipariş alıyoruz. 750 TL üzeri siparişlerde kurye ücreti bizden.</p>
-<a href="https://wa.me/" class="inline-flex px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">WhatsApp'tan Yaz</a>
+<a href="https://wa.me/905326424738" class="inline-flex px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">WhatsApp'tan Yaz</a>
 </div>
 <div class="w-full md:w-1/2 grid grid-cols-2 gap-4">
 <div class="aspect-square bg-primary-container overflow-hidden">
@@ -161,9 +161,9 @@ Menümüzü Keşfedin
 <p class="font-label-sm text-label-sm text-secondary-fixed/60 uppercase tracking-widest">© 2026 Brokers Coffee. Toryum AVM.</p>
 </div>
 <div class="flex gap-8 items-center flex-wrap justify-center">
-<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">Gizlilik Politikası</a>
-<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">Kullanım Koşulları</a>
-<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="#">İletişim</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="/privacy-policy.html">Gizlilik Politikası</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="/terms.html">Kullanım Koşulları</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed/70 hover:text-tertiary-fixed transition-colors" href="/contact.html">İletişim</a>
 </div>
 </div>
 </footer>
@@ -183,7 +183,7 @@ Menümüzü Keşfedin
 <span data-cart-badge-mobile class="hidden absolute top-1 right-[calc(50%-18px)] bg-tertiary-container text-on-tertiary-fixed text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
 <span class="text-[10px] font-semibold uppercase tracking-wide">Sepet</span>
 </a>
-<a href="/admin/login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
+<a href="/account.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
 <span class="material-symbols-outlined text-[22px]">person</span>
 <span class="text-[10px] font-semibold uppercase tracking-wide">Hesabım</span>
 </a>
@@ -224,9 +224,9 @@ function renderFeatured(products) {
   const wrap = document.getElementById('featured-scroll');
   const featured = products.slice(0, 8);
   wrap.innerHTML = featured.map(p => `
-    <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer">
+    <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer" onclick="location.href='/product.html?id=${p.id}'">
       <div class="aspect-square overflow-hidden mb-3 rounded-lg bg-surface-container-low">
-        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${FALLBACK_IMG}" alt="${p.name}"/>
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
       </div>
       <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
       <p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>
@@ -258,9 +258,9 @@ function renderGrid() {
     : allProducts.filter(p => (p.subcategory || p.category) === activeCategory);
 
   grid.innerHTML = filtered.slice(0, 12).map(p => `
-    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2">
+    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2" onclick="location.href='/product.html?id=${p.id}'">
       <div class="aspect-[4/5] overflow-hidden mb-4 bg-surface-container-low">
-        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${FALLBACK_IMG}" alt="${p.name}"/>
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
       </div>
       <div class="text-center">
         <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>

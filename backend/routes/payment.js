@@ -2,22 +2,45 @@ const express = require('express');
 const router = express.Router();
 const paynet = require('../utils/paynet');
 const orderStore = require('../utils/orderStore');
+const customerAuth = require('../utils/customerAuth');
+const settings = require('../utils/settings');
 
 const SITE_DOMAIN = process.env.SITE_DOMAIN || 'brokerscoffee.com.tr';
 const SITE_BASE_URL = process.env.SITE_BASE_URL || `https://${SITE_DOMAIN}`;
 
 // Sipariş oluştur + 3D ödeme başlat
-router.post('/init', async (req, res) => {
-  const { items, customerName, phone, deliveryType, address, total, cardHolder, pan, month, year, cvc } = req.body;
+router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
+  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc } = req.body;
 
-  if (!items || !items.length || !customerName || !phone || !deliveryType || !total) {
+  if (!items || !items.length || !customerName || !phone || !deliveryType) {
     return res.status(400).json({ error: 'Eksik sipariş bilgisi' });
   }
   if (!cardHolder || !pan || !month || !year || !cvc) {
     return res.status(400).json({ error: 'Eksik kart bilgisi' });
   }
 
+  // Toplamı sunucu tarafında ürün fiyatlarından hesapla (müşteriden gelen tutara güvenme)
+  let subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
+  let discountPercent = 0;
+  if (req.customer && req.customer.isStaff) {
+    discountPercent = settings.loadSettings().staffDiscountPercent;
+  }
+  const total = Math.round((subtotal * (1 - discountPercent / 100)) * 100) / 100;
+
   const order = orderStore.createOrder({ items, customerName, phone, deliveryType, address, total });
+  order.customerId = req.customer ? req.customer.id : null;
+  {
+    const orders = orderStore.loadOrders();
+    const idx = orders.findIndex((o) => o.id === order.id);
+    if (idx !== -1) { orders[idx] = order; orderStore.saveOrders(orders); }
+  }
+  if (discountPercent > 0) {
+    order.staffDiscountPercent = discountPercent;
+    order.subtotalBeforeDiscount = subtotal;
+    const orders = orderStore.loadOrders();
+    const idx = orders.findIndex((o) => o.id === order.id);
+    if (idx !== -1) { orders[idx] = order; orderStore.saveOrders(orders); }
+  }
 
   try {
     const result = await paynet.initiateTdsPayment({
@@ -63,6 +86,11 @@ router.post('/callback', async (req, res) => {
       if (order) {
         order.paymentStatus = success ? 'odendi' : 'basarisiz';
         orderStore.saveOrders(orders);
+        if (success && order.customerId) {
+          const pointsPerTL = settings.loadSettings().pointsPerTL;
+          const earned = Math.floor(order.total / pointsPerTL);
+          if (earned > 0) customerAuth.addPoints(order.customerId, earned);
+        }
       }
     }
     res.redirect(`/payment-result.html?status=${success ? 'success' : 'fail'}&orderId=${orderId || ''}&message=${encodeURIComponent(result.message || '')}`);

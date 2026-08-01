@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hesabım | Brokers Coffee</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
+  h1, h2 { font-family: 'Playfair Display', serif; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="bg-white border-b border-[#e3e2e0]">
+<div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+<a href="/" class="font-bold text-lg text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
+<a href="/" class="text-sm text-[#735c00]">← Menüye Dön</a>
+</div>
+</header>
+
+<main class="max-w-3xl mx-auto px-5 py-8">
+<div id="loading" class="text-[#827472]">Yükleniyor...</div>
+
+<div id="content" class="hidden">
+<div id="staff-banner" class="hidden bg-[#c9a227] text-[#241a00] font-semibold rounded-lg px-5 py-3 mb-6 text-center"></div>
+
+<div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+<h1 class="text-2xl text-[#0d1b3d] mb-1" id="customer-name"></h1>
+<p class="text-[#827472]" id="customer-phone"></p>
+<span id="staff-tag" class="hidden inline-block mt-2 bg-[#0d1b3d] text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">Personel</span>
+</div>
+
+<a href="/loyalty.html" class="block text-center bg-[#0d1b3d] text-white rounded py-3 text-sm font-semibold mb-3">Sadakat Programı — Puanlarım</a>
+<button id="logout-btn" class="w-full border border-[#d3c3c0] rounded py-3 text-sm font-semibold text-[#0d1b3d]">Çıkış Yap</button>
+</div>
+
+<div id="unauth" class="hidden text-center">
+<p class="text-[#827472] mb-4">Hesabına erişmek için giriş yapmalısın.</p>
+<a href="/login.html" class="inline-block bg-[#0d1b3d] text-white font-semibold uppercase tracking-widest text-sm py-3 px-6 rounded">Giriş Yap</a>
+</div>
+</main>
+
+<script>
+async function init() {
+  try {
+    const res = await fetch('/api/account/me');
+    if (!res.ok) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('unauth').classList.remove('hidden');
+      return;
+    }
+    const data = await res.json();
+    document.getElementById('customer-name').textContent = data.name;
+    document.getElementById('customer-phone').textContent = data.phone;
+    if (data.isStaff) {
+      document.getElementById('staff-tag').classList.remove('hidden');
+      const banner = document.getElementById('staff-banner');
+      banner.textContent = data.staffBannerText;
+      banner.classList.remove('hidden');
+    }
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+  } catch (err) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('unauth').classList.remove('hidden');
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await fetch('/api/account/logout', { method: 'POST' });
+  window.location.href = '/';
+});
+
+init();
+</script>
+</body>
+</html>
