@@ -10,6 +10,9 @@
   body { font-family: 'Plus Jakarta Sans', sans-serif; }
   h1, h2 { font-family: 'Playfair Display', serif; }
   .status-badge { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 999px; }
+  .sidebar-link { color: #504442; }
+  .sidebar-link.active-section { background: #0d1b3d; color: #fff; }
+  .sidebar-link:hover:not(.active-section) { background: #f4f3f1; }
 </style>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
@@ -39,9 +42,22 @@
 </div>
 </div>
 
-<main class="max-w-5xl mx-auto px-6 py-8">
+<div class="flex flex-col md:flex-row max-w-6xl mx-auto">
 
-<section class="mb-10">
+<!-- Sol menü -->
+<nav id="admin-sidebar" class="md:w-56 flex-shrink-0 md:sticky md:top-0 md:h-screen bg-white md:border-r border-[#e3e2e0] overflow-x-auto md:overflow-visible">
+<div class="flex md:flex-col gap-1 p-3 md:p-4">
+<button data-section="orders" class="sidebar-link active-section text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📦 Siparişler</button>
+<button data-section="products" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">☕ Ürün Yönetimi</button>
+<button data-section="staff" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👥 Personel Ayarları</button>
+<button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
+<button data-section="integrations" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🔌 Entegrasyonlar</button>
+</div>
+</nav>
+
+<main class="flex-1 px-6 py-8 min-w-0">
+
+<div id="section-staff" class="admin-panel hidden">
 <h2 class="text-2xl text-[#0d1b3d] mb-4">Personel Ayarları</h2>
 <div class="bg-white rounded-lg shadow-sm p-5">
 <div class="grid md:grid-cols-2 gap-4 mb-4">
@@ -64,15 +80,15 @@
 <button id="save-settings-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded">Kaydet</button>
 <span id="settings-saved-msg" class="hidden text-emerald-600 text-sm ml-3">Kaydedildi ✓</span>
 </div>
-</section>
+</div>
 
-<section class="mb-10">
+<div id="section-products" class="admin-panel hidden">
 <div class="flex items-center justify-between mb-4">
 <h2 class="text-2xl text-[#0d1b3d]">Ürün Yönetimi</h2>
 <button id="add-product-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ürün Ekle</button>
 </div>
 <div id="products-list" class="grid md:grid-cols-2 gap-3"></div>
-</section>
+</div>
 
 <div id="product-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
 <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -105,13 +121,13 @@
 </div>
 </div>
 
-<section class="mb-10">
+<div id="section-integrations" class="admin-panel hidden">
 <h2 class="text-2xl text-[#0d1b3d] mb-4">Entegrasyonlar</h2>
 <p class="text-sm text-[#827472] mb-4">Bilgileri aldıkça buraya gir, kaydet. Aktif olana kadar "Pasif" görünür, biz kodu şimdiden hazır tutuyoruz.</p>
 <div id="integrations-list" class="flex flex-col gap-4"></div>
-</section>
+</div>
 
-<section class="mb-10">
+<div id="section-loyalty" class="admin-panel hidden">
 <div class="flex items-center justify-between mb-4">
 <h2 class="text-2xl text-[#0d1b3d]">Sadakat Programı — Ödüller</h2>
 <button id="add-reward-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ödül Ekle</button>
@@ -120,7 +136,7 @@
 
 <h3 class="text-lg text-[#0d1b3d] mb-3">Kullanılan Kodlar</h3>
 <div id="redemptions-list" class="flex flex-col gap-2"></div>
-</section>
+</div>
 
 <div id="reward-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
 <div class="bg-white rounded-lg p-6 w-full max-w-sm">
@@ -139,6 +155,7 @@
 </div>
 </div>
 
+<div id="section-orders" class="admin-panel">
 <div class="flex items-center justify-between mb-6">
 <h2 class="text-2xl text-[#0d1b3d]">Siparişler</h2>
 <button id="refresh-btn" class="text-sm text-[#735c00] font-semibold">↻ Yenile</button>
@@ -147,7 +164,10 @@
 <div id="orders-list" class="flex flex-col gap-4">
 <p class="text-[#827472]">Yükleniyor...</p>
 </div>
+</div>
+
 </main>
+</div>
 
 <script>
 const STATUS_LABELS = {
@@ -158,6 +178,16 @@ const STATUS_LABELS = {
   'iptal': { label: 'İptal', color: 'bg-red-100 text-red-800' },
 };
 const STATUS_FLOW = ['yeni', 'hazirlaniyor', 'hazir', 'teslim-edildi'];
+
+// ---- Sol menü sekme geçişi ----
+document.querySelectorAll('.sidebar-link').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active-section'));
+    btn.classList.add('active-section');
+    document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.add('hidden'));
+    document.getElementById(`section-${btn.dataset.section}`).classList.remove('hidden');
+  });
+});
 
 async function checkAuth() {
   const res = await fetch('/api/admin/me');
@@ -397,6 +427,14 @@ const INTEGRATION_CONFIG = {
       { key: 'phoneNumberId', label: 'Telefon Numarası ID', type: 'text' },
       { key: 'accessToken', label: 'Erişim Anahtarı (Access Token)', type: 'secret' },
       { key: 'verifyToken', label: 'Doğrulama Anahtarı (Verify Token)', type: 'secret' },
+    ],
+  },
+  netgsm: {
+    title: 'NetGSM (SMS Doğrulama)',
+    fields: [
+      { key: 'username', label: 'Kullanıcı Adı (Üye No)', type: 'text' },
+      { key: 'password', label: 'Şifre', type: 'secret' },
+      { key: 'header', label: 'Gönderici Başlığı (Header)', type: 'text' },
     ],
   },
   multinet: {

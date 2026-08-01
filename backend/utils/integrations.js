@@ -6,6 +6,7 @@ const FILE = path.join(__dirname, '..', '..', 'data', 'integrations.json');
 const DEFAULTS = {
   iyzico: { enabled: false, apiKey: '', secretKey: '', environment: 'sandbox' },
   whatsapp: { enabled: false, phoneNumberId: '', accessToken: '', verifyToken: '' },
+  netgsm: { enabled: false, username: '', password: '', header: '' },
   multinet: { enabled: false, merchantId: '', apiKey: '' },
   pluxee: { enabled: false, merchantId: '', apiKey: '' },
   ticket: { enabled: false, merchantId: '', apiKey: '' },
@@ -15,6 +16,7 @@ const DEFAULTS = {
 const SECRET_FIELDS = {
   iyzico: ['apiKey', 'secretKey'],
   whatsapp: ['accessToken', 'verifyToken'],
+  netgsm: ['password'],
   multinet: ['apiKey'],
   pluxee: ['apiKey'],
   ticket: ['apiKey'],

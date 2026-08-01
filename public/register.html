@@ -3,71 +3,116 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Üye Ol | Brokers Coffee</title>
+<title>Üye Ol / Giriş Yap | Brokers Coffee</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
   body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
   h1 { font-family: 'Playfair Display', serif; }
+  .type-tab.active { background:#0d1b3d; color:#fff; }
 </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-6 py-10">
 <div class="w-full max-w-sm">
 <a href="/" class="block text-center text-xl mb-6 text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
-<h1 class="text-2xl text-[#0d1b3d] text-center mb-6">Üye Ol</h1>
+<h1 class="text-2xl text-[#0d1b3d] text-center mb-2">Üye Ol / Giriş Yap</h1>
+<p class="text-center text-sm text-[#827472] mb-6">Telefon numaranla, şifresiz.</p>
 
-<form id="register-form" class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
-<input required id="name" placeholder="Ad Soyad" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<!-- Üye tipi seçimi -->
+<div class="flex gap-2 mb-4">
+<button type="button" id="tab-customer" class="type-tab active flex-1 py-2.5 rounded border border-[#d3c3c0] text-sm font-semibold uppercase tracking-widest">Müşteri</button>
+<button type="button" id="tab-staff" class="type-tab flex-1 py-2.5 rounded border border-[#d3c3c0] text-sm font-semibold uppercase tracking-widest">Personel</button>
+</div>
+
+<!-- Adım 1: Telefon -->
+<form id="phone-form" class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
 <input required id="phone" type="tel" placeholder="Telefon (05xx xxx xx xx)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<input required id="password" type="password" placeholder="Şifre (en az 6 karakter)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-
-<label class="flex items-center gap-2 text-sm text-[#504442] mt-1">
-<input type="checkbox" id="is-staff-check"/> Brokers Coffee personeliyim
-</label>
-<input id="staff-code" placeholder="Personel Kodu" class="border border-[#d3c3c0] rounded px-4 py-2.5 hidden"/>
-
-<p id="error-msg" class="text-red-600 text-sm hidden"></p>
-
-<button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors mt-2">Üye Ol</button>
+<div id="staff-code-wrap" class="hidden">
+<input id="staff-code" placeholder="Personel Kodu" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
+</div>
+<p id="phone-error" class="text-red-600 text-sm hidden"></p>
+<button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Kod Gönder</button>
 </form>
 
-<p class="text-center text-sm text-[#827472] mt-4">Zaten üye misin? <a href="/login.html" class="text-[#0d1b3d] font-semibold underline">Giriş Yap</a></p>
+<!-- Adım 2: Kod + (yeni üyeyse) isim -->
+<form id="verify-form" class="hidden bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
+<p class="text-sm text-[#504442]">Telefonuna gelen 6 haneli kodu gir.</p>
+<input required id="otp-code" inputmode="numeric" maxlength="6" placeholder="123456" class="border border-[#d3c3c0] rounded px-4 py-2.5 text-center text-xl tracking-widest"/>
+<input id="name-input" placeholder="Ad Soyad (ilk kayıtta gerekli)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<p id="verify-error" class="text-red-600 text-sm hidden"></p>
+<button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Doğrula ve Devam Et</button>
+<button type="button" id="back-btn" class="text-sm text-[#735c00] underline">← Numarayı Değiştir</button>
+</form>
 </div>
 
 <script>
-document.getElementById('is-staff-check').addEventListener('change', (e) => {
-  document.getElementById('staff-code').classList.toggle('hidden', !e.target.checked);
+let selectedType = 'customer';
+let currentPhone = '';
+
+document.getElementById('tab-customer').addEventListener('click', () => {
+  selectedType = 'customer';
+  document.getElementById('tab-customer').classList.add('active');
+  document.getElementById('tab-staff').classList.remove('active');
+  document.getElementById('staff-code-wrap').classList.add('hidden');
+});
+document.getElementById('tab-staff').addEventListener('click', () => {
+  selectedType = 'staff';
+  document.getElementById('tab-staff').classList.add('active');
+  document.getElementById('tab-customer').classList.remove('active');
+  document.getElementById('staff-code-wrap').classList.remove('hidden');
 });
 
-document.getElementById('register-form').addEventListener('submit', async (e) => {
+document.getElementById('phone-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const errorMsg = document.getElementById('error-msg');
-  errorMsg.classList.add('hidden');
+  const errorEl = document.getElementById('phone-error');
+  errorEl.classList.add('hidden');
+  currentPhone = document.getElementById('phone').value;
+
+  const res = await fetch('/api/account/request-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: currentPhone }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Kod gönderilemedi';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  document.getElementById('phone-form').classList.add('hidden');
+  document.getElementById('verify-form').classList.remove('hidden');
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  document.getElementById('verify-form').classList.add('hidden');
+  document.getElementById('phone-form').classList.remove('hidden');
+});
+
+document.getElementById('verify-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('verify-error');
+  errorEl.classList.add('hidden');
+
   const payload = {
-    name: document.getElementById('name').value,
-    phone: document.getElementById('phone').value,
-    password: document.getElementById('password').value,
+    phone: currentPhone,
+    code: document.getElementById('otp-code').value,
+    name: document.getElementById('name-input').value,
+    isStaff: selectedType === 'staff',
+    staffCode: document.getElementById('staff-code').value,
   };
-  if (document.getElementById('is-staff-check').checked) {
-    payload.staffCode = document.getElementById('staff-code').value;
+
+  const res = await fetch('/api/account/verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Doğrulama başarısız';
+    errorEl.classList.remove('hidden');
+    return;
   }
-  try {
-    const res = await fetch('/api/account/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      errorMsg.textContent = data.error || 'Kayıt başarısız';
-      errorMsg.classList.remove('hidden');
-      return;
-    }
-    window.location.href = '/account.html';
-  } catch (err) {
-    errorMsg.textContent = 'Bağlantı hatası, tekrar deneyin.';
-    errorMsg.classList.remove('hidden');
-  }
+  window.location.href = '/account.html';
 });
 </script>
 </body>

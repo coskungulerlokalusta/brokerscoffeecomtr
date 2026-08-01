@@ -2,56 +2,8 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Giriş Yap | Brokers Coffee</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<style>
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
-  h1 { font-family: 'Playfair Display', serif; }
-</style>
+<meta http-equiv="refresh" content="0; url=/register.html"/>
+<title>Yönlendiriliyor...</title>
 </head>
-<body class="min-h-screen flex items-center justify-center px-6">
-<div class="w-full max-w-sm">
-<a href="/" class="block text-center text-xl mb-6 text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
-<h1 class="text-2xl text-[#0d1b3d] text-center mb-6">Giriş Yap</h1>
-
-<form id="login-form" class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
-<input required id="phone" type="tel" placeholder="Telefon" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<input required id="password" type="password" placeholder="Şifre" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<p id="error-msg" class="text-red-600 text-sm hidden"></p>
-<button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors mt-2">Giriş Yap</button>
-</form>
-
-<p class="text-center text-sm text-[#827472] mt-4">Hesabın yok mu? <a href="/register.html" class="text-[#0d1b3d] font-semibold underline">Üye Ol</a></p>
-</div>
-
-<script>
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const errorMsg = document.getElementById('error-msg');
-  errorMsg.classList.add('hidden');
-  try {
-    const res = await fetch('/api/account/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: document.getElementById('phone').value,
-        password: document.getElementById('password').value,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      errorMsg.textContent = data.error || 'Giriş başarısız';
-      errorMsg.classList.remove('hidden');
-      return;
-    }
-    window.location.href = '/account.html';
-  } catch (err) {
-    errorMsg.textContent = 'Bağlantı hatası, tekrar deneyin.';
-    errorMsg.classList.remove('hidden');
-  }
-});
-</script>
-</body>
+<body></body>
 </html>

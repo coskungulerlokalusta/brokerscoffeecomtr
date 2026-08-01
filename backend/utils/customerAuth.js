@@ -16,50 +16,39 @@ function saveCustomers(customers) {
   fs.writeFileSync(CUSTOMERS_FILE, JSON.stringify(customers, null, 2), 'utf-8');
 }
 
-function hashPassword(password, salt) {
-  salt = salt || crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-  return { salt, hash };
-}
-
-function verifyPassword(password, salt, hash) {
-  const check = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(check), Buffer.from(hash));
+function normalizePhone(phone) {
+  return phone.replace(/\D/g, '');
 }
 
 function findByPhone(phone) {
-  return loadCustomers().find((c) => c.phone === phone);
+  const normalized = normalizePhone(phone);
+  return loadCustomers().find((c) => c.phone === normalized);
 }
 
 function findById(id) {
   return loadCustomers().find((c) => c.id === id);
 }
 
-function register({ name, phone, password, isStaff }) {
+// Telefon doğrulandıktan sonra çağrılır: müşteri varsa girişini yapar, yoksa oluşturur
+function registerOrLogin({ phone, name, isStaff }) {
+  const normalized = normalizePhone(phone);
   const customers = loadCustomers();
-  if (customers.find((c) => c.phone === phone)) {
-    throw new Error('Bu telefon numarasıyla zaten bir hesap var');
-  }
-  const { salt, hash } = hashPassword(password);
-  const customer = {
-    id: crypto.randomUUID(),
-    name,
-    phone,
-    salt,
-    hash,
-    isStaff: !!isStaff,
-    loyaltyPoints: 0,
-    createdAt: new Date().toISOString(),
-  };
-  customers.push(customer);
-  saveCustomers(customers);
-  return customer;
-}
+  let customer = customers.find((c) => c.phone === normalized);
 
-function login(phone, password) {
-  const customer = findByPhone(phone);
-  if (!customer) return null;
-  if (!verifyPassword(password, customer.salt, customer.hash)) return null;
+  if (!customer) {
+    if (!name) throw new Error('İlk kayıt için ad soyad gerekli');
+    customer = {
+      id: crypto.randomUUID(),
+      name,
+      phone: normalized,
+      isStaff: !!isStaff,
+      loyaltyPoints: 0,
+      createdAt: new Date().toISOString(),
+    };
+    customers.push(customer);
+    saveCustomers(customers);
+  }
+
   const token = crypto.randomBytes(32).toString('hex');
   sessions.set(token, { customerId: customer.id, expires: Date.now() + SESSION_TTL_MS });
   return { token, customer };
@@ -89,7 +78,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Oturum varsa müşteriyi req'e ekler ama zorunlu kılmaz (opsiyonel giriş)
 function attachCustomerIfPresent(req, res, next) {
   const token = req.cookies && req.cookies.customer_session;
   const customerId = token && validateSession(token);
@@ -112,15 +100,14 @@ function deductPoints(customerId, points) {
   const customers = loadCustomers();
   const customer = customers.find((c) => c.id === customerId);
   if (!customer) return null;
-  if ((customer.loyaltyPoints || 0) < points) return null; // yetersiz puan
+  if ((customer.loyaltyPoints || 0) < points) return null;
   customer.loyaltyPoints -= points;
   saveCustomers(customers);
   return customer;
 }
 
 module.exports = {
-  register,
-  login,
+  registerOrLogin,
   logout,
   validateSession,
   requireAuth,
@@ -131,4 +118,5 @@ module.exports = {
   saveCustomers,
   addPoints,
   deductPoints,
+  normalizePhone,
 };
