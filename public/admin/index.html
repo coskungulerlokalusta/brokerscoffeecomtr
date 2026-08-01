@@ -487,52 +487,82 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
 
 // ---- Entegrasyonlar ----
 const INTEGRATION_CONFIG = {
+  paynet: {
+    title: 'Paynet',
+    subtitle: 'Ödeme Sistemi',
+    icon: 'pn',
+    color: '#e0e7ff', textColor: '#3730a3',
+    envOnly: true, // Paynet zaten sadece ortam değişkeni ile çalışıyor (backend/utils/paynet.js)
+    envVarNames: ['PAYNET_SECRET_KEY'],
+    fields: [],
+  },
   iyzico: {
     title: 'iyzico',
+    subtitle: 'Ödeme Sistemi',
+    icon: 'iy',
+    color: '#fdecec', textColor: '#c0392b',
     fields: [
-      { key: 'apiKey', label: 'API Key', type: 'secret' },
-      { key: 'secretKey', label: 'Secret Key', type: 'secret' },
-      { key: 'environment', label: 'Ortam', type: 'select', options: [['sandbox', 'Test (Sandbox)'], ['production', 'Canlı']] },
+      { key: 'apiKey', label: 'API Key', help: '(iyzico panelinden kopyala)', type: 'secret' },
+      { key: 'secretKey', label: 'Secret Key', help: '(iyzico panelinden kopyala)', type: 'secret' },
+      { key: 'environment', label: 'Ortam', type: 'select', options: [['sandbox', 'Sandbox (Test)'], ['production', 'Canlı']] },
+    ],
+  },
+  netgsm: {
+    title: 'NetGSM',
+    subtitle: 'SMS OTP Doğrulama',
+    icon: 'ng',
+    color: '#dbeafe', textColor: '#1d4ed8',
+    fields: [
+      { key: 'username', label: 'Kullanıcı Adı (Üye No)', help: '(NetGSM panelinden)', type: 'text' },
+      { key: 'password', label: 'Şifre', help: '(NetGSM panel şifresi)', type: 'secret' },
+      { key: 'header', label: 'SMS Başlığı (Originator)', help: '(Onaylı gönderici adı)', type: 'text' },
     ],
   },
   whatsapp: {
-    title: 'WhatsApp Business API',
+    title: 'WhatsApp Business',
+    subtitle: 'Mesajlaşma',
+    icon: 'wa',
+    color: '#dcfce7', textColor: '#15803d',
     fields: [
-      { key: 'phoneNumberId', label: 'Telefon Numarası ID', type: 'text' },
+      { key: 'phoneNumberId', label: 'Telefon Numarası ID', help: '(Meta Developer panelinden)', type: 'text' },
       { key: 'accessToken', label: 'Erişim Anahtarı (Access Token)', type: 'secret' },
       { key: 'verifyToken', label: 'Doğrulama Anahtarı (Verify Token)', type: 'secret' },
     ],
   },
-  netgsm: {
-    title: 'NetGSM (SMS Doğrulama)',
-    fields: [
-      { key: 'username', label: 'Kullanıcı Adı (Üye No)', type: 'text' },
-      { key: 'password', label: 'Şifre', type: 'secret' },
-      { key: 'header', label: 'Gönderici Başlığı (Header)', type: 'text' },
-    ],
-  },
   anthropic: {
-    title: 'AI Asistan (Kampanya Mesajı Yazımı)',
+    title: 'AI Asistan',
+    subtitle: 'Kampanya Mesajı Yazımı',
+    icon: 'ai',
+    color: '#f3e8ff', textColor: '#7e22ce',
     fields: [
-      { key: 'apiKey', label: 'Anthropic API Key', type: 'secret' },
+      { key: 'apiKey', label: 'Anthropic API Key', help: '(console.anthropic.com)', type: 'secret' },
     ],
   },
   multinet: {
-    title: 'Multinet Yemek Kartı',
+    title: 'Multinet',
+    subtitle: 'Yemek Kartı',
+    icon: 'mn',
+    color: '#fef3c7', textColor: '#b45309',
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
     ],
   },
   pluxee: {
-    title: 'Pluxee (Sodexo) Yemek Kartı',
+    title: 'Pluxee (Sodexo)',
+    subtitle: 'Yemek Kartı',
+    icon: 'px',
+    color: '#fee2e2', textColor: '#b91c1c',
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
     ],
   },
   ticket: {
-    title: 'Ticket (Edenred) Yemek Kartı',
+    title: 'Ticket (Edenred)',
+    subtitle: 'Yemek Kartı',
+    icon: 'tk',
+    color: '#e0f2fe', textColor: '#0369a1',
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
@@ -540,6 +570,9 @@ const INTEGRATION_CONFIG = {
   },
   metropol: {
     title: 'Metropol Kart',
+    subtitle: 'Yemek Kartı',
+    icon: 'mt',
+    color: '#ede9fe', textColor: '#6d28d9',
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
@@ -553,16 +586,26 @@ function fieldInputHtml(provider, field, currentValue, isSet) {
     const options = field.options.map(([val, label]) =>
       `<option value="${val}" ${currentValue === val ? 'selected' : ''}>${label}</option>`
     ).join('');
-    return `<select id="${id}" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm">${options}</select>`;
+    return `<select id="${id}" class="border border-[#d3c3c0] rounded px-3 py-2.5 text-sm w-full">${options}</select>`;
   }
   if (field.type === 'secret') {
-    // currentValue burada zaten maskeli (örn ••••1234) geliyor; gerçek değeri asla input'a koymayız
-    const placeholder = isSet ? currentValue : 'Girilmedi';
-    return `<input id="${id}" type="password" placeholder="${placeholder}" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full"/>`;
+    const placeholder = isSet ? currentValue : 'sandbox-xxx veya gerçek anahtar';
+    return `
+      <div class="relative">
+        <input id="${id}" type="password" placeholder="${placeholder}" class="border border-[#d3c3c0] rounded px-3 py-2.5 text-sm w-full pr-9"/>
+        <button type="button" data-toggle-eye="${id}" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#827472] text-xs">👁️</button>
+      </div>`;
   }
-  // Şifre olmayan alanlar: kaydedilen gerçek değeri input'a koy ki tekrar kaydedince silinmesin
   const safeValue = (currentValue || '').replace(/"/g, '&quot;');
-  return `<input id="${id}" type="text" value="${safeValue}" placeholder="Girilmedi" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full"/>`;
+  return `<input id="${id}" type="text" value="${safeValue}" placeholder="Girilmedi" class="border border-[#d3c3c0] rounded px-3 py-2.5 text-sm w-full"/>`;
+}
+
+function isProviderConnected(provider, cfg, values) {
+  if (cfg.envOnly) {
+    return cfg.envVarNames.some(() => values.envConnected);
+  }
+  const requiredKeys = cfg.fields.filter(f => f.type !== 'select').map(f => f.key);
+  return values.enabled && requiredKeys.every(k => values[k + 'Set'] || (values.envFields || []).includes(k) || (values[k] && k === 'environment'));
 }
 
 async function loadIntegrations() {
@@ -570,68 +613,113 @@ async function loadIntegrations() {
   if (!res.ok) return;
   const data = await res.json();
   const list = document.getElementById('integrations-list');
+  list.className = 'grid md:grid-cols-2 gap-4';
 
   list.innerHTML = Object.keys(INTEGRATION_CONFIG).map(provider => {
     const cfg = INTEGRATION_CONFIG[provider];
     const values = data[provider] || {};
+
+    if (cfg.envOnly) {
+      const connected = !!values.envConnected;
+      return `
+        <div class="bg-white rounded-lg shadow-sm p-5">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs" style="background:${cfg.color};color:${cfg.textColor}">${cfg.icon}</div>
+              <div>
+                <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
+                <p class="text-xs text-[#827472]">${cfg.subtitle}</p>
+              </div>
+            </div>
+            <span class="flex items-center gap-1.5 text-xs font-semibold ${connected ? 'text-emerald-600' : 'text-[#827472]'}">
+              <span class="w-2 h-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-gray-300'}"></span>
+              ${connected ? 'Bağlandı' : 'Bağlı Değil'}
+            </span>
+          </div>
+          <p class="text-xs text-[#827472] mt-3">Bu entegrasyon panelden değil, doğrudan Hostinger'da <code class="bg-gray-100 px-1 rounded">PAYNET_SECRET_KEY</code> ortam değişkeninden okunuyor (ödeme sırasında kart bilgisiyle çalıştığı için en güvenli yol bu).</p>
+        </div>
+      `;
+    }
+
     const fieldsHtml = cfg.fields.map(f => {
       const fromEnv = (values.envFields || []).includes(f.key);
       if (fromEnv) {
         return `
           <div>
-            <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">${f.label}</label>
-            <div class="border border-emerald-200 bg-emerald-50 rounded px-3 py-2 text-sm text-emerald-700">🔒 Ortam değişkeninden geliyor (Hostinger panelinde tanımlı)</div>
+            <label class="text-xs font-semibold text-[#504442] mb-1 flex items-center gap-1">🔑 ${f.label}</label>
+            <div class="border border-emerald-200 bg-emerald-50 rounded px-3 py-2.5 text-xs text-emerald-700">🔒 Ortam değişkeninden geliyor</div>
           </div>
         `;
       }
       return `
         <div>
-          <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">${f.label}</label>
+          <label class="text-xs font-semibold text-[#504442] mb-1 flex items-center gap-1">🔑 ${f.label} ${f.help ? `<span class="font-normal text-[#a89a95] normal-case">${f.help}</span>` : ''}</label>
           ${fieldInputHtml(provider, f, values[f.key], values[f.key + 'Set'])}
         </div>
       `;
     }).join('');
 
+    const connected = isProviderConnected(provider, cfg, values);
+
     return `
       <div class="bg-white rounded-lg shadow-sm p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
-            <span class="status-badge ${values.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}">${values.enabled ? 'Aktif' : 'Pasif'}</span>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs" style="background:${cfg.color};color:${cfg.textColor}">${cfg.icon}</div>
+            <div>
+              <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
+              <p class="text-xs text-[#827472]">${cfg.subtitle}</p>
+            </div>
           </div>
-          <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest cursor-pointer">
-            <input type="checkbox" id="${provider}-enabled" ${values.enabled ? 'checked' : ''}/>
-            <span>Aktif</span>
-          </label>
+          <span data-status-badge="${provider}" class="flex items-center gap-1.5 text-xs font-semibold ${connected ? 'text-emerald-600' : 'text-[#827472]'}">
+            <span class="w-2 h-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-gray-300'}"></span>
+            ${connected ? 'Bağlandı' : 'Bağlı Değil'}
+          </span>
         </div>
-        <div class="grid md:grid-cols-2 gap-3 mb-3">${fieldsHtml}</div>
-        <div class="flex items-center gap-3">
-          <button data-provider="${provider}" class="save-integration-btn text-xs font-semibold uppercase tracking-widest bg-[#0d1b3d] text-white px-4 py-2 rounded">Kaydet</button>
-          <button data-provider="${provider}" class="test-integration-btn text-xs font-semibold uppercase tracking-widest border border-[#0d1b3d] text-[#0d1b3d] px-4 py-2 rounded">🔌 Bağlantıyı Test Et</button>
-          <span data-saved-msg="${provider}" class="hidden text-emerald-600 text-xs">Kaydedildi ✓</span>
+        <div class="flex flex-col gap-3 mb-4">${fieldsHtml}</div>
+        <div class="flex items-center gap-2">
+          <button data-provider="${provider}" class="test-integration-btn text-xs font-semibold uppercase tracking-widest border border-[#d3c3c0] text-[#0d1b3d] px-4 py-2.5 rounded whitespace-nowrap">🔍 Test Et</button>
+          <button data-provider="${provider}" class="save-integration-btn flex-1 text-xs font-semibold uppercase tracking-widest bg-[#0d1b3d] text-white px-4 py-2.5 rounded">💾 Kaydet &amp; Bağlan</button>
         </div>
-        <p data-test-result="${provider}" class="hidden text-xs mt-2 font-medium"></p>
+        <p data-test-result="${provider}" class="hidden text-xs mt-3 font-medium"></p>
       </div>
     `;
   }).join('');
+
+  // Göz ikonu: şifre alanını göster/gizle
+  list.querySelectorAll('[data-toggle-eye]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.toggleEye);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+  });
 
   list.querySelectorAll('.save-integration-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const provider = btn.dataset.provider;
       const cfg = INTEGRATION_CONFIG[provider];
-      const payload = { enabled: document.getElementById(`${provider}-enabled`).checked };
+      const payload = {};
+      let anyFilled = false;
       cfg.fields.forEach(f => {
-        payload[f.key] = document.getElementById(`${provider}-${f.key}`).value;
+        const el = document.getElementById(`${provider}-${f.key}`);
+        if (!el) return; // ortam değişkeninden geliyorsa input yok
+        payload[f.key] = el.value;
+        if (el.value && f.type !== 'select') anyFilled = true;
       });
+      payload.enabled = anyFilled || Object.keys(payload).some(k => payload[k]);
+
+      btn.disabled = true;
+      btn.textContent = 'Kaydediliyor...';
       const res = await fetch(`/api/admin/integrations/${provider}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      btn.disabled = false;
+      btn.innerHTML = '💾 Kaydet &amp; Bağlan';
+
       if (res.ok) {
-        const msg = document.querySelector(`[data-saved-msg="${provider}"]`);
-        msg.classList.remove('hidden');
-        setTimeout(() => loadIntegrations(), 1200);
+        await loadIntegrations();
       } else if (res.status === 401) {
         alert('Oturumun sona ermiş. Tekrar giriş yapman gerekiyor.');
         window.location.href = '/admin/login.html';

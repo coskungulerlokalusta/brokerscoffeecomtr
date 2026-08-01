@@ -118,7 +118,10 @@ router.get('/customers', adminAuth.requireAuth, (req, res) => {
 
 // Entegrasyon ayarlarını getir (secret alanlar maskeli döner)
 router.get('/integrations', adminAuth.requireAuth, (req, res) => {
-  res.json(integrations.loadMasked());
+  const data = integrations.loadMasked();
+  // Paynet ayrı bir sistemle (sadece ortam değişkeni) çalışıyor, panelde durumunu göstermek için ekliyoruz
+  data.paynet = { envConnected: !!process.env.PAYNET_SECRET_KEY };
+  res.json(data);
 });
 
 // Bir entegrasyonun ayarlarını güncelle (örn. provider = 'iyzico')
