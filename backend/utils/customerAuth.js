@@ -3,9 +3,21 @@ const fs = require('fs');
 const path = require('path');
 
 const CUSTOMERS_FILE = path.join(__dirname, '..', '..', 'data', 'customers.json');
+const SESSIONS_FILE = path.join(__dirname, '..', '..', 'data', 'customer-sessions.json');
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 gün
 
-const sessions = new Map();
+function loadSessions() {
+  if (!fs.existsSync(SESSIONS_FILE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveSessions(sessions) {
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2), 'utf-8');
+}
 
 function loadCustomers() {
   if (!fs.existsSync(CUSTOMERS_FILE)) return [];
@@ -50,19 +62,25 @@ function registerOrLogin({ phone, name, isStaff }) {
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { customerId: customer.id, expires: Date.now() + SESSION_TTL_MS });
+  const sessions = loadSessions();
+  sessions[token] = { customerId: customer.id, expires: Date.now() + SESSION_TTL_MS };
+  saveSessions(sessions);
   return { token, customer };
 }
 
 function logout(token) {
-  sessions.delete(token);
+  const sessions = loadSessions();
+  delete sessions[token];
+  saveSessions(sessions);
 }
 
 function validateSession(token) {
-  const session = sessions.get(token);
+  const sessions = loadSessions();
+  const session = sessions[token];
   if (!session) return null;
   if (session.expires < Date.now()) {
-    sessions.delete(token);
+    delete sessions[token];
+    saveSessions(sessions);
     return null;
   }
   return session.customerId;

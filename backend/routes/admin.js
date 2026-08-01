@@ -16,7 +16,7 @@ const COOKIE_OPTS = {
   httpOnly: true,
   secure: true,
   sameSite: 'lax',
-  maxAge: 12 * 60 * 60 * 1000,
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 gün
 };
 
 // Giriş

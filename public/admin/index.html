@@ -555,9 +555,14 @@ function fieldInputHtml(provider, field, currentValue, isSet) {
     ).join('');
     return `<select id="${id}" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm">${options}</select>`;
   }
-  const placeholder = field.type === 'secret' && isSet ? currentValue : 'Girilmedi';
-  const inputType = field.type === 'secret' ? 'password' : 'text';
-  return `<input id="${id}" type="${inputType}" placeholder="${placeholder}" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full"/>`;
+  if (field.type === 'secret') {
+    // currentValue burada zaten maskeli (örn ••••1234) geliyor; gerçek değeri asla input'a koymayız
+    const placeholder = isSet ? currentValue : 'Girilmedi';
+    return `<input id="${id}" type="password" placeholder="${placeholder}" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full"/>`;
+  }
+  // Şifre olmayan alanlar: kaydedilen gerçek değeri input'a koy ki tekrar kaydedince silinmesin
+  const safeValue = (currentValue || '').replace(/"/g, '&quot;');
+  return `<input id="${id}" type="text" value="${safeValue}" placeholder="Girilmedi" class="border border-[#d3c3c0] rounded px-3 py-2 text-sm w-full"/>`;
 }
 
 async function loadIntegrations() {
@@ -583,9 +588,9 @@ async function loadIntegrations() {
             <h3 class="font-semibold text-[#0d1b3d]">${cfg.title}</h3>
             <span class="status-badge ${values.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}">${values.enabled ? 'Aktif' : 'Pasif'}</span>
           </div>
-          <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
+          <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest cursor-pointer">
             <input type="checkbox" id="${provider}-enabled" ${values.enabled ? 'checked' : ''}/>
-            <span>${values.enabled ? 'Aktif Et' : 'Pasif'}</span>
+            <span>Aktif</span>
           </label>
         </div>
         <div class="grid md:grid-cols-2 gap-3 mb-3">${fieldsHtml}</div>
@@ -616,6 +621,12 @@ async function loadIntegrations() {
         const msg = document.querySelector(`[data-saved-msg="${provider}"]`);
         msg.classList.remove('hidden');
         setTimeout(() => loadIntegrations(), 1200);
+      } else if (res.status === 401) {
+        alert('Oturumun sona ermiş. Tekrar giriş yapman gerekiyor.');
+        window.location.href = '/admin/login.html';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert('Kaydedilemedi: ' + (data.error || 'Bilinmeyen hata'));
       }
     });
   });

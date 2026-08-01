@@ -3,10 +3,23 @@ const fs = require('fs');
 const path = require('path');
 
 const USERS_FILE = path.join(__dirname, '..', '..', 'data', 'admin-users.json');
-const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 saat
+const SESSIONS_FILE = path.join(__dirname, '..', '..', 'data', 'admin-sessions.json');
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 gün
 
-// Basit in-memory oturum deposu (tek sunucu için yeterli)
-const sessions = new Map();
+// Oturumlar diske kaydedilir — sunucu yeniden başlasa bile (her deploy'da olduğu gibi)
+// giriş yapmış kullanıcılar dışarı atılmaz.
+function loadSessions() {
+  if (!fs.existsSync(SESSIONS_FILE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveSessions(sessions) {
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2), 'utf-8');
+}
 
 function loadUsers() {
   if (!fs.existsSync(USERS_FILE)) return [];
@@ -50,19 +63,25 @@ function login(username, password) {
   if (!user) return null;
   if (!verifyPassword(password, user.salt, user.hash)) return null;
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { username, expires: Date.now() + SESSION_TTL_MS });
+  const sessions = loadSessions();
+  sessions[token] = { username, expires: Date.now() + SESSION_TTL_MS };
+  saveSessions(sessions);
   return token;
 }
 
 function logout(token) {
-  sessions.delete(token);
+  const sessions = loadSessions();
+  delete sessions[token];
+  saveSessions(sessions);
 }
 
 function validateSession(token) {
-  const session = sessions.get(token);
+  const sessions = loadSessions();
+  const session = sessions[token];
   if (!session) return null;
   if (session.expires < Date.now()) {
-    sessions.delete(token);
+    delete sessions[token];
+    saveSessions(sessions);
     return null;
   }
   return session.username;
