@@ -28,7 +28,7 @@ async function sendTextMessage(phone, message) {
 
   const options = {
     hostname: 'graph.facebook.com',
-    path: `/v19.0/${creds.phoneNumberId}/messages`,
+    path: `/v19.0/${encodeURIComponent(creds.phoneNumberId.trim())}/messages`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ async function testConnection() {
   }
   const options = {
     hostname: 'graph.facebook.com',
-    path: `/v19.0/${creds.phoneNumberId}?fields=display_phone_number,verified_name`,
+    path: `/v19.0/${encodeURIComponent(creds.phoneNumberId.trim())}?fields=display_phone_number,verified_name`,
     method: 'GET',
     headers: { 'Authorization': 'Bearer ' + creds.accessToken },
   };

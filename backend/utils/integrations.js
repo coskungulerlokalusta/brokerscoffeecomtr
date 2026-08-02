@@ -91,12 +91,14 @@ async function updateProvider(provider, updates) {
   if (!data[provider]) throw new Error('Bilinmeyen entegrasyon: ' + provider);
   const secretFields = SECRET_FIELDS[provider] || [];
   Object.keys(updates).forEach((key) => {
+    let value = updates[key];
+    if (typeof value === 'string') value = value.trim(); // kopyala-yapıştırdan gelen görünmez boşluk/satır sonu karakterlerini temizle
     if (secretFields.includes(key)) {
-      if (updates[key] && !updates[key].startsWith('••••')) {
-        data[provider][key] = updates[key];
+      if (value && !value.startsWith('••••')) {
+        data[provider][key] = value;
       }
     } else {
-      data[provider][key] = updates[key];
+      data[provider][key] = value;
     }
   });
   await save(data);
