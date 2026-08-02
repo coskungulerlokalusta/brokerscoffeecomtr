@@ -27,9 +27,6 @@
 <!-- Adım 1: Telefon -->
 <form id="phone-form" class="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
 <input required id="phone" type="tel" placeholder="Telefon (05xx xxx xx xx)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<div id="staff-code-wrap" class="hidden">
-<input id="staff-code" placeholder="Mağaza Adı" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
-</div>
 <p id="phone-error" class="text-red-600 text-sm hidden"></p>
 <button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Kod Gönder</button>
 </form>
@@ -38,7 +35,10 @@
 <form id="verify-form" class="hidden bg-white rounded-lg shadow-sm p-6 flex flex-col gap-3">
 <p class="text-sm text-[#504442]">Telefonuna gelen 6 haneli kodu gir.</p>
 <input required id="otp-code" inputmode="numeric" maxlength="6" placeholder="123456" class="border border-[#d3c3c0] rounded px-4 py-2.5 text-center text-xl tracking-widest"/>
-<input id="name-input" placeholder="Ad Soyad (ilk kayıtta gerekli)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<input required id="name-input" placeholder="Ad Soyad" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<div id="staff-code-wrap" class="hidden">
+<input id="staff-code" placeholder="Mağaza Adı" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
+</div>
 <p id="verify-error" class="text-red-600 text-sm hidden"></p>
 <button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Doğrula ve Devam Et</button>
 <button type="button" id="back-btn" class="text-sm text-[#735c00] underline">← Numarayı Değiştir</button>
@@ -56,12 +56,14 @@ document.getElementById('tab-customer').addEventListener('click', () => {
   document.getElementById('tab-customer').classList.add('active');
   document.getElementById('tab-staff').classList.remove('active');
   document.getElementById('staff-code-wrap').classList.add('hidden');
+  document.getElementById('staff-code').required = false;
 });
 document.getElementById('tab-staff').addEventListener('click', () => {
   selectedType = 'staff';
   document.getElementById('tab-staff').classList.add('active');
   document.getElementById('tab-customer').classList.remove('active');
   document.getElementById('staff-code-wrap').classList.remove('hidden');
+  document.getElementById('staff-code').required = true;
 });
 
 document.getElementById('phone-form').addEventListener('submit', async (e) => {
