@@ -92,10 +92,6 @@
 <button id="bulk-clear-btn" class="text-xs font-semibold uppercase tracking-widest ml-auto opacity-70 hover:opacity-100">Seçimi Temizle</button>
 </div>
 
-<div id="photo-save-bar" class="hidden sticky top-0 z-30 bg-emerald-700 text-white rounded-lg px-4 py-3 mb-4 flex items-center gap-3">
-<span id="photo-save-count" class="text-sm font-semibold">0 resim seçildi</span>
-<button id="photo-save-btn" class="text-xs font-semibold uppercase tracking-widest bg-white text-emerald-700 rounded px-4 py-2 ml-auto">💾 Seçilen Resimleri Kaydet</button>
-</div>
 
 <div id="products-list" class="grid md:grid-cols-2 gap-3"></div>
 </div>
@@ -542,40 +538,6 @@ document.getElementById('bulk-clear-btn').addEventListener('click', () => {
   loadProducts();
 });
 
-// ---- Hızlı Fotoğraf Yükleme (satır bazlı, tek "Kaydet" ile hepsi) ----
-let pendingPhotos = new Map(); // productId -> File
-
-function updatePhotoSaveBar() {
-  const bar = document.getElementById('photo-save-bar');
-  const count = pendingPhotos.size;
-  document.getElementById('photo-save-count').textContent = `${count} resim seçildi`;
-  bar.classList.toggle('hidden', count === 0);
-}
-
-document.getElementById('photo-save-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('photo-save-btn');
-  const total = pendingPhotos.size;
-  if (!total) return;
-  btn.disabled = true;
-  let done = 0;
-
-  for (const [productId, file] of pendingPhotos.entries()) {
-    btn.textContent = `Yükleniyor... (${done + 1}/${total})`;
-    const formData = new FormData();
-    formData.append('image', file);
-    try {
-      await fetch(`/api/admin/products/${productId}`, { method: 'PUT', body: formData });
-    } catch (e) {}
-    done++;
-  }
-
-  btn.disabled = false;
-  btn.textContent = '💾 Seçilen Resimleri Kaydet';
-  pendingPhotos.clear();
-  updatePhotoSaveBar();
-  loadProducts();
-});
-
 // Toplu düzenle
 const bulkEditModal = document.getElementById('bulk-edit-modal');
 document.getElementById('bulk-edit-btn').addEventListener('click', () => {
@@ -672,16 +634,15 @@ async function loadProducts() {
         ${groups[category].map(p => `
           <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
             <input type="checkbox" class="product-select" value="${p.id}" data-category="${category}" ${selectedProductIds.has(p.id) ? 'checked' : ''}/>
-            <label class="relative w-14 h-14 rounded flex-shrink-0 cursor-pointer group/photo" title="Resmi değiştirmek için tıkla">
-              <img data-product-thumb="${p.id}" src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover"/>
-              <span class="absolute inset-0 rounded bg-black/0 group-hover/photo:bg-black/40 flex items-center justify-center text-white text-xs opacity-0 group-hover/photo:opacity-100 transition-all">📷</span>
-              <input type="file" class="photo-picker hidden" data-product-id="${p.id}" accept="image/jpeg,image/png,image/webp"/>
-            </label>
+            <img data-product-thumb="${p.id}" src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
               <p class="text-xs text-[#827472]">₺${p.basePrice}</p>
             </div>
             <button data-id="${p.id}" class="edit-product-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
+            <label class="photo-add-label text-xs font-semibold text-[#735c00] px-2 cursor-pointer" data-status-for="${p.id}">📷 Foto Ekle
+              <input type="file" class="photo-picker hidden" data-product-id="${p.id}" accept="image/jpeg,image/png,image/webp"/>
+            </label>
             <button data-id="${p.id}" class="delete-product-btn text-xs font-semibold text-red-600 px-2">Sil</button>
           </div>
         `).join('')}
@@ -690,14 +651,27 @@ async function loadProducts() {
   `).join('');
 
   list.querySelectorAll('.photo-picker').forEach(input => {
-    input.addEventListener('change', () => {
+    input.addEventListener('change', async () => {
       const file = input.files[0];
       const productId = input.dataset.productId;
       if (!file) return;
-      pendingPhotos.set(productId, file);
+
+      const label = list.querySelector(`[data-status-for="${productId}"]`);
+      const originalText = label.innerHTML.split('<input')[0];
+      label.childNodes[0].textContent = '⏳ Yükleniyor...';
+
       const thumb = list.querySelector(`[data-product-thumb="${productId}"]`);
       if (thumb) thumb.src = URL.createObjectURL(file);
-      updatePhotoSaveBar();
+
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await fetch(`/api/admin/products/${productId}`, { method: 'PUT', body: formData });
+        label.childNodes[0].textContent = res.ok ? '✅ Kaydedildi' : '❌ Hata';
+      } catch (e) {
+        label.childNodes[0].textContent = '❌ Hata';
+      }
+      setTimeout(() => { label.childNodes[0].textContent = '📷 Foto Ekle'; }, 1500);
     });
   });
 
