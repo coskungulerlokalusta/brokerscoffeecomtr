@@ -87,28 +87,17 @@
 
 <div id="bulk-toolbar" class="hidden sticky top-0 z-30 bg-[#0d1b3d] text-white rounded-lg px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
 <span id="bulk-selected-count" class="text-sm font-semibold">0 ürün seçili</span>
-<button id="bulk-image-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">🖼️ Toplu Resim Ata</button>
 <button id="bulk-edit-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">✏️ Toplu Düzenle</button>
 <button id="bulk-price-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">💰 Toplu Fiyat</button>
 <button id="bulk-clear-btn" class="text-xs font-semibold uppercase tracking-widest ml-auto opacity-70 hover:opacity-100">Seçimi Temizle</button>
 </div>
 
-<div id="products-list" class="grid md:grid-cols-2 gap-3"></div>
+<div id="photo-save-bar" class="hidden sticky top-0 z-30 bg-emerald-700 text-white rounded-lg px-4 py-3 mb-4 flex items-center gap-3">
+<span id="photo-save-count" class="text-sm font-semibold">0 resim seçildi</span>
+<button id="photo-save-btn" class="text-xs font-semibold uppercase tracking-widest bg-white text-emerald-700 rounded px-4 py-2 ml-auto">💾 Seçilen Resimleri Kaydet</button>
 </div>
 
-<!-- Toplu resim ata modalı -->
-<div id="bulk-image-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-<div class="bg-white rounded-lg p-6 w-full max-w-sm">
-<h3 class="font-semibold text-[#0d1b3d] mb-4">Toplu Resim Ata</h3>
-<p id="bulk-image-count" class="text-sm text-[#827472] mb-3"></p>
-<input type="file" id="bulk-image-input" accept="image/jpeg,image/png,image/webp" class="text-sm mb-4 w-full"/>
-<p id="bulk-image-error" class="text-red-600 text-sm mb-2 hidden"></p>
-<p id="bulk-image-success" class="text-emerald-600 text-sm mb-2 hidden"></p>
-<div class="flex gap-2">
-<button id="bulk-image-submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Uygula</button>
-<button id="bulk-image-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
-</div>
-</div>
+<div id="products-list" class="grid md:grid-cols-2 gap-3"></div>
 </div>
 
 <!-- Toplu düzenle modalı -->
@@ -553,33 +542,38 @@ document.getElementById('bulk-clear-btn').addEventListener('click', () => {
   loadProducts();
 });
 
-// Toplu resim ata
-const bulkImageModal = document.getElementById('bulk-image-modal');
-document.getElementById('bulk-image-btn').addEventListener('click', () => {
-  document.getElementById('bulk-image-count').textContent = `${selectedProductIds.size} ürüne uygulanacak`;
-  document.getElementById('bulk-image-input').value = '';
-  document.getElementById('bulk-image-error').classList.add('hidden');
-  document.getElementById('bulk-image-success').classList.add('hidden');
-  bulkImageModal.classList.remove('hidden');
-});
-document.getElementById('bulk-image-cancel').addEventListener('click', () => bulkImageModal.classList.add('hidden'));
-document.getElementById('bulk-image-submit').addEventListener('click', async () => {
-  const file = document.getElementById('bulk-image-input').files[0];
-  const errorEl = document.getElementById('bulk-image-error');
-  const successEl = document.getElementById('bulk-image-success');
-  errorEl.classList.add('hidden');
-  successEl.classList.add('hidden');
-  if (!file) { errorEl.textContent = 'Bir resim seç'; errorEl.classList.remove('hidden'); return; }
+// ---- Hızlı Fotoğraf Yükleme (satır bazlı, tek "Kaydet" ile hepsi) ----
+let pendingPhotos = new Map(); // productId -> File
 
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('productIds', JSON.stringify(Array.from(selectedProductIds)));
-  const res = await fetch('/api/admin/products/bulk-image', { method: 'POST', body: formData });
-  const data = await res.json();
-  if (!res.ok) { errorEl.textContent = data.error || 'Hata oluştu'; errorEl.classList.remove('hidden'); return; }
-  successEl.textContent = `${data.updated} ürün güncellendi.`;
-  successEl.classList.remove('hidden');
-  setTimeout(() => { bulkImageModal.classList.add('hidden'); loadProducts(); }, 1200);
+function updatePhotoSaveBar() {
+  const bar = document.getElementById('photo-save-bar');
+  const count = pendingPhotos.size;
+  document.getElementById('photo-save-count').textContent = `${count} resim seçildi`;
+  bar.classList.toggle('hidden', count === 0);
+}
+
+document.getElementById('photo-save-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('photo-save-btn');
+  const total = pendingPhotos.size;
+  if (!total) return;
+  btn.disabled = true;
+  let done = 0;
+
+  for (const [productId, file] of pendingPhotos.entries()) {
+    btn.textContent = `Yükleniyor... (${done + 1}/${total})`;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      await fetch(`/api/admin/products/${productId}`, { method: 'PUT', body: formData });
+    } catch (e) {}
+    done++;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '💾 Seçilen Resimleri Kaydet';
+  pendingPhotos.clear();
+  updatePhotoSaveBar();
+  loadProducts();
 });
 
 // Toplu düzenle
@@ -678,7 +672,11 @@ async function loadProducts() {
         ${groups[category].map(p => `
           <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
             <input type="checkbox" class="product-select" value="${p.id}" data-category="${category}" ${selectedProductIds.has(p.id) ? 'checked' : ''}/>
-            <img src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
+            <label class="relative w-14 h-14 rounded flex-shrink-0 cursor-pointer group/photo" title="Resmi değiştirmek için tıkla">
+              <img data-product-thumb="${p.id}" src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover"/>
+              <span class="absolute inset-0 rounded bg-black/0 group-hover/photo:bg-black/40 flex items-center justify-center text-white text-xs opacity-0 group-hover/photo:opacity-100 transition-all">📷</span>
+              <input type="file" class="photo-picker hidden" data-product-id="${p.id}" accept="image/jpeg,image/png,image/webp"/>
+            </label>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
               <p class="text-xs text-[#827472]">₺${p.basePrice}</p>
@@ -690,6 +688,18 @@ async function loadProducts() {
       </div>
     </div>
   `).join('');
+
+  list.querySelectorAll('.photo-picker').forEach(input => {
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      const productId = input.dataset.productId;
+      if (!file) return;
+      pendingPhotos.set(productId, file);
+      const thumb = list.querySelector(`[data-product-thumb="${productId}"]`);
+      if (thumb) thumb.src = URL.createObjectURL(file);
+      updatePhotoSaveBar();
+    });
+  });
 
   list.querySelectorAll('.product-select').forEach(cb => {
     cb.addEventListener('change', () => {
