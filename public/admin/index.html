@@ -84,7 +84,69 @@
 <h2 class="text-2xl text-[#0d1b3d]">Ürün Yönetimi</h2>
 <button id="add-product-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ürün Ekle</button>
 </div>
+
+<div id="bulk-toolbar" class="hidden sticky top-0 z-30 bg-[#0d1b3d] text-white rounded-lg px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+<span id="bulk-selected-count" class="text-sm font-semibold">0 ürün seçili</span>
+<button id="bulk-image-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">🖼️ Toplu Resim Ata</button>
+<button id="bulk-edit-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">✏️ Toplu Düzenle</button>
+<button id="bulk-price-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">💰 Toplu Fiyat</button>
+<button id="bulk-clear-btn" class="text-xs font-semibold uppercase tracking-widest ml-auto opacity-70 hover:opacity-100">Seçimi Temizle</button>
+</div>
+
 <div id="products-list" class="grid md:grid-cols-2 gap-3"></div>
+</div>
+
+<!-- Toplu resim ata modalı -->
+<div id="bulk-image-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-sm">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Toplu Resim Ata</h3>
+<p id="bulk-image-count" class="text-sm text-[#827472] mb-3"></p>
+<input type="file" id="bulk-image-input" accept="image/jpeg,image/png,image/webp" class="text-sm mb-4 w-full"/>
+<p id="bulk-image-error" class="text-red-600 text-sm mb-2 hidden"></p>
+<p id="bulk-image-success" class="text-emerald-600 text-sm mb-2 hidden"></p>
+<div class="flex gap-2">
+<button id="bulk-image-submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Uygula</button>
+<button id="bulk-image-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
+</div>
+</div>
+</div>
+
+<!-- Toplu düzenle modalı -->
+<div id="bulk-edit-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-sm">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Toplu Düzenle</h3>
+<p id="bulk-edit-count" class="text-sm text-[#827472] mb-3"></p>
+<p class="text-xs text-[#827472] mb-3">Boş bıraktığın alanlar değişmez.</p>
+<input id="bulk-edit-category" placeholder="Kategori (örn. Soğuk İçecekler)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
+<input id="bulk-edit-subcategory" placeholder="Alt Kategori" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
+<textarea id="bulk-edit-description" placeholder="Açıklama" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm" rows="2"></textarea>
+<p id="bulk-edit-error" class="text-red-600 text-sm mb-2 hidden"></p>
+<p id="bulk-edit-success" class="text-emerald-600 text-sm mb-2 hidden"></p>
+<div class="flex gap-2">
+<button id="bulk-edit-submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Uygula</button>
+<button id="bulk-edit-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
+</div>
+</div>
+</div>
+
+<!-- Toplu fiyat modalı -->
+<div id="bulk-price-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg p-6 w-full max-w-sm">
+<h3 class="font-semibold text-[#0d1b3d] mb-4">Toplu Fiyat Güncelle</h3>
+<p id="bulk-price-count" class="text-sm text-[#827472] mb-3"></p>
+<select id="bulk-price-mode" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm">
+<option value="percent">Yüzde Artış/Azalış (örn. 10 = %10 zam, -10 = %10 indirim)</option>
+<option value="amount">Sabit Tutar Ekle/Çıkar (₺)</option>
+<option value="set">Tüm Boyutları Bu Fiyata Sabitle (₺)</option>
+</select>
+<input id="bulk-price-value" type="number" step="0.01" placeholder="Değer" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
+<p id="bulk-price-error" class="text-red-600 text-sm mb-2 hidden"></p>
+<p id="bulk-price-success" class="text-emerald-600 text-sm mb-2 hidden"></p>
+<div class="flex gap-2">
+<button id="bulk-price-submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Uygula</button>
+<button id="bulk-price-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Vazgeç</button>
+</div>
+</div>
 </div>
 
 <div id="product-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -476,6 +538,117 @@ function openProductModal(product) {
 document.getElementById('add-product-btn').addEventListener('click', () => openProductModal(null));
 document.getElementById('product-cancel').addEventListener('click', () => productModal.classList.add('hidden'));
 
+// ---- Toplu İşlemler ----
+let selectedProductIds = new Set();
+
+function updateBulkToolbar() {
+  const toolbar = document.getElementById('bulk-toolbar');
+  const count = selectedProductIds.size;
+  document.getElementById('bulk-selected-count').textContent = `${count} ürün seçili`;
+  toolbar.classList.toggle('hidden', count === 0);
+}
+
+document.getElementById('bulk-clear-btn').addEventListener('click', () => {
+  selectedProductIds.clear();
+  loadProducts();
+});
+
+// Toplu resim ata
+const bulkImageModal = document.getElementById('bulk-image-modal');
+document.getElementById('bulk-image-btn').addEventListener('click', () => {
+  document.getElementById('bulk-image-count').textContent = `${selectedProductIds.size} ürüne uygulanacak`;
+  document.getElementById('bulk-image-input').value = '';
+  document.getElementById('bulk-image-error').classList.add('hidden');
+  document.getElementById('bulk-image-success').classList.add('hidden');
+  bulkImageModal.classList.remove('hidden');
+});
+document.getElementById('bulk-image-cancel').addEventListener('click', () => bulkImageModal.classList.add('hidden'));
+document.getElementById('bulk-image-submit').addEventListener('click', async () => {
+  const file = document.getElementById('bulk-image-input').files[0];
+  const errorEl = document.getElementById('bulk-image-error');
+  const successEl = document.getElementById('bulk-image-success');
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+  if (!file) { errorEl.textContent = 'Bir resim seç'; errorEl.classList.remove('hidden'); return; }
+
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('productIds', JSON.stringify(Array.from(selectedProductIds)));
+  const res = await fetch('/api/admin/products/bulk-image', { method: 'POST', body: formData });
+  const data = await res.json();
+  if (!res.ok) { errorEl.textContent = data.error || 'Hata oluştu'; errorEl.classList.remove('hidden'); return; }
+  successEl.textContent = `${data.updated} ürün güncellendi.`;
+  successEl.classList.remove('hidden');
+  setTimeout(() => { bulkImageModal.classList.add('hidden'); loadProducts(); }, 1200);
+});
+
+// Toplu düzenle
+const bulkEditModal = document.getElementById('bulk-edit-modal');
+document.getElementById('bulk-edit-btn').addEventListener('click', () => {
+  document.getElementById('bulk-edit-count').textContent = `${selectedProductIds.size} ürüne uygulanacak`;
+  ['bulk-edit-category', 'bulk-edit-subcategory', 'bulk-edit-description'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bulk-edit-error').classList.add('hidden');
+  document.getElementById('bulk-edit-success').classList.add('hidden');
+  bulkEditModal.classList.remove('hidden');
+});
+document.getElementById('bulk-edit-cancel').addEventListener('click', () => bulkEditModal.classList.add('hidden'));
+document.getElementById('bulk-edit-submit').addEventListener('click', async () => {
+  const errorEl = document.getElementById('bulk-edit-error');
+  const successEl = document.getElementById('bulk-edit-success');
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+
+  const res = await fetch('/api/admin/products/bulk-edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productIds: Array.from(selectedProductIds),
+      category: document.getElementById('bulk-edit-category').value,
+      subcategory: document.getElementById('bulk-edit-subcategory').value,
+      description: document.getElementById('bulk-edit-description').value,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) { errorEl.textContent = data.error || 'Hata oluştu'; errorEl.classList.remove('hidden'); return; }
+  successEl.textContent = `${data.updated} ürün güncellendi.`;
+  successEl.classList.remove('hidden');
+  setTimeout(() => { bulkEditModal.classList.add('hidden'); loadProducts(); }, 1200);
+});
+
+// Toplu fiyat
+const bulkPriceModal = document.getElementById('bulk-price-modal');
+document.getElementById('bulk-price-btn').addEventListener('click', () => {
+  document.getElementById('bulk-price-count').textContent = `${selectedProductIds.size} ürüne uygulanacak`;
+  document.getElementById('bulk-price-value').value = '';
+  document.getElementById('bulk-price-error').classList.add('hidden');
+  document.getElementById('bulk-price-success').classList.add('hidden');
+  bulkPriceModal.classList.remove('hidden');
+});
+document.getElementById('bulk-price-cancel').addEventListener('click', () => bulkPriceModal.classList.add('hidden'));
+document.getElementById('bulk-price-submit').addEventListener('click', async () => {
+  const errorEl = document.getElementById('bulk-price-error');
+  const successEl = document.getElementById('bulk-price-success');
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+  const value = document.getElementById('bulk-price-value').value;
+  if (value === '') { errorEl.textContent = 'Bir değer gir'; errorEl.classList.remove('hidden'); return; }
+
+  const res = await fetch('/api/admin/products/bulk-price', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productIds: Array.from(selectedProductIds),
+      mode: document.getElementById('bulk-price-mode').value,
+      value,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) { errorEl.textContent = data.error || 'Hata oluştu'; errorEl.classList.remove('hidden'); return; }
+  successEl.textContent = `${data.updated} ürün güncellendi.`;
+  successEl.classList.remove('hidden');
+  setTimeout(() => { bulkPriceModal.classList.add('hidden'); loadProducts(); }, 1200);
+});
+
 async function loadProducts() {
   const res = await fetch('/api/admin/products');
   if (!res.ok) return;
@@ -497,10 +670,14 @@ async function loadProducts() {
   list.className = 'flex flex-col gap-6';
   list.innerHTML = Object.keys(groups).sort().map(category => `
     <div>
-      <h3 class="text-sm font-bold uppercase tracking-widest text-[#735c00] mb-2">${category} <span class="text-[#827472] font-normal normal-case">(${groups[category].length})</span></h3>
+      <h3 class="text-sm font-bold uppercase tracking-widest text-[#735c00] mb-2 flex items-center gap-2">
+        <label class="flex items-center gap-1.5 normal-case font-normal text-[#504442]"><input type="checkbox" class="category-select-all" data-category="${category}"/> Tümü</label>
+        ${category} <span class="text-[#827472] font-normal normal-case">(${groups[category].length})</span>
+      </h3>
       <div class="grid md:grid-cols-2 gap-3">
         ${groups[category].map(p => `
           <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
+            <input type="checkbox" class="product-select" value="${p.id}" data-category="${category}" ${selectedProductIds.has(p.id) ? 'checked' : ''}/>
             <img src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
@@ -513,6 +690,25 @@ async function loadProducts() {
       </div>
     </div>
   `).join('');
+
+  list.querySelectorAll('.product-select').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedProductIds.add(cb.value);
+      else selectedProductIds.delete(cb.value);
+      updateBulkToolbar();
+    });
+  });
+  list.querySelectorAll('.category-select-all').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const cat = cb.dataset.category;
+      list.querySelectorAll(`.product-select[data-category="${CSS.escape(cat)}"]`).forEach(pc => {
+        pc.checked = cb.checked;
+        if (cb.checked) selectedProductIds.add(pc.value);
+        else selectedProductIds.delete(pc.value);
+      });
+      updateBulkToolbar();
+    });
+  });
 
   list.querySelectorAll('.edit-product-btn').forEach(btn => {
     btn.addEventListener('click', () => {

@@ -89,4 +89,71 @@ router.delete('/:id', adminAuth.requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Toplu resim atama — seçilen ürünlerin hepsine aynı resmi uygular
+router.post('/bulk-image', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    const ids = JSON.parse(productIds || '[]');
+    if (!ids.length) return res.status(400).json({ error: 'Ürün seçilmedi' });
+    if (!req.file) return res.status(400).json({ error: 'Resim dosyası gerekli' });
+
+    const image = `/uploads/products/${req.file.filename}`;
+    let updated = 0;
+    for (const id of ids) {
+      const result = await productStore.updateProduct(id, { image });
+      if (result) updated++;
+    }
+    res.json({ updated, image });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Toplu düzenleme — seçilen ürünlerin kategori/alt kategori/açıklamasını aynı anda değiştirir
+router.post('/bulk-edit', adminAuth.requireAuth, async (req, res) => {
+  const { productIds, category, subcategory, description } = req.body;
+  if (!productIds || !productIds.length) return res.status(400).json({ error: 'Ürün seçilmedi' });
+
+  const updates = {};
+  if (category !== undefined && category !== '') updates.category = category;
+  if (subcategory !== undefined && subcategory !== '') updates.subcategory = subcategory;
+  if (description !== undefined && description !== '') updates.description = description;
+  if (!Object.keys(updates).length) return res.status(400).json({ error: 'Değiştirilecek bir alan gerekli' });
+
+  let updated = 0;
+  for (const id of productIds) {
+    const result = await productStore.updateProduct(id, updates);
+    if (result) updated++;
+  }
+  res.json({ updated });
+});
+
+// Toplu fiyat güncelleme — yüzde artış/azalış, sabit tutar ekleme, ya da tüm boyutlara sabit fiyat
+router.post('/bulk-price', adminAuth.requireAuth, async (req, res) => {
+  const { productIds, mode, value } = req.body; // mode: 'percent' | 'amount' | 'set'
+  if (!productIds || !productIds.length) return res.status(400).json({ error: 'Ürün seçilmedi' });
+  const num = Number(value);
+  if (isNaN(num)) return res.status(400).json({ error: 'Geçersiz değer' });
+
+  const allProducts = await productStore.loadProducts();
+  let updated = 0;
+
+  for (const id of productIds) {
+    const product = allProducts.find((p) => p.id === id);
+    if (!product) continue;
+
+    const newSizes = product.sizes.map((s) => {
+      let newPrice = s.price;
+      if (mode === 'percent') newPrice = s.price * (1 + num / 100);
+      else if (mode === 'amount') newPrice = s.price + num;
+      else if (mode === 'set') newPrice = num;
+      return { ...s, price: Math.max(0, Math.round(newPrice * 100) / 100) };
+    });
+
+    await productStore.updateProduct(id, { sizes: newSizes });
+    updated++;
+  }
+  res.json({ updated });
+});
+
 module.exports = router;
