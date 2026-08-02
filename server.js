@@ -18,6 +18,8 @@ const rewardsRoutes = require('./backend/routes/rewards');
 const siteContentRoutes = require('./backend/routes/siteContent');
 const pushRoutes = require('./backend/routes/push');
 const whatsappWebhookRoutes = require('./backend/routes/whatsappWebhook');
+const instagramWebhookRoutes = require('./backend/routes/instagramWebhook');
+const messengerWebhookRoutes = require('./backend/routes/messengerWebhook');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,8 @@ app.use('/api/rewards', rewardsRoutes);
 app.use('/api/site-content', siteContentRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/webhooks', whatsappWebhookRoutes);
+app.use('/api/webhooks', instagramWebhookRoutes);
+app.use('/api/webhooks', messengerWebhookRoutes);
 
 // Tüm ürünleri getir (opsiyonel ?category= filtresi ile)
 app.get('/api/products', async (req, res) => {

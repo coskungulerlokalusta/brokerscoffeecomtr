@@ -13,6 +13,10 @@ const customerAuth = require('../utils/customerAuth');
 const messageQueue = require('../utils/messageQueue');
 const pushNotifications = require('../utils/pushNotifications');
 const whatsappConversations = require('../utils/whatsappConversations');
+const instagram = require('../utils/instagram');
+const instagramConversations = require('../utils/instagramConversations');
+const messenger = require('../utils/messenger');
+const messengerConversations = require('../utils/messengerConversations');
 const crypto = require('crypto');
 
 const COOKIE_OPTS = {
@@ -172,6 +176,8 @@ router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, r
     netgsm: () => require('../utils/netgsm').testConnection(req.body.testPhone),
     whatsapp: () => require('../utils/whatsapp').testConnection(),
     anthropic: () => require('../utils/aiAssistant').testConnection(),
+    instagram: () => require('../utils/instagram').testConnection(),
+    messenger: () => require('../utils/messenger').testConnection(),
   };
   if (!testers[provider]) {
     return res.status(400).json({ error: 'Bu sağlayıcı için otomatik bağlantı testi henüz yok.' });
@@ -307,6 +313,52 @@ router.post('/whatsapp/conversations/:phone/reply', adminAuth.requireAuth, async
   try {
     await whatsapp.sendTextMessage(req.params.phone, text);
     await whatsappConversations.addMessage(req.params.phone, { direction: 'out', text });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Instagram Gelen Kutusu — sohbet listesi
+router.get('/instagram/conversations', adminAuth.requireAuth, async (req, res) => {
+  res.json(await instagramConversations.listConversations());
+});
+
+router.get('/instagram/conversations/:igsid', adminAuth.requireAuth, async (req, res) => {
+  const convo = await instagramConversations.getConversation(req.params.igsid);
+  if (!convo) return res.status(404).json({ error: 'Sohbet bulunamadı' });
+  res.json(convo);
+});
+
+router.post('/instagram/conversations/:igsid/reply', adminAuth.requireAuth, async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Mesaj metni gerekli' });
+  try {
+    await instagram.sendMessage(req.params.igsid, text);
+    await instagramConversations.addMessage(req.params.igsid, { direction: 'out', text });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Messenger Gelen Kutusu — sohbet listesi
+router.get('/messenger/conversations', adminAuth.requireAuth, async (req, res) => {
+  res.json(await messengerConversations.listConversations());
+});
+
+router.get('/messenger/conversations/:psid', adminAuth.requireAuth, async (req, res) => {
+  const convo = await messengerConversations.getConversation(req.params.psid);
+  if (!convo) return res.status(404).json({ error: 'Sohbet bulunamadı' });
+  res.json(convo);
+});
+
+router.post('/messenger/conversations/:psid/reply', adminAuth.requireAuth, async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Mesaj metni gerekli' });
+  try {
+    await messenger.sendMessage(req.params.psid, text);
+    await messengerConversations.addMessage(req.params.psid, { direction: 'out', text });
     res.json({ ok: true });
   } catch (err) {
     res.status(400).json({ error: err.message });
