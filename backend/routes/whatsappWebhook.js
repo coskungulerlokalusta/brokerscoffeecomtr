@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const integrations = require('../utils/integrations');
+const whatsappConversations = require('../utils/whatsappConversations');
+const customerAuth = require('../utils/customerAuth');
 
 // Meta, webhook'u kaydederken bu adrese GET isteği atıp doğrulama yapar.
 // hub.verify_token, panelde kayıtlı "Doğrulama Anahtarı (Verify Token)" ile eşleşmeli.
@@ -20,8 +22,7 @@ router.get('/whatsapp', async (req, res) => {
 });
 
 // Gelen mesajlar / durum güncellemeleri buraya POST edilir.
-// Şimdilik sadece loglar — ileride otomatik sohbet/sipariş botu buraya bağlanacak.
-router.post('/whatsapp', (req, res) => {
+router.post('/whatsapp', async (req, res) => {
   try {
     const entry = req.body.entry && req.body.entry[0];
     const change = entry && entry.changes && entry.changes[0];
@@ -29,7 +30,21 @@ router.post('/whatsapp', (req, res) => {
     const message = value && value.messages && value.messages[0];
 
     if (message) {
-      console.log(`WhatsApp mesajı alındı: ${message.from} → "${message.text ? message.text.body : '[metin değil]'}"`);
+      const phone = message.from; // 90XXXXXXXXXX formatında
+      const text = message.text ? message.text.body : '[metin olmayan içerik]';
+      const contactName = value.contacts && value.contacts[0] && value.contacts[0].profile
+        ? value.contacts[0].profile.name
+        : null;
+
+      // Kayıtlı bir üyeyse gerçek adını kullan
+      let displayName = contactName;
+      try {
+        const customer = await customerAuth.findByPhone(phone);
+        if (customer) displayName = customer.name;
+      } catch (e) {}
+
+      await whatsappConversations.addMessage(phone, { direction: 'in', text, name: displayName });
+      console.log(`WhatsApp mesajı alındı: ${phone} → "${text}"`);
     }
   } catch (err) {
     console.error('WhatsApp webhook işleme hatası:', err.message);

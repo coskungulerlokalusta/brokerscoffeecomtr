@@ -55,6 +55,7 @@
 <button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
 <button data-section="site-content" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🖼️ Site Görselleri</button>
 <button data-section="members" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👤 Üyeler &amp; Mesajlaşma</button>
+<button data-section="whatsapp-inbox" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">💬 WhatsApp Gelen Kutusu</button>
 <button data-section="integrations" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🔌 Entegrasyonlar</button>
 </div>
 </nav>
@@ -249,6 +250,27 @@
 <button id="notify-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Kapat</button>
 </div>
 </div>
+</div>
+</div>
+
+<div id="section-whatsapp-inbox" class="admin-panel hidden">
+<h2 class="text-2xl text-[#0d1b3d] mb-4">WhatsApp Gelen Kutusu</h2>
+<p class="text-sm text-[#827472] mb-4">Bu numaraya gelen mesajlar burada listelenir. Bir sohbete tıklayıp doğrudan buradan cevap yazabilirsin.</p>
+<div id="whatsapp-conversations-list" class="flex flex-col gap-2"></div>
+</div>
+
+<div id="whatsapp-chat-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+<div class="bg-white rounded-lg w-full max-w-md max-h-[85vh] flex flex-col">
+<div class="p-4 border-b border-[#e3e2e0] flex items-center justify-between">
+<h3 id="whatsapp-chat-title" class="font-semibold text-[#0d1b3d]"></h3>
+<button id="whatsapp-chat-close" class="text-[#827472] text-sm">Kapat ✕</button>
+</div>
+<div id="whatsapp-chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+<div class="p-3 border-t border-[#e3e2e0] flex gap-2">
+<input id="whatsapp-reply-input" placeholder="Mesaj yaz..." class="flex-1 border border-[#d3c3c0] rounded px-3 py-2 text-sm"/>
+<button id="whatsapp-reply-send" class="bg-[#0d1b3d] text-white text-sm font-semibold px-4 py-2 rounded">Gönder</button>
+</div>
+<p id="whatsapp-reply-error" class="text-red-600 text-xs px-3 pb-2 hidden"></p>
 </div>
 </div>
 
@@ -1419,6 +1441,79 @@ document.getElementById('push-send-btn').addEventListener('click', async () => {
   }
 });
 
+// ---- WhatsApp Gelen Kutusu ----
+let currentChatPhone = null;
+
+async function loadWhatsappConversations() {
+  const res = await fetch('/api/admin/whatsapp/conversations');
+  if (!res.ok) return;
+  const conversations = await res.json();
+  const list = document.getElementById('whatsapp-conversations-list');
+  if (!conversations.length) {
+    list.innerHTML = '<p class="text-[#827472] text-sm">Henüz mesaj yok.</p>';
+    return;
+  }
+  list.innerHTML = conversations.map(c => `
+    <div class="whatsapp-convo-row bg-white rounded-lg shadow-sm p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50" data-phone="${c.phone}">
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold text-[#0d1b3d]">${c.name || c.phone}</p>
+        <p class="text-xs text-[#827472] truncate">${c.lastMessage}</p>
+      </div>
+      <span class="text-[10px] text-[#827472] flex-shrink-0 ml-2">${c.lastTimestamp ? new Date(c.lastTimestamp).toLocaleString('tr-TR') : ''}</span>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.whatsapp-convo-row').forEach(row => {
+    row.addEventListener('click', () => openWhatsappChat(row.dataset.phone));
+  });
+}
+
+async function openWhatsappChat(phone) {
+  currentChatPhone = phone;
+  const res = await fetch(`/api/admin/whatsapp/conversations/${phone}`);
+  if (!res.ok) return;
+  const convo = await res.json();
+
+  document.getElementById('whatsapp-chat-title').textContent = convo.name || phone;
+  const messagesEl = document.getElementById('whatsapp-chat-messages');
+  messagesEl.innerHTML = convo.messages.map(m => `
+    <div class="max-w-[80%] px-3 py-2 rounded-lg text-sm ${m.direction === 'out' ? 'bg-[#0d1b3d] text-white self-end' : 'bg-gray-100 text-[#1a1c1a] self-start'}">
+      ${m.text}
+      <div class="text-[10px] opacity-60 mt-1">${new Date(m.timestamp).toLocaleString('tr-TR')}</div>
+    </div>
+  `).join('');
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  document.getElementById('whatsapp-reply-input').value = '';
+  document.getElementById('whatsapp-reply-error').classList.add('hidden');
+  document.getElementById('whatsapp-chat-modal').classList.remove('hidden');
+}
+
+document.getElementById('whatsapp-chat-close').addEventListener('click', () => {
+  document.getElementById('whatsapp-chat-modal').classList.add('hidden');
+  loadWhatsappConversations();
+});
+
+document.getElementById('whatsapp-reply-send').addEventListener('click', async () => {
+  const text = document.getElementById('whatsapp-reply-input').value;
+  const errorEl = document.getElementById('whatsapp-reply-error');
+  errorEl.classList.add('hidden');
+  if (!text || !currentChatPhone) return;
+
+  const res = await fetch(`/api/admin/whatsapp/conversations/${currentChatPhone}/reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Gönderilemedi';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  openWhatsappChat(currentChatPhone);
+});
+
 // ---- Üyeler & Mesajlaşma ----
 let allMembers = [];
 let memberFilter = 'all';
@@ -1631,6 +1726,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadMembers();
     loadMessageQueue();
     loadPushSubscriberCount();
+    loadWhatsappConversations();
   }
 })();
 </script>

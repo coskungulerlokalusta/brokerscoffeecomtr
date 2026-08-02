@@ -12,6 +12,7 @@ const whatsapp = require('../utils/whatsapp');
 const customerAuth = require('../utils/customerAuth');
 const messageQueue = require('../utils/messageQueue');
 const pushNotifications = require('../utils/pushNotifications');
+const whatsappConversations = require('../utils/whatsappConversations');
 const crypto = require('crypto');
 
 const COOKIE_OPTS = {
@@ -285,6 +286,31 @@ router.post('/push/send', adminAuth.requireAuth, async (req, res) => {
   if (!title || !body) return res.status(400).json({ error: 'Başlık ve mesaj gerekli' });
   const result = await pushNotifications.sendToAll({ title, body, url }, recipientIds);
   res.json(result);
+});
+
+// WhatsApp Gelen Kutusu — sohbet listesi
+router.get('/whatsapp/conversations', adminAuth.requireAuth, async (req, res) => {
+  res.json(await whatsappConversations.listConversations());
+});
+
+// Tek bir sohbetin tüm mesajları
+router.get('/whatsapp/conversations/:phone', adminAuth.requireAuth, async (req, res) => {
+  const convo = await whatsappConversations.getConversation(req.params.phone);
+  if (!convo) return res.status(404).json({ error: 'Sohbet bulunamadı' });
+  res.json(convo);
+});
+
+// Bir sohbete cevap gönder
+router.post('/whatsapp/conversations/:phone/reply', adminAuth.requireAuth, async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Mesaj metni gerekli' });
+  try {
+    await whatsapp.sendTextMessage(req.params.phone, text);
+    await whatsappConversations.addMessage(req.params.phone, { direction: 'out', text });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 module.exports = router;
