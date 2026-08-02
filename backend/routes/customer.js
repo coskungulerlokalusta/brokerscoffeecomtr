@@ -74,10 +74,8 @@ router.get('/me', customerAuth.requireAuth, async (req, res) => {
     phone: req.customer.phone,
     isStaff: req.customer.isStaff,
     loyaltyPoints: req.customer.loyaltyPoints || 0,
-    staffDiscountPercent: req.customer.isStaff ? currentSettings.staffDiscountPercent : 0,
-    staffBannerText: req.customer.isStaff
-      ? currentSettings.staffBannerText.replace('{percent}', currentSettings.staffDiscountPercent)
-      : null,
+    staffDiscountByGroup: req.customer.isStaff ? currentSettings.staffDiscountByGroup : null,
+    staffBannerText: req.customer.isStaff ? currentSettings.staffBannerText : null,
   });
 });
 

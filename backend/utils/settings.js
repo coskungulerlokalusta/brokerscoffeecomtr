@@ -1,11 +1,15 @@
 const crypto = require('crypto');
 const kv = require('./kvStore');
+const { GROUPS } = require('./discountGroups');
 
 const KEY = 'settings';
 
+const DEFAULT_DISCOUNT_BY_GROUP = {};
+GROUPS.forEach((g) => { DEFAULT_DISCOUNT_BY_GROUP[g.key] = 20; });
+
 const DEFAULTS = {
-  staffDiscountPercent: 20,
-  staffBannerText: 'Personel indirimi: Aldığınız ürünler %{percent} indirimli.',
+  staffDiscountByGroup: DEFAULT_DISCOUNT_BY_GROUP,
+  staffBannerText: 'Personel indirimi uygulanıyor.',
   staffSignupCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
   pointsPerTL: 10,
 };
@@ -16,7 +20,10 @@ async function loadSettings() {
     await kv.setJSON(KEY, DEFAULTS);
     return DEFAULTS;
   }
-  return { ...DEFAULTS, ...stored };
+  const merged = { ...DEFAULTS, ...stored };
+  // Yeni bir grup eklendiyse eski kayıtlarda eksik kalmasın diye tamamla
+  merged.staffDiscountByGroup = { ...DEFAULT_DISCOUNT_BY_GROUP, ...(stored.staffDiscountByGroup || {}) };
+  return merged;
 }
 
 async function saveSettings(settings) {

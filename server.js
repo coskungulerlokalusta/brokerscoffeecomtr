@@ -16,6 +16,7 @@ const customerRoutes = require('./backend/routes/customer');
 const adminProductRoutes = require('./backend/routes/adminProducts');
 const rewardsRoutes = require('./backend/routes/rewards');
 const siteContentRoutes = require('./backend/routes/siteContent');
+const pushRoutes = require('./backend/routes/push');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use('/api/account', customerRoutes);
 app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/site-content', siteContentRoutes);
+app.use('/api/push', pushRoutes);
 
 // Tüm ürünleri getir (opsiyonel ?category= filtresi ile)
 app.get('/api/products', async (req, res) => {

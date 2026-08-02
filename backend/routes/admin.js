@@ -11,6 +11,7 @@ const aiAssistant = require('../utils/aiAssistant');
 const whatsapp = require('../utils/whatsapp');
 const customerAuth = require('../utils/customerAuth');
 const messageQueue = require('../utils/messageQueue');
+const pushNotifications = require('../utils/pushNotifications');
 const crypto = require('crypto');
 
 const COOKIE_OPTS = {
@@ -75,14 +76,18 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 });
 
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
-  const { staffDiscountPercent, staffBannerText } = req.body;
+  const { staffDiscountByGroup, staffBannerText } = req.body;
   const updates = {};
-  if (staffDiscountPercent !== undefined) {
-    const pct = Number(staffDiscountPercent);
-    if (isNaN(pct) || pct < 0 || pct > 100) {
-      return res.status(400).json({ error: 'İndirim oranı 0-100 arası olmalı' });
+  if (staffDiscountByGroup !== undefined) {
+    const cleaned = {};
+    for (const key of Object.keys(staffDiscountByGroup)) {
+      const pct = Number(staffDiscountByGroup[key]);
+      if (isNaN(pct) || pct < 0 || pct > 100) {
+        return res.status(400).json({ error: `İndirim oranı 0-100 arası olmalı (${key})` });
+      }
+      cleaned[key] = pct;
     }
-    updates.staffDiscountPercent = pct;
+    updates.staffDiscountByGroup = cleaned;
   }
   if (staffBannerText !== undefined) {
     updates.staffBannerText = staffBannerText;
@@ -266,6 +271,20 @@ router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, re
 
   await campaignStore.updateCampaign(campaign.id, { staffNotifiedAt: new Date().toISOString() });
   res.json({ results });
+});
+
+// Push bildirim: kaç kişi abone, listesi
+router.get('/push/subscribers', adminAuth.requireAuth, async (req, res) => {
+  const subs = await pushNotifications.loadSubscriptions();
+  res.json({ count: subs.length });
+});
+
+// Push bildirim gönder — recipientIds boşsa tüm abonelere gider
+router.post('/push/send', adminAuth.requireAuth, async (req, res) => {
+  const { title, body, url, recipientIds } = req.body;
+  if (!title || !body) return res.status(400).json({ error: 'Başlık ve mesaj gerekli' });
+  const result = await pushNotifications.sendToAll({ title, body, url }, recipientIds);
+  res.json(result);
 });
 
 module.exports = router;

@@ -106,39 +106,43 @@ if (!cart.length) {
   renderSummary();
 }
 
-let staffDiscountPercent = 0;
+let discountPreview = null;
 
-async function checkStaffStatus() {
+async function refreshDiscountPreview() {
   try {
-    const res = await fetch('/api/account/me');
+    const res = await fetch('/api/payment/preview-discount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: getCart().map(i => ({ productId: i.productId, price: i.price, qty: i.qty })) }),
+    });
     if (res.ok) {
-      const data = await res.json();
-      if (data.isStaff) {
-        staffDiscountPercent = data.staffDiscountPercent;
-        renderSummary();
-      }
+      discountPreview = await res.json();
+      renderSummary();
     }
   } catch (e) {}
 }
 
 function renderSummary() {
+  const items = getCart();
   const subtotal = cartTotal();
-  const discount = subtotal * (staffDiscountPercent / 100);
-  const total = subtotal - discount;
+  const discountAmount = discountPreview ? discountPreview.discountAmount : 0;
+  const total = subtotal - discountAmount;
 
-  let html = getCart().map(i =>
+  let html = items.map(i =>
     `<div class="flex justify-between"><span>${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}</span><span>₺${(i.price * i.qty).toFixed(0)}</span></div>`
   ).join('');
 
-  if (staffDiscountPercent > 0) {
-    html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>Personel İndirimi (%${staffDiscountPercent})</span><span>−₺${discount.toFixed(0)}</span></div>`;
+  if (discountPreview && discountPreview.discountBreakdown.length) {
+    discountPreview.discountBreakdown.forEach(d => {
+      html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>Personel İndirimi (%${d.percent})</span><span>−₺${d.amount.toFixed(0)}</span></div>`;
+    });
   }
 
   document.getElementById('order-summary').innerHTML = html;
   document.getElementById('order-total').textContent = '₺' + total.toFixed(0);
 }
 
-checkStaffStatus();
+refreshDiscountPreview();
 
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio => {
   radio.addEventListener('change', () => {
@@ -194,7 +198,7 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
   submitBtn.textContent = 'İşleniyor...';
 
   const payload = {
-    items: getCart().map(i => ({ name: i.name, size: i.size, price: i.price, qty: i.qty })),
+    items: getCart().map(i => ({ productId: i.productId, name: i.name, size: i.size, price: i.price, qty: i.qty })),
     customerName: document.getElementById('customerName').value,
     phone: document.getElementById('phone').value,
     deliveryType: document.querySelector('input[name="deliveryType"]:checked').value,
