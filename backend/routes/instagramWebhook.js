@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const integrations = require('../utils/integrations');
 const instagramConversations = require('../utils/instagramConversations');
+const settings = require('../utils/settings');
+const aiAssistant = require('../utils/aiAssistant');
+const instagram = require('../utils/instagram');
 
 // Meta, webhook'u kaydederken bu adrese GET isteği atıp doğrulama yapar.
 router.get('/instagram', async (req, res) => {
@@ -30,8 +33,19 @@ router.post('/instagram', async (req, res) => {
     if (message && !message.is_echo) {
       const igsid = messagingEvent.sender.id;
       const text = message.text || '[metin olmayan içerik]';
-      await instagramConversations.addMessage(igsid, { direction: 'in', text });
+      const convo = await instagramConversations.addMessage(igsid, { direction: 'in', text });
       console.log(`Instagram mesajı alındı: ${igsid} → "${text}"`);
+
+      try {
+        const currentSettings = await settings.loadSettings();
+        if (currentSettings.aiAutoReplyEnabled && currentSettings.aiInstructions) {
+          const reply = await aiAssistant.generateAutoReply(currentSettings.aiInstructions, convo.messages, text);
+          await instagram.sendMessage(igsid, reply);
+          await instagramConversations.addMessage(igsid, { direction: 'out', text: reply });
+        }
+      } catch (aiErr) {
+        console.error('Instagram otomatik cevap hatası:', aiErr.message);
+      }
     }
   } catch (err) {
     console.error('Instagram webhook işleme hatası:', err.message);

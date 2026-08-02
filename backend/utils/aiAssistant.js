@@ -73,4 +73,15 @@ Bağlam: ${context}`;
   return callClaude(prompt);
 }
 
-module.exports = { draftStaffCampaignMessage, draftGenericMessage, testConnection };
+// Müşteri mesajına, admin'in yazdığı talimatlara göre otomatik cevap üretir
+async function generateAutoReply(instructions, conversationHistory, newMessage) {
+  const historyText = conversationHistory
+    .slice(-10)
+    .map((m) => `${m.direction === 'in' ? 'Müşteri' : 'Sen'}: ${m.text}`)
+    .join('\n');
+
+  const prompt = `${instructions}\n\nSohbet geçmişi:\n${historyText}\nMüşteri: ${newMessage}\n\nBuna kısa ve doğal bir cevap yaz. Sadece cevap metnini yaz, başka açıklama ekleme.`;
+  return callClaude(prompt);
+}
+
+module.exports = { draftStaffCampaignMessage, draftGenericMessage, generateAutoReply, testConnection };

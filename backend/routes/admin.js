@@ -81,8 +81,10 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 });
 
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
-  const { staffDiscountByGroup, staffBannerText } = req.body;
+  const { staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions } = req.body;
   const updates = {};
+  if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
+  if (aiInstructions !== undefined) updates.aiInstructions = aiInstructions;
   if (staffDiscountByGroup !== undefined) {
     const cleaned = {};
     for (const key of Object.keys(staffDiscountByGroup)) {

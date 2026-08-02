@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const integrations = require('../utils/integrations');
 const messengerConversations = require('../utils/messengerConversations');
+const settings = require('../utils/settings');
+const aiAssistant = require('../utils/aiAssistant');
+const messenger = require('../utils/messenger');
 
 // Meta, webhook'u kaydederken bu adrese GET isteği atıp doğrulama yapar.
 router.get('/messenger', async (req, res) => {
@@ -29,8 +32,19 @@ router.post('/messenger', async (req, res) => {
     if (message && !message.is_echo) {
       const psid = messagingEvent.sender.id;
       const text = message.text || '[metin olmayan içerik]';
-      await messengerConversations.addMessage(psid, { direction: 'in', text });
+      const convo = await messengerConversations.addMessage(psid, { direction: 'in', text });
       console.log(`Messenger mesajı alındı: ${psid} → "${text}"`);
+
+      try {
+        const currentSettings = await settings.loadSettings();
+        if (currentSettings.aiAutoReplyEnabled && currentSettings.aiInstructions) {
+          const reply = await aiAssistant.generateAutoReply(currentSettings.aiInstructions, convo.messages, text);
+          await messenger.sendMessage(psid, reply);
+          await messengerConversations.addMessage(psid, { direction: 'out', text: reply });
+        }
+      } catch (aiErr) {
+        console.error('Messenger otomatik cevap hatası:', aiErr.message);
+      }
     }
   } catch (err) {
     console.error('Messenger webhook işleme hatası:', err.message);
