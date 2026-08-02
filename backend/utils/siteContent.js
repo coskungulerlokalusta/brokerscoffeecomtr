@@ -3,8 +3,11 @@ const kv = require('./kvStore');
 const KEY = 'site_content';
 const KEYS = ['heroImg', 'aboutImg1', 'aboutImg2', 'locationImg1', 'locationImg2'];
 
+const FEATURED_DEFAULTS = { featuredTitle: 'Öne Çıkanlar', featuredProductIds: [] };
+
 async function load() {
-  return kv.getJSON(KEY, {});
+  const data = await kv.getJSON(KEY, {});
+  return { ...FEATURED_DEFAULTS, ...data };
 }
 
 async function save(data) {
@@ -19,4 +22,12 @@ async function setImage(key, imagePath) {
   return data;
 }
 
-module.exports = { load, save, setImage, KEYS };
+async function setFeaturedConfig({ featuredTitle, featuredProductIds }) {
+  const data = await load();
+  if (featuredTitle !== undefined) data.featuredTitle = featuredTitle;
+  if (featuredProductIds !== undefined) data.featuredProductIds = featuredProductIds;
+  await save(data);
+  return data;
+}
+
+module.exports = { load, save, setImage, setFeaturedConfig, KEYS };

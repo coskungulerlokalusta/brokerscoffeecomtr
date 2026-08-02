@@ -63,7 +63,7 @@
 <!-- Öne Çıkanlar -->
 <section id="one-cikanlar" class="py-14 md:py-20 bg-white">
 <div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
-<h2 class="font-display-lg text-[26px] md:text-[32px] text-primary mb-6">Öne Çıkanlar</h2>
+<h2 id="featured-title" class="font-display-lg text-[26px] md:text-[32px] text-primary mb-6">Öne Çıkanlar</h2>
 <div id="featured-scroll" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
 <p class="text-on-surface-variant">Yükleniyor...</p>
 </div>
@@ -267,9 +267,14 @@ function wireAddToCart(scope) {
   });
 }
 
-function renderFeatured(products) {
+function renderFeatured(products, featuredIds) {
   const wrap = document.getElementById('featured-scroll');
-  const featured = products.slice(0, 8);
+  let featured;
+  if (featuredIds && featuredIds.length) {
+    featured = featuredIds.map(id => products.find(p => p.id === id)).filter(Boolean);
+  } else {
+    featured = products.slice(0, 8);
+  }
   wrap.innerHTML = featured.map(p => `
     <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer" onclick="location.href='/product.html?id=${p.id}'">
       <div class="aspect-square overflow-hidden mb-3 rounded-lg bg-surface-container-low">
@@ -350,13 +355,19 @@ function renderGrid() {
 
 async function init() {
   try {
-    const [productsRes, categoriesRes] = await Promise.all([
+    const [productsRes, categoriesRes, contentRes] = await Promise.all([
       fetch('/api/products'),
       fetch('/api/categories'),
+      fetch('/api/site-content'),
     ]);
     allProducts = await productsRes.json();
     const categories = await categoriesRes.json();
-    renderFeatured(allProducts);
+    const content = await contentRes.json();
+
+    const titleEl = document.getElementById('featured-title');
+    if (titleEl && content.featuredTitle) titleEl.textContent = content.featuredTitle;
+
+    renderFeatured(allProducts, content.featuredProductIds);
     renderTabs(categories);
     renderGrid();
   } catch (e) {

@@ -31,6 +31,13 @@ router.get('/', async (req, res) => {
   res.json(await siteContent.load());
 });
 
+// Admin: Öne Çıkanlar bölümünün başlığını ve gösterilecek ürünleri güncelle
+router.post('/featured', adminAuth.requireAuth, async (req, res) => {
+  const { featuredTitle, featuredProductIds } = req.body;
+  const data = await siteContent.setFeaturedConfig({ featuredTitle, featuredProductIds });
+  res.json(data);
+});
+
 // Admin: bir görsel alanını güncelle (key: heroImg, aboutImg1, aboutImg2, locationImg1, locationImg2)
 router.post('/:key', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Resim dosyası gerekli' });
