@@ -17,6 +17,7 @@ const DEFAULTS = {
   showPaymentMethodSelector: true,
   paymentMethodsEnabled: { card: true, store: true, multinet: false, pluxee: false, ticket: false, metropol: false },
   showOrderPreferences: true,
+  hideDeliveryInfoForStaff: false,
   extraShotPrice: 10,
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',

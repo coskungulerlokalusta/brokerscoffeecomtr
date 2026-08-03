@@ -37,7 +37,7 @@
 </div>
 </section>
 
-<section class="bg-white rounded-lg shadow-sm p-5">
+<section id="delivery-info-section" class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Teslimat Bilgileri</h2>
 <p id="staff-greeting" class="hidden text-sm text-[#735c00] font-semibold mb-3"></p>
 <div class="flex flex-col gap-3">
@@ -194,6 +194,8 @@ fetch('/api/settings/public').then(r => r.json()).then(s => {
   if (!s.showOrderPreferences) {
     document.getElementById('order-preferences-section').classList.add('hidden');
   }
+  hideDeliveryForStaffSetting = !!s.hideDeliveryInfoForStaff;
+  maybeHideDeliverySection();
   orderExtraShotPrice = s.extraShotPrice ?? 10;
   document.getElementById('order-extra-shot-price-label').textContent = `(+₺${orderExtraShotPrice.toFixed(0)})`;
   renderSummary();
@@ -219,8 +221,18 @@ const PAYMENT_METHOD_LABELS = {
   metropol: 'Metropol Kart',
 };
 
+let isStaffCustomer = false;
+let hideDeliveryForStaffSetting = false;
+
+function maybeHideDeliverySection() {
+  if (isStaffCustomer && hideDeliveryForStaffSetting) {
+    document.getElementById('delivery-info-section').classList.add('hidden');
+  }
+}
+
 fetch('/api/account/me').then(r => r.ok ? r.json() : null).then(data => {
   if (data && data.isStaff) {
+    isStaffCustomer = true;
     document.getElementById('customerName').value = data.name;
     document.getElementById('phone').value = data.phone;
     document.getElementById('customerName').classList.add('hidden');
@@ -228,6 +240,7 @@ fetch('/api/account/me').then(r => r.ok ? r.json() : null).then(data => {
     const greeting = document.getElementById('staff-greeting');
     greeting.textContent = `Merhaba ${data.name.split(' ')[0]}, bilgilerin otomatik dolduruldu.`;
     greeting.classList.remove('hidden');
+    maybeHideDeliverySection();
   }
 }).catch(() => {});
 

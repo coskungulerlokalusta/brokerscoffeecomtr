@@ -55,6 +55,7 @@ app.get('/api/settings/public', async (req, res) => {
     showPaymentMethodSelector: s.showPaymentMethodSelector,
     paymentMethodsEnabled: s.paymentMethodsEnabled,
     showOrderPreferences: s.showOrderPreferences,
+    hideDeliveryInfoForStaff: s.hideDeliveryInfoForStaff,
     extraShotPrice: s.extraShotPrice,
   });
 });

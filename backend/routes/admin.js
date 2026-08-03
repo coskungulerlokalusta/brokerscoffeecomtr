@@ -83,7 +83,7 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2,
+    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, hideDeliveryInfoForStaff, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2,
   } = req.body;
   const updates = {};
   if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
@@ -97,6 +97,7 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
     updates.paymentMethodsEnabled = cleaned;
   }
   if (showOrderPreferences !== undefined) updates.showOrderPreferences = !!showOrderPreferences;
+  if (hideDeliveryInfoForStaff !== undefined) updates.hideDeliveryInfoForStaff = !!hideDeliveryInfoForStaff;
   if (extraShotPrice !== undefined) updates.extraShotPrice = Number(extraShotPrice) || 0;
   if (orderNotifyPhone1 !== undefined) updates.orderNotifyPhone1 = orderNotifyPhone1;
   if (orderNotifyPhone2 !== undefined) updates.orderNotifyPhone2 = orderNotifyPhone2;
