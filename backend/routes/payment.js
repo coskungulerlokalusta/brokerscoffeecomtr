@@ -5,6 +5,7 @@ const orderStore = require('../utils/orderStore');
 const customerAuth = require('../utils/customerAuth');
 const settings = require('../utils/settings');
 const orderNotify = require('../utils/orderNotify');
+const monthlyTiers = require('../utils/monthlyTiers');
 const { calculateDiscount } = require('../utils/discountCalc');
 
 const SITE_DOMAIN = process.env.SITE_DOMAIN || 'brokerscoffee.com.tr';
@@ -12,15 +13,16 @@ const SITE_BASE_URL = process.env.SITE_BASE_URL || `https://${SITE_DOMAIN}`;
 
 // Ödeme sayfasında canlı önizleme için — sipariş oluşturmaz, ödeme başlatmaz
 router.post('/preview-discount', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const { items } = req.body;
+  const { items, useMonthlyTier } = req.body;
   if (!items || !items.length) return res.status(400).json({ error: 'Sepet boş' });
-  const result = await calculateDiscount(items, !!(req.customer && req.customer.isStaff));
+  const customerId = req.customer ? req.customer.id : null;
+  const result = await calculateDiscount(items, !!(req.customer && req.customer.isStaff), { customerId, useMonthlyTier });
   res.json(result);
 });
 
 // Sipariş oluştur + 3D ödeme başlat
 router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc, orderIntensity, orderExtraShot, orderNote } = req.body;
+  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
     return res.status(400).json({ error: 'Eksik sipariş bilgisi' });
@@ -29,19 +31,24 @@ router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
     return res.status(400).json({ error: 'Eksik kart bilgisi' });
   }
 
-  const { subtotal, discountAmount, discountBreakdown, total: itemsTotal } = await calculateDiscount(
+  const customerId = req.customer ? req.customer.id : null;
+  const { subtotal, discountAmount, discountBreakdown, total: itemsTotal, appliedTier } = await calculateDiscount(
     items,
-    !!(req.customer && req.customer.isStaff)
+    !!(req.customer && req.customer.isStaff),
+    { customerId, useMonthlyTier }
   );
   const currentSettings = await settings.loadSettings();
   const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
   const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
 
   const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote });
-  order.customerId = req.customer ? req.customer.id : null;
+  order.customerId = customerId;
   if (discountAmount > 0) {
     order.staffDiscountBreakdown = discountBreakdown;
     order.subtotalBeforeDiscount = subtotal;
+  }
+  if (appliedTier) {
+    order.monthlyTierApplied = appliedTier.threshold;
   }
   {
     const orders = await orderStore.loadOrders();
@@ -96,6 +103,7 @@ router.post('/callback', async (req, res) => {
           const currentSettings = await settings.loadSettings();
           const earned = Math.floor(order.total / currentSettings.pointsPerTL);
           if (earned > 0) await customerAuth.addPoints(order.customerId, earned);
+          if (order.monthlyTierApplied) await monthlyTiers.claimTier(order.customerId, order.monthlyTierApplied);
         }
         if (success) orderNotify.notifyNewOrder(order);
       }

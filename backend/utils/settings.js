@@ -19,6 +19,11 @@ const DEFAULTS = {
   showOrderPreferences: true,
   hideDeliveryInfoForStaff: false,
   extraShotPrice: 10,
+  monthlySpendTiers: [
+    { threshold: 500, discount: 60 },
+    { threshold: 1000, discount: 150 },
+    { threshold: 1500, discount: 250 },
+  ],
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',
 };

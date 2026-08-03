@@ -11,9 +11,16 @@ async function saveRewards(rewards) {
   return kv.setJSON(KEY, rewards);
 }
 
-async function createReward({ title, pointsCost, description }) {
+async function createReward({ title, pointsCost, description, freeItemGroup }) {
   const rewards = await loadRewards();
-  const reward = { id: crypto.randomUUID(), title, pointsCost: Number(pointsCost), description: description || '', active: true };
+  const reward = {
+    id: crypto.randomUUID(),
+    title,
+    pointsCost: Number(pointsCost),
+    description: description || '',
+    freeItemGroup: freeItemGroup || null, // dolu ise, siparişte bu gruptan bir ürünü bedava yapar
+    active: true,
+  };
   rewards.push(reward);
   await saveRewards(rewards);
   return reward;

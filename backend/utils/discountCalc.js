@@ -3,8 +3,10 @@
 const settings = require('./settings');
 const productStore = require('./productStore');
 const { getGroupForProduct, DEFAULT_GROUP_KEY } = require('./discountGroups');
+const monthlyTiers = require('./monthlyTiers');
 
-async function calculateDiscount(items, isStaff) {
+async function calculateDiscount(items, isStaff, options = {}) {
+  const { customerId, useMonthlyTier } = options;
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
   let discountAmount = 0;
   let discountBreakdown = [];
@@ -41,8 +43,18 @@ async function calculateDiscount(items, isStaff) {
     });
   }
 
+  let appliedTier = null;
+  if (customerId && useMonthlyTier) {
+    const tier = await monthlyTiers.getUnclaimedTier(customerId);
+    if (tier) {
+      discountAmount += tier.discount;
+      discountBreakdown.push({ group: 'aylik', percent: null, amount: tier.discount });
+      appliedTier = tier;
+    }
+  }
+
   const total = Math.round((subtotal - discountAmount) * 100) / 100;
-  return { subtotal, discountAmount: Math.round(discountAmount * 100) / 100, discountBreakdown, total };
+  return { subtotal, discountAmount: Math.round(discountAmount * 100) / 100, discountBreakdown, total: Math.max(0, total), appliedTier };
 }
 
 module.exports = { calculateDiscount };

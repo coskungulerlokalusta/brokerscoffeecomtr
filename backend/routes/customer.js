@@ -5,6 +5,7 @@ const settings = require('../utils/settings');
 const otpStore = require('../utils/otpStore');
 const netgsm = require('../utils/netgsm');
 const orderStore = require('../utils/orderStore');
+const monthlyTiers = require('../utils/monthlyTiers');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -87,6 +88,11 @@ router.get('/orders', customerAuth.requireAuth, async (req, res) => {
     .filter((o) => o.customerId === req.customer.id || o.phone === req.customer.phone)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(myOrders);
+});
+
+// Bu ayki "yedikçe indirim kazan" ilerlemesi
+router.get('/monthly-progress', customerAuth.requireAuth, async (req, res) => {
+  res.json(await monthlyTiers.getProgress(req.customer.id));
 });
 
 module.exports = router;

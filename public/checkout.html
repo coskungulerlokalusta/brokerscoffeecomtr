@@ -31,6 +31,10 @@
 <section class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Sipariş Özeti</h2>
 <div id="order-summary" class="flex flex-col gap-2 text-sm text-[#504442] mb-3"></div>
+<label id="monthly-tier-banner" class="hidden flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-3 py-2.5 mb-3 cursor-pointer text-sm">
+<input type="checkbox" id="monthly-tier-check" checked/>
+<span id="monthly-tier-text" class="text-amber-800 font-semibold"></span>
+</label>
 <div class="flex justify-between font-bold text-[#0d1b3d] pt-3 border-t border-[#e3e2e0]">
 <span>Toplam</span>
 <span id="order-total">₺0</span>
@@ -132,13 +136,24 @@ if (!cart.length) {
 
 async function refreshDiscountPreview() {
   try {
+    const useTier = document.getElementById('monthly-tier-check').checked;
     const res = await fetch('/api/payment/preview-discount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: getCart().map(i => ({ productId: i.productId, price: i.price, qty: i.qty })) }),
+      body: JSON.stringify({
+        items: getCart().map(i => ({ productId: i.productId, price: i.price, qty: i.qty })),
+        useMonthlyTier: useTier,
+      }),
     });
     if (res.ok) {
       discountPreview = await res.json();
+      const banner = document.getElementById('monthly-tier-banner');
+      if (discountPreview.appliedTier) {
+        document.getElementById('monthly-tier-text').textContent = `🎉 Bu ay ₺${discountPreview.appliedTier.threshold}+ harcadın, ₺${discountPreview.appliedTier.discount} indirim kazandın!`;
+        banner.classList.remove('hidden');
+      } else if (!useTier) {
+        banner.classList.remove('hidden');
+      }
       renderSummary();
     }
   } catch (e) {}
@@ -158,7 +173,10 @@ function renderSummary() {
 
   if (discountPreview && discountPreview.discountBreakdown.length) {
     discountPreview.discountBreakdown.forEach(d => {
-      const label = d.percent !== null ? `Personel İndirimi (%${d.percent})` : 'Personel Özel Fiyatı';
+      let label;
+      if (d.group === 'aylik') label = '🎉 Aylık Harcama İndirimi';
+      else if (d.percent !== null) label = `Personel İndirimi (%${d.percent})`;
+      else label = 'Personel Özel Fiyatı';
       html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>${label}</span><span>−₺${d.amount.toFixed(0)}</span></div>`;
     });
   }
@@ -172,6 +190,7 @@ function renderSummary() {
 
 refreshDiscountPreview();
 document.getElementById('order-extra-shot-check').addEventListener('change', renderSummary);
+document.getElementById('monthly-tier-check').addEventListener('change', refreshDiscountPreview);
 
 fetch('/api/settings/public').then(r => r.json()).then(s => {
   if (!s.showPaymentMethodSelector) {
@@ -295,6 +314,7 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
     orderIntensity: document.querySelector('input[name="orderIntensity"]:checked').value,
     orderExtraShot: document.getElementById('order-extra-shot-check').checked,
     orderNote: document.getElementById('order-note-input').value.trim(),
+    useMonthlyTier: document.getElementById('monthly-tier-check').checked,
   };
 
   try {

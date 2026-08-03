@@ -25,9 +25,17 @@
 </div>
 
 <div id="content" class="hidden">
-<div class="bg-[#0d1b3d] text-white rounded-lg p-6 mb-8 text-center">
+<div class="bg-[#0d1b3d] text-white rounded-lg p-6 mb-6 text-center">
 <p class="text-xs uppercase tracking-widest text-white/60 mb-1">Puan Bakiyen</p>
 <p id="points-balance" class="text-4xl font-bold">0</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm p-5 mb-8">
+<h2 class="text-lg text-[#0d1b3d] mb-1">🎉 Yedikçe İndirim Kazan</h2>
+<p class="text-xs text-[#827472] mb-4">Bu ay ne kadar harcarsan o kadar indirim kazanırsın — her ay başında sıfırlanır.</p>
+<div id="tier-progress-bar" class="relative h-2 bg-[#e3e2e0] rounded-full mb-4"></div>
+<div id="tier-progress-labels" class="flex justify-between text-[10px] text-[#827472] mb-3"></div>
+<p id="tier-status-text" class="text-sm font-semibold text-[#0d1b3d]"></p>
 </div>
 
 <h2 class="text-xl text-[#0d1b3d] mb-4">Ödüller</h2>
@@ -62,11 +70,40 @@ async function init() {
     const rewards = await rewardsRes.json();
     renderRewards(rewards);
 
+    const progressRes = await fetch('/api/account/monthly-progress');
+    if (progressRes.ok) renderTierProgress(await progressRes.json());
+
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('content').classList.remove('hidden');
   } catch (e) {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('unauth').classList.remove('hidden');
+  }
+}
+
+function renderTierProgress(progress) {
+  const { spend, tiers, nextTier, unclaimedTier } = progress;
+  if (!tiers.length) {
+    document.getElementById('tier-progress-bar').parentElement.classList.add('hidden');
+    return;
+  }
+  const maxTier = tiers[tiers.length - 1].threshold;
+  const pct = Math.min(100, (spend / maxTier) * 100);
+
+  const bar = document.getElementById('tier-progress-bar');
+  bar.innerHTML = `<div class="absolute inset-y-0 left-0 bg-[#c9a227] rounded-full" style="width:${pct}%"></div>` +
+    tiers.map(t => `<div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 ${t.reached ? 'bg-[#c9a227] border-[#c9a227]' : 'bg-white border-[#d3c3c0]'}" style="left:${(t.threshold / maxTier) * 100}%"></div>`).join('');
+
+  document.getElementById('tier-progress-labels').innerHTML = tiers.map(t =>
+    `<span>₺${t.threshold}<br/>₺${t.discount} indirim</span>`
+  ).join('');
+
+  if (unclaimedTier) {
+    document.getElementById('tier-status-text').textContent = `🎉 ₺${unclaimedTier.discount} indirim kazandın! Bir sonraki siparişinde kullanabilirsin.`;
+  } else if (nextTier) {
+    document.getElementById('tier-status-text').textContent = `₺${(nextTier.threshold - spend).toFixed(0)} daha harca, ₺${nextTier.discount} indirim kazan. (Bu ay ₺${spend.toFixed(0)} harcandı)`;
+  } else {
+    document.getElementById('tier-status-text').textContent = `Bu ay ₺${spend.toFixed(0)} harcadın — tüm kademeleri tamamladın! 🎉`;
   }
 }
 

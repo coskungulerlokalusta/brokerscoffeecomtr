@@ -178,6 +178,17 @@
 </div>
 
 <div id="section-loyalty" class="admin-panel hidden">
+<div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+<h3 class="font-semibold text-[#0d1b3d] mb-1">🎉 Aylık Harcama Kademeleri</h3>
+<p class="text-xs text-[#827472] mb-3">Müşteri bu ay ne kadar harcarsa ne kadar indirim kazansın? Her ayın başında sıfırlanır, kazanılan indirim bir sonraki siparişte kullanılabilir.</p>
+<div id="tier-rows" class="flex flex-col gap-2 mb-2"></div>
+<button type="button" id="add-tier-btn" class="text-xs text-[#735c00] font-semibold mb-3">+ Kademe Ekle</button>
+<div>
+<button id="save-tiers-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded">Kaydet</button>
+<span id="tiers-saved-msg" class="hidden text-emerald-600 text-sm ml-3">Kaydedildi ✓</span>
+</div>
+</div>
+
 <div class="flex items-center justify-between mb-4">
 <h2 class="text-2xl text-[#0d1b3d]">Sadakat Programı — Ödüller</h2>
 <button id="add-reward-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ödül Ekle</button>
@@ -557,7 +568,7 @@ function renderOrders(orders) {
           <span class="status-badge ${statusInfo.color}">${statusInfo.label}</span>
         </div>
         <p class="text-sm text-[#504442] mb-3">${itemsText}</p>
-        ${o.staffDiscountBreakdown && o.staffDiscountBreakdown.length ? `<p class="text-xs text-emerald-600 font-semibold mb-2">Personel indirimi uygulandı (${o.staffDiscountBreakdown.map(d => d.percent !== null ? '%' + d.percent : 'özel fiyat').join(', ')}) — indirim öncesi ₺${o.subtotalBeforeDiscount.toFixed(0)}</p>` : ''}
+        ${o.staffDiscountBreakdown && o.staffDiscountBreakdown.length ? `<p class="text-xs text-emerald-600 font-semibold mb-2">İndirim uygulandı (${o.staffDiscountBreakdown.map(d => d.group === 'aylik' ? 'aylık harcama' : (d.percent !== null ? '%' + d.percent : 'özel fiyat')).join(', ')}) — indirim öncesi ₺${o.subtotalBeforeDiscount.toFixed(0)}</p>` : ''}
         <div class="flex items-center justify-between">
           <p class="font-bold text-[#0d1b3d]">₺${o.total.toFixed(2)}</p>
           <div class="flex gap-2">
@@ -1628,6 +1639,55 @@ document.getElementById('push-send-btn').addEventListener('click', async () => {
 });
 
 // ---- Sipariş Ayarları ----
+// ---- Aylık Harcama Kademeleri ----
+function tierRowHtml(threshold = '', discount = '') {
+  return `
+    <div class="flex gap-2 items-center tier-row">
+      <input type="number" min="0" placeholder="Harcama (₺)" value="${threshold}" class="tier-threshold flex-1 border border-[#d3c3c0] rounded px-3 py-2 text-sm"/>
+      <span class="text-[#827472] text-sm">→</span>
+      <input type="number" min="0" placeholder="İndirim (₺)" value="${discount}" class="tier-discount flex-1 border border-[#d3c3c0] rounded px-3 py-2 text-sm"/>
+      <button type="button" class="remove-tier-btn text-red-500 text-sm px-1">✕</button>
+    </div>
+  `;
+}
+
+function addTierRow(threshold, discount) {
+  const wrap = document.getElementById('tier-rows');
+  const div = document.createElement('div');
+  div.innerHTML = tierRowHtml(threshold, discount);
+  const row = div.firstElementChild;
+  row.querySelector('.remove-tier-btn').addEventListener('click', () => row.remove());
+  wrap.appendChild(row);
+}
+
+document.getElementById('add-tier-btn').addEventListener('click', () => addTierRow());
+
+async function loadTiers() {
+  const res = await fetch('/api/admin/settings');
+  if (!res.ok) return;
+  const s = await res.json();
+  document.getElementById('tier-rows').innerHTML = '';
+  (s.monthlySpendTiers || []).forEach(t => addTierRow(t.threshold, t.discount));
+}
+
+document.getElementById('save-tiers-btn').addEventListener('click', async () => {
+  const monthlySpendTiers = Array.from(document.querySelectorAll('#tier-rows .tier-row')).map(row => ({
+    threshold: row.querySelector('.tier-threshold').value,
+    discount: row.querySelector('.tier-discount').value,
+  }));
+  const res = await fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ monthlySpendTiers }),
+  });
+  if (res.ok) {
+    const msg = document.getElementById('tiers-saved-msg');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+    loadTiers();
+  }
+});
+
 async function loadOrderSettings() {
   const res = await fetch('/api/admin/settings');
   if (!res.ok) return;
@@ -2113,6 +2173,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadIntegrations();
     loadRewardsAdmin();
     loadRedemptions();
+    loadTiers();
     loadCampaigns();
     loadSiteImages();
     loadFeaturedSettings();
