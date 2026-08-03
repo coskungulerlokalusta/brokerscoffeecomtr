@@ -336,7 +336,7 @@ function renderGrid() {
     ? allProducts
     : allProducts.filter(p => (p.subcategory || p.category) === activeCategory);
 
-  grid.innerHTML = filtered.slice(0, 12).map(p => `
+  grid.innerHTML = filtered.map(p => `
     <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2" onclick="location.href='/product.html?id=${p.id}'">
       <div class="aspect-[4/5] overflow-hidden mb-4 bg-surface-container-low">
         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
