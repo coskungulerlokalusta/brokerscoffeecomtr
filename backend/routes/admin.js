@@ -83,12 +83,19 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    showPaymentMethodSelector, showOrderPreferences, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2,
+    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2,
   } = req.body;
   const updates = {};
   if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
   if (aiInstructions !== undefined) updates.aiInstructions = aiInstructions;
   if (showPaymentMethodSelector !== undefined) updates.showPaymentMethodSelector = !!showPaymentMethodSelector;
+  if (paymentMethodsEnabled !== undefined) {
+    const cleaned = {};
+    for (const key of Object.keys(paymentMethodsEnabled)) {
+      cleaned[key] = !!paymentMethodsEnabled[key];
+    }
+    updates.paymentMethodsEnabled = cleaned;
+  }
   if (showOrderPreferences !== undefined) updates.showOrderPreferences = !!showOrderPreferences;
   if (extraShotPrice !== undefined) updates.extraShotPrice = Number(extraShotPrice) || 0;
   if (orderNotifyPhone1 !== undefined) updates.orderNotifyPhone1 = orderNotifyPhone1;

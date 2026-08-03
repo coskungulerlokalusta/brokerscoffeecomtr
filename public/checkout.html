@@ -39,6 +39,7 @@
 
 <section class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Teslimat Bilgileri</h2>
+<p id="staff-greeting" class="hidden text-sm text-[#735c00] font-semibold mb-3"></p>
 <div class="flex flex-col gap-3">
 <input required id="customerName" placeholder="Ad Soyad" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
 <input required id="phone" type="tel" placeholder="Telefon (05xx xxx xx xx)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
@@ -74,22 +75,22 @@
 <section id="payment-method-section" class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Ödeme Yöntemi</h2>
 <div id="payment-method-options" class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-1">
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="card">
 <input type="radio" name="paymentMethod" value="card" checked/> Kredi Kartı
 </label>
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="store">
 <input type="radio" name="paymentMethod" value="store"/> 🏪 Mağazada Öde
 </label>
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="multinet">
 <input type="radio" name="paymentMethod" value="multinet"/> Multinet
 </label>
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="pluxee">
 <input type="radio" name="paymentMethod" value="pluxee"/> Pluxee
 </label>
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="ticket">
 <input type="radio" name="paymentMethod" value="ticket"/> Ticket
 </label>
-<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm" data-method="metropol">
 <input type="radio" name="paymentMethod" value="metropol"/> Metropol Kart
 </label>
 </div>
@@ -175,6 +176,20 @@ document.getElementById('order-extra-shot-check').addEventListener('change', ren
 fetch('/api/settings/public').then(r => r.json()).then(s => {
   if (!s.showPaymentMethodSelector) {
     document.getElementById('payment-method-section').classList.add('hidden');
+  } else if (s.paymentMethodsEnabled) {
+    let firstEnabledInput = null;
+    document.querySelectorAll('.payment-method-label').forEach(label => {
+      const method = label.dataset.method;
+      const enabled = s.paymentMethodsEnabled[method] !== false;
+      label.classList.toggle('hidden', !enabled);
+      if (enabled && !firstEnabledInput) firstEnabledInput = label.querySelector('input');
+    });
+    // Seçili olan yöntem kapatılmışsa, açık olan ilk yönteme geç
+    const checked = document.querySelector('input[name="paymentMethod"]:checked');
+    if (checked && s.paymentMethodsEnabled[checked.value] === false && firstEnabledInput) {
+      firstEnabledInput.checked = true;
+      firstEnabledInput.dispatchEvent(new Event('change'));
+    }
   }
   if (!s.showOrderPreferences) {
     document.getElementById('order-preferences-section').classList.add('hidden');
@@ -204,6 +219,18 @@ const PAYMENT_METHOD_LABELS = {
   metropol: 'Metropol Kart',
 };
 
+fetch('/api/account/me').then(r => r.ok ? r.json() : null).then(data => {
+  if (data && data.isStaff) {
+    document.getElementById('customerName').value = data.name;
+    document.getElementById('phone').value = data.phone;
+    document.getElementById('customerName').classList.add('hidden');
+    document.getElementById('phone').classList.add('hidden');
+    const greeting = document.getElementById('staff-greeting');
+    greeting.textContent = `Merhaba ${data.name.split(' ')[0]}, bilgilerin otomatik dolduruldu.`;
+    greeting.classList.remove('hidden');
+  }
+}).catch(() => {});
+
 document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
   radio.addEventListener('change', () => {
     const method = document.querySelector('input[name="paymentMethod"]:checked').value;
@@ -215,16 +242,19 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
       cardSection.classList.remove('hidden');
       cardInputs.forEach(i => i.required = true);
       note.classList.add('hidden');
+      document.getElementById('submit-btn').textContent = 'Ödemeyi Tamamla';
     } else if (method === 'store') {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
       note.textContent = 'Siparişin hazırlanacak, ödemeyi mağazadan teslim alırken yapacaksın.';
       note.classList.remove('hidden');
+      document.getElementById('submit-btn').textContent = 'Siparişi Oluştur';
     } else {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
       note.textContent = `${PAYMENT_METHOD_LABELS[method]} ile online ödeme yakında aktif olacak. Şimdilik mağazada kartınızı okutabilir ya da Kredi Kartı seçeneğini kullanabilirsiniz.`;
       note.classList.remove('hidden');
+      document.getElementById('submit-btn').textContent = 'Ödemeyi Tamamla';
     }
   });
 });

@@ -265,7 +265,17 @@
 <input type="checkbox" id="show-payment-selector-toggle"/>
 <span class="font-semibold text-[#0d1b3d]">Ödeme sayfasında ödeme yöntemi seçimini göster</span>
 </label>
-<p class="text-xs text-[#827472] mb-4">Kapatırsan müşteri direkt kredi kartıyla öder, seçim ekranı görünmez.</p>
+<p class="text-xs text-[#827472] mb-3">Kapatırsan müşteri direkt kredi kartıyla öder, seçim ekranı görünmez.</p>
+
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Hangi Ödeme Yöntemleri Görünsün</label>
+<div class="grid grid-cols-2 gap-2 mb-4">
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="card"/> Kredi Kartı</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="store"/> 🏪 Mağazada Öde</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="multinet"/> Multinet</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="pluxee"/> Pluxee</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="ticket"/> Ticket</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="payment-method-toggle" data-method="metropol"/> Metropol Kart</label>
+</div>
 
 <label class="flex items-center gap-2 mb-4">
 <input type="checkbox" id="show-order-preferences-toggle"/>
@@ -1617,6 +1627,9 @@ async function loadOrderSettings() {
   if (!res.ok) return;
   const s = await res.json();
   document.getElementById('show-payment-selector-toggle').checked = !!s.showPaymentMethodSelector;
+  document.querySelectorAll('.payment-method-toggle').forEach(cb => {
+    cb.checked = !s.paymentMethodsEnabled || s.paymentMethodsEnabled[cb.dataset.method] !== false;
+  });
   document.getElementById('show-order-preferences-toggle').checked = s.showOrderPreferences !== false;
   document.getElementById('extra-shot-price-input').value = s.extraShotPrice ?? 10;
   document.getElementById('order-notify-phone1-input').value = s.orderNotifyPhone1 || '';
@@ -1629,6 +1642,7 @@ document.getElementById('save-order-settings-btn').addEventListener('click', asy
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       showPaymentMethodSelector: document.getElementById('show-payment-selector-toggle').checked,
+      paymentMethodsEnabled: Object.fromEntries(Array.from(document.querySelectorAll('.payment-method-toggle')).map(cb => [cb.dataset.method, cb.checked])),
       showOrderPreferences: document.getElementById('show-order-preferences-toggle').checked,
       extraShotPrice: document.getElementById('extra-shot-price-input').value,
       orderNotifyPhone1: document.getElementById('order-notify-phone1-input').value,

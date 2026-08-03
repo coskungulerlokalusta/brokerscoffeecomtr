@@ -15,6 +15,7 @@ const DEFAULTS = {
   aiAutoReplyEnabled: false,
   aiInstructions: 'Sen Brokers Coffee\'nin WhatsApp/Instagram/Messenger üzerinden müşterilerle konuşan yapay zeka asistanısın. Sıcak, samimi ve kısa cevaplar ver. Menü, fiyat, teslimat ve sipariş hakkında sorulara yardımcı ol. Emin olmadığın konularda müşteriyi mağazayı aramaya veya beklemeye yönlendir.',
   showPaymentMethodSelector: true,
+  paymentMethodsEnabled: { card: true, store: true, multinet: false, pluxee: false, ticket: false, metropol: false },
   showOrderPreferences: true,
   extraShotPrice: 10,
   orderNotifyPhone1: '',
@@ -30,6 +31,7 @@ async function loadSettings() {
   const merged = { ...DEFAULTS, ...stored };
   // Yeni bir grup eklendiyse eski kayıtlarda eksik kalmasın diye tamamla
   merged.staffDiscountByGroup = { ...DEFAULT_DISCOUNT_BY_GROUP, ...(stored.staffDiscountByGroup || {}) };
+  merged.paymentMethodsEnabled = { ...DEFAULTS.paymentMethodsEnabled, ...(stored.paymentMethodsEnabled || {}) };
   return merged;
 }
 
