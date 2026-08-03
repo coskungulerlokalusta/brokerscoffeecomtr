@@ -4,6 +4,7 @@ const customerAuth = require('../utils/customerAuth');
 const settings = require('../utils/settings');
 const otpStore = require('../utils/otpStore');
 const netgsm = require('../utils/netgsm');
+const orderStore = require('../utils/orderStore');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -77,6 +78,15 @@ router.get('/me', customerAuth.requireAuth, async (req, res) => {
     staffDiscountByGroup: req.customer.isStaff ? currentSettings.staffDiscountByGroup : null,
     staffBannerText: req.customer.isStaff ? currentSettings.staffBannerText : null,
   });
+});
+
+// Giriş yapan müşterinin geçmiş siparişleri (kendi hesabına veya telefon numarasına bağlı)
+router.get('/orders', customerAuth.requireAuth, async (req, res) => {
+  const allOrders = await orderStore.loadOrders();
+  const myOrders = allOrders
+    .filter((o) => o.customerId === req.customer.id || o.phone === req.customer.phone)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(myOrders);
 });
 
 module.exports = router;
