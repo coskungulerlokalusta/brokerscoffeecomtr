@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0d1b3d"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
 <title>Üye Ol | Brokers Coffee</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
@@ -39,6 +45,9 @@
 <div id="staff-code-wrap" class="hidden">
 <input id="staff-code" placeholder="Mağaza Adı" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
 </div>
+<label class="flex items-center gap-2 text-sm text-[#504442]">
+<input type="checkbox" id="keep-logged-in-check" checked/> Beni hatırla (sürekli açık kalsın)
+</label>
 <p id="verify-error" class="text-red-600 text-sm hidden"></p>
 <button type="submit" class="bg-[#0d1b3d] text-white font-semibold py-3 rounded uppercase tracking-widest text-sm hover:bg-[#16285c] transition-colors">Doğrula ve Devam Et</button>
 <button type="button" id="back-btn" class="text-sm text-[#735c00] underline">← Numarayı Değiştir</button>
@@ -47,6 +56,7 @@
 <p class="text-center text-sm text-[#827472] mt-4">Zaten üye misin? <a href="/login.html" class="text-[#0d1b3d] font-semibold underline">Giriş Yap</a></p>
 </div>
 
+<script src="/js/push.js"></script>
 <script>
 let selectedType = 'customer';
 let currentPhone = '';
@@ -103,6 +113,7 @@ document.getElementById('verify-form').addEventListener('submit', async (e) => {
     name: document.getElementById('name-input').value,
     isStaff: selectedType === 'staff',
     storeName: document.getElementById('staff-code').value,
+    keepLoggedIn: document.getElementById('keep-logged-in-check').checked,
   };
 
   const res = await fetch('/api/account/verify-otp', {

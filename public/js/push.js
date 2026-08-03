@@ -1,4 +1,10 @@
 // Push bildirim aboneliği — sitenin her sayfasında kullanılabilir
+
+// Service worker'ı her sayfada kaydet — site "Ana Ekrana Ekle" ile gerçek
+// bir uygulama gibi (tarayıcı çubuğu olmadan) açılabilsin diye gerekli
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');

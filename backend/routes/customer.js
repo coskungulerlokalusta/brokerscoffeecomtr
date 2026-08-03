@@ -7,12 +7,13 @@ const netgsm = require('../utils/netgsm');
 const orderStore = require('../utils/orderStore');
 const monthlyTiers = require('../utils/monthlyTiers');
 
-const COOKIE_OPTS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'lax',
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-};
+function getCookieOpts(keepLoggedIn) {
+  const base = { httpOnly: true, secure: true, sameSite: 'lax' };
+  // Açıksa (varsayılan): neredeyse süresiz (1 yıl) açık kalır — "uygulama gibi" sürekli girişli.
+  // Kapalıysa: oturum çerezi, tarayıcı kapanınca sona erer (paylaşılan cihaz için).
+  if (keepLoggedIn === false) return base;
+  return { ...base, maxAge: 365 * 24 * 60 * 60 * 1000 };
+}
 
 router.post('/request-otp', async (req, res) => {
   const { phone } = req.body;
@@ -31,7 +32,7 @@ router.post('/request-otp', async (req, res) => {
 });
 
 router.post('/verify-otp', async (req, res) => {
-  const { phone, code, name, isStaff, storeName } = req.body;
+  const { phone, code, name, isStaff, storeName, keepLoggedIn } = req.body;
   if (!phone || !code) return res.status(400).json({ error: 'Telefon ve kod gerekli' });
 
   const normalized = customerAuth.normalizePhone(phone);
@@ -53,8 +54,9 @@ router.post('/verify-otp', async (req, res) => {
       name,
       isStaff: staffFlag,
       storeName: staffFlag ? storeName.trim() : undefined,
+      keepLoggedIn,
     });
-    res.cookie('customer_session', token, COOKIE_OPTS);
+    res.cookie('customer_session', token, getCookieOpts(keepLoggedIn));
     res.json({ id: customer.id, name: customer.name, isStaff: customer.isStaff, isNew: !existing });
   } catch (err) {
     res.status(400).json({ error: err.message });

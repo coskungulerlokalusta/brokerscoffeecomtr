@@ -3,7 +3,8 @@ const kv = require('./kvStore');
 
 const CUSTOMERS_KEY = 'customers';
 const SESSIONS_KEY = 'customer_sessions';
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 gün
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 gün (varsayılan / "beni hatırla" kapalıyken)
+const SESSION_TTL_LONG_MS = 365 * 24 * 60 * 60 * 1000; // 1 yıl ("beni hatırla" açıkken — uygulama gibi sürekli girişli kalır)
 
 async function loadCustomers() {
   return kv.getJSON(CUSTOMERS_KEY, []);
@@ -36,7 +37,7 @@ async function findById(id) {
   return customers.find((c) => c.id === id);
 }
 
-async function registerOrLogin({ phone, name, isStaff, storeName }) {
+async function registerOrLogin({ phone, name, isStaff, storeName, keepLoggedIn }) {
   const normalized = normalizePhone(phone);
   const customers = await loadCustomers();
   let customer = customers.find((c) => c.phone === normalized);
@@ -58,7 +59,8 @@ async function registerOrLogin({ phone, name, isStaff, storeName }) {
 
   const token = crypto.randomBytes(32).toString('hex');
   const sessions = await loadSessions();
-  sessions[token] = { customerId: customer.id, expires: Date.now() + SESSION_TTL_MS };
+  const ttl = keepLoggedIn === false ? SESSION_TTL_MS : SESSION_TTL_LONG_MS;
+  sessions[token] = { customerId: customer.id, expires: Date.now() + ttl };
   await saveSessions(sessions);
   return { token, customer };
 }

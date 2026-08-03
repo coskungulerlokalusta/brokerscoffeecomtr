@@ -1,4 +1,18 @@
-// Brokers Coffee - Push bildirim service worker'ı
+// Brokers Coffee - Service Worker (push bildirimleri + "Ana Ekrana Ekle" desteği)
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// Uygulamanın kurulabilir (installable) sayılması için bir fetch dinleyicisi
+// gerekiyor — şimdilik sadece normal ağ isteğini geçiriyor, önbellekleme yok.
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
+
 self.addEventListener('push', (event) => {
   let data = { title: 'Brokers Coffee', body: 'Yeni bir bildirim var.' };
   try {
@@ -8,8 +22,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Brokers Coffee', {
       body: data.body || '',
-      icon: '/uploads/site/icon.png',
-      badge: '/uploads/site/icon.png',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       data: { url: data.url || '/' },
     })
   );
