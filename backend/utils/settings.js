@@ -14,6 +14,10 @@ const DEFAULTS = {
   pointsPerTL: 10,
   aiAutoReplyEnabled: false,
   aiInstructions: 'Sen Brokers Coffee\'nin WhatsApp/Instagram/Messenger üzerinden müşterilerle konuşan yapay zeka asistanısın. Sıcak, samimi ve kısa cevaplar ver. Menü, fiyat, teslimat ve sipariş hakkında sorulara yardımcı ol. Emin olmadığın konularda müşteriyi mağazayı aramaya veya beklemeye yönlendir.',
+  showPaymentMethodSelector: true,
+  extraShotPrice: 10,
+  orderNotifyPhone1: '',
+  orderNotifyPhone2: '',
 };
 
 async function loadSettings() {

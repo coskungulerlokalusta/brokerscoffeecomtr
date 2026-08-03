@@ -15,10 +15,15 @@ function saveCart(cart) {
 }
 
 function addToCart(item) {
-  // item: { productId, name, size, price, qty, extras }
+  // item: { productId, name, size, price, qty, extras, intensity, extraShot, note }
   const cart = getCart();
   const existing = cart.find(
-    (c) => c.productId === item.productId && c.size === item.size && JSON.stringify(c.extras || []) === JSON.stringify(item.extras || [])
+    (c) => c.productId === item.productId
+      && c.size === item.size
+      && JSON.stringify(c.extras || []) === JSON.stringify(item.extras || [])
+      && (c.intensity || 'normal') === (item.intensity || 'normal')
+      && !!c.extraShot === !!item.extraShot
+      && (c.note || '') === (item.note || '')
   );
   if (existing) {
     existing.qty += item.qty || 1;

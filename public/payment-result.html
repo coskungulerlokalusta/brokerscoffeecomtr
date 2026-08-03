@@ -23,11 +23,14 @@
 const params = new URLSearchParams(window.location.search);
 const status = params.get('status');
 const message = params.get('message');
+const method = params.get('method');
 
 if (status === 'success') {
-  document.getElementById('icon').textContent = '✅';
-  document.getElementById('title').textContent = 'Ödeme Başarılı';
-  document.getElementById('message').textContent = 'Siparişiniz alındı, en kısa sürede hazırlanmaya başlayacak.';
+  document.getElementById('icon').textContent = method === 'store' ? '🏪' : '✅';
+  document.getElementById('title').textContent = method === 'store' ? 'Sipariş Alındı' : 'Ödeme Başarılı';
+  document.getElementById('message').textContent = method === 'store'
+    ? 'Siparişiniz alındı, hazırlanmaya başlıyor. Ödemeyi teslim alırken mağazada yapabilirsin.'
+    : 'Siparişiniz alındı, en kısa sürede hazırlanmaya başlayacak.';
 } else {
   document.getElementById('icon').textContent = '❌';
   document.getElementById('title').textContent = 'Ödeme Başarısız';

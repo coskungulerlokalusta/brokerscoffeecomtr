@@ -55,6 +55,7 @@
 <button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
 <button data-section="site-content" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🖼️ Site Görselleri</button>
 <button data-section="members" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👤 Üyeler &amp; Mesajlaşma</button>
+<button data-section="order-settings" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">⚙️ Sipariş Ayarları</button>
 <button data-section="ai-assistant" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🤖 AI Asistan Talimatları</button>
 <button data-section="whatsapp-inbox" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">💬 WhatsApp Gelen Kutusu</button>
 <button data-section="instagram-inbox" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📸 Instagram Gelen Kutusu</button>
@@ -254,6 +255,28 @@
 <button id="notify-cancel" class="flex-1 border border-[#d3c3c0] rounded py-2.5 text-sm">Kapat</button>
 </div>
 </div>
+</div>
+</div>
+
+<div id="section-order-settings" class="admin-panel hidden">
+<h2 class="text-2xl text-[#0d1b3d] mb-4">Sipariş Ayarları</h2>
+<div class="bg-white rounded-lg shadow-sm p-5">
+<label class="flex items-center gap-2 mb-4">
+<input type="checkbox" id="show-payment-selector-toggle"/>
+<span class="font-semibold text-[#0d1b3d]">Ödeme sayfasında ödeme yöntemi seçimini göster</span>
+</label>
+<p class="text-xs text-[#827472] mb-4">Kapatırsan müşteri direkt kredi kartıyla öder, seçim ekranı görünmez.</p>
+
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Ekstra Shot Fiyatı (₺)</label>
+<input id="extra-shot-price-input" type="number" min="0" step="0.01" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
+
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Sipariş Bildirim Numaraları (WhatsApp)</label>
+<p class="text-xs text-[#827472] mb-2">Yeni bir sipariş geldiğinde bu numaralara otomatik WhatsApp mesajı gider.</p>
+<input id="order-notify-phone1-input" placeholder="Telefon 1 (05xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
+<input id="order-notify-phone2-input" placeholder="Telefon 2 (05xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
+
+<button id="save-order-settings-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded">Kaydet</button>
+<span id="order-settings-saved-msg" class="hidden text-emerald-600 text-sm ml-3">Kaydedildi ✓</span>
 </div>
 </div>
 
@@ -489,7 +512,14 @@ function renderOrders(orders) {
     return;
   }
   list.innerHTML = orders.map(o => {
-    const itemsText = o.items.map(i => `${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}`).join(', ');
+    const itemsText = o.items.map(i => {
+      let extras = [];
+      if (i.intensity === 'yumusak') extras.push('yumuşak içim');
+      if (i.extraShot) extras.push('ekstra shot');
+      let line = `${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}${extras.length ? ' — ' + extras.join(', ') : ''}`;
+      if (i.note) line += ` 📝 "${i.note}"`;
+      return line;
+    }).join(', ');
     const statusInfo = STATUS_LABELS[o.orderStatus] || { label: o.orderStatus, color: 'bg-gray-100' };
     const nextIdx = STATUS_FLOW.indexOf(o.orderStatus);
     const nextStatus = nextIdx >= 0 && nextIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[nextIdx + 1] : null;
@@ -499,7 +529,7 @@ function renderOrders(orders) {
         <div class="flex items-start justify-between mb-2">
           <div>
             <p class="font-semibold text-[#0d1b3d]">${o.customerName} · ${o.phone}</p>
-            <p class="text-xs text-[#827472]">${formatDate(o.createdAt)} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${o.address ? ' · ' + o.address : ''}</p>
+            <p class="text-xs text-[#827472]">${formatDate(o.createdAt)} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${o.address ? ' · ' + o.address : ''}${o.paymentMethod === 'store' ? ' · 🏪 Mağazada Ödeme' : ''}</p>
           </div>
           <span class="status-badge ${statusInfo.color}">${statusInfo.label}</span>
         </div>
@@ -1532,6 +1562,35 @@ document.getElementById('push-send-btn').addEventListener('click', async () => {
   }
 });
 
+// ---- Sipariş Ayarları ----
+async function loadOrderSettings() {
+  const res = await fetch('/api/admin/settings');
+  if (!res.ok) return;
+  const s = await res.json();
+  document.getElementById('show-payment-selector-toggle').checked = !!s.showPaymentMethodSelector;
+  document.getElementById('extra-shot-price-input').value = s.extraShotPrice ?? 10;
+  document.getElementById('order-notify-phone1-input').value = s.orderNotifyPhone1 || '';
+  document.getElementById('order-notify-phone2-input').value = s.orderNotifyPhone2 || '';
+}
+
+document.getElementById('save-order-settings-btn').addEventListener('click', async () => {
+  const res = await fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      showPaymentMethodSelector: document.getElementById('show-payment-selector-toggle').checked,
+      extraShotPrice: document.getElementById('extra-shot-price-input').value,
+      orderNotifyPhone1: document.getElementById('order-notify-phone1-input').value,
+      orderNotifyPhone2: document.getElementById('order-notify-phone2-input').value,
+    }),
+  });
+  if (res.ok) {
+    const msg = document.getElementById('order-settings-saved-msg');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+  }
+});
+
 // ---- AI Asistan Talimatları ----
 async function loadAiInstructions() {
   const res = await fetch('/api/admin/settings');
@@ -1992,6 +2051,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadInstagramConversations();
     loadMessengerConversations();
     loadAiInstructions();
+    loadOrderSettings();
   }
 })();
 </script>

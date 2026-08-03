@@ -75,11 +75,19 @@ function render() {
   emptyEl.classList.add('hidden');
   summaryEl.classList.remove('hidden');
 
-  itemsEl.innerHTML = cart.map((item, i) => `
+  itemsEl.innerHTML = cart.map((item, i) => {
+    let details = [];
+    if (item.intensity === 'yumusak') details.push('yumuşak içim');
+    if (item.extraShot) details.push('ekstra shot');
+    const detailsText = details.length ? `<p class="text-xs text-[#735c00]">${details.join(', ')}</p>` : '';
+    const noteText = item.note ? `<p class="text-xs text-[#827472] italic">📝 ${item.note}</p>` : '';
+    return `
     <div class="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
       <div>
         <p class="font-semibold text-[#0d1b3d]">${item.name}${item.size ? ' <span class="text-xs text-[#827472] font-normal">(' + item.size + ')</span>' : ''}</p>
         <p class="text-sm text-[#827472]">₺${item.price.toFixed(0)}</p>
+        ${detailsText}
+        ${noteText}
       </div>
       <div class="flex items-center gap-3">
         <button data-i="${i}" data-delta="-1" class="qty-btn w-7 h-7 rounded-full border border-[#d3c3c0] text-[#0d1b3d]">−</button>
@@ -88,7 +96,8 @@ function render() {
         <button data-i="${i}" class="remove-btn text-red-500 text-xs ml-2">Sil</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   document.getElementById('cart-total').textContent = '₺' + cartTotal().toFixed(0);
 

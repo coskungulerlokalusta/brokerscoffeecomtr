@@ -4,54 +4,11 @@ const paynet = require('../utils/paynet');
 const orderStore = require('../utils/orderStore');
 const customerAuth = require('../utils/customerAuth');
 const settings = require('../utils/settings');
-const productStore = require('../utils/productStore');
-const { getGroupForProduct, DEFAULT_GROUP_KEY } = require('../utils/discountGroups');
+const orderNotify = require('../utils/orderNotify');
+const { calculateDiscount } = require('../utils/discountCalc');
 
 const SITE_DOMAIN = process.env.SITE_DOMAIN || 'brokerscoffee.com.tr';
 const SITE_BASE_URL = process.env.SITE_BASE_URL || `https://${SITE_DOMAIN}`;
-
-// Sepetteki ürünleri gruplarına göre indirime tabi tutar (personel değilse indirim 0)
-async function calculateDiscount(items, isStaff) {
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
-  let discountAmount = 0;
-  let discountBreakdown = [];
-
-  if (isStaff) {
-    const currentSettings = await settings.loadSettings();
-    const allProducts = await productStore.loadProducts();
-    const groupTotals = {};
-
-    for (const item of items) {
-      const product = allProducts.find((p) => p.id === item.productId);
-      const lineQty = Number(item.qty);
-      const linePrice = Number(item.price);
-
-      // Bu ürün/boyut için admin'in elle girdiği özel personel fiyatı var mı?
-      const matchedSize = product && product.sizes.find((s) => (s.label || '') === (item.size || ''));
-      if (matchedSize && matchedSize.staffPrice !== undefined && matchedSize.staffPrice !== null && matchedSize.staffPrice !== '') {
-        const staffPrice = Number(matchedSize.staffPrice);
-        const amount = Math.max(0, (linePrice - staffPrice)) * lineQty;
-        discountAmount += amount;
-        if (amount > 0) discountBreakdown.push({ group: 'ozel', percent: null, amount: Math.round(amount * 100) / 100 });
-        continue;
-      }
-
-      const group = product ? getGroupForProduct(product) : DEFAULT_GROUP_KEY;
-      const lineTotal = linePrice * lineQty;
-      groupTotals[group] = (groupTotals[group] || 0) + lineTotal;
-    }
-
-    Object.keys(groupTotals).forEach((group) => {
-      const pct = currentSettings.staffDiscountByGroup[group] ?? 0;
-      const amount = groupTotals[group] * (pct / 100);
-      discountAmount += amount;
-      if (amount > 0) discountBreakdown.push({ group, percent: pct, amount: Math.round(amount * 100) / 100 });
-    });
-  }
-
-  const total = Math.round((subtotal - discountAmount) * 100) / 100;
-  return { subtotal, discountAmount: Math.round(discountAmount * 100) / 100, discountBreakdown, total };
-}
 
 // Ödeme sayfasında canlı önizleme için — sipariş oluşturmaz, ödeme başlatmaz
 router.post('/preview-discount', customerAuth.attachCustomerIfPresent, async (req, res) => {
@@ -137,6 +94,7 @@ router.post('/callback', async (req, res) => {
           const earned = Math.floor(order.total / currentSettings.pointsPerTL);
           if (earned > 0) await customerAuth.addPoints(order.customerId, earned);
         }
+        if (success) orderNotify.notifyNewOrder(order);
       }
     }
     res.redirect(`/payment-result.html?status=${success ? 'success' : 'fail'}&orderId=${orderId || ''}&message=${encodeURIComponent(result.message || '')}`);

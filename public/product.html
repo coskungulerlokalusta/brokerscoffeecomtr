@@ -38,6 +38,30 @@
 <div id="size-options" class="flex gap-3 flex-wrap"></div>
 </div>
 
+<div class="mb-6">
+<h2 class="text-sm font-bold uppercase tracking-widest text-[#504442] mb-3">İçim Tercihi</h2>
+<div class="flex gap-3">
+<label class="flex-1 border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="intensity" value="normal" checked class="accent-[#0d1b3d]"/> Normal İçim
+</label>
+<label class="flex-1 border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="intensity" value="yumusak" class="accent-[#0d1b3d]"/> Yumuşak İçim
+</label>
+</div>
+</div>
+
+<div class="mb-6">
+<label class="flex items-center gap-2 border border-[#d3c3c0] rounded-lg px-4 py-2.5 cursor-pointer w-fit">
+<input type="checkbox" id="extra-shot-check" class="accent-[#0d1b3d]"/>
+<span class="text-sm font-semibold text-[#0d1b3d]">Ekstra Shot <span id="extra-shot-price-label" class="text-[#827472] font-normal"></span></span>
+</label>
+</div>
+
+<div class="mb-8">
+<h2 class="text-sm font-bold uppercase tracking-widest text-[#504442] mb-2">Not Ekle <span class="text-[#827472] font-normal normal-case">(opsiyonel)</span></h2>
+<textarea id="order-note-input" placeholder="Örn: az şekerli olsun" class="w-full border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm" rows="2"></textarea>
+</div>
+
 <div class="flex items-center gap-4 mb-8">
 <h2 class="text-sm font-bold uppercase tracking-widest text-[#504442]">Adet</h2>
 <div class="flex items-center gap-3">
@@ -63,10 +87,12 @@ const productId = params.get('id');
 let product = null;
 let selectedSize = null;
 let qty = 1;
+let extraShotPrice = 10;
 
 function updateTotal() {
   const eff = selectedSize ? (selectedSize.effectivePrice !== undefined ? selectedSize.effectivePrice : selectedSize.price) : 0;
-  document.getElementById('total-price').textContent = '₺' + (eff * qty).toFixed(0);
+  const extra = document.getElementById('extra-shot-check').checked ? extraShotPrice : 0;
+  document.getElementById('total-price').textContent = '₺' + ((eff + extra) * qty).toFixed(0);
 }
 
 function renderSizes() {
@@ -106,9 +132,17 @@ async function init() {
     return;
   }
   try {
-    const res = await fetch(`/api/products/${productId}`);
-    if (!res.ok) throw new Error('not found');
-    product = await res.json();
+    const [productRes, settingsRes] = await Promise.all([
+      fetch(`/api/products/${productId}`),
+      fetch('/api/settings/public'),
+    ]);
+    if (!productRes.ok) throw new Error('not found');
+    product = await productRes.json();
+    if (settingsRes.ok) {
+      const publicSettings = await settingsRes.json();
+      extraShotPrice = publicSettings.extraShotPrice ?? 10;
+    }
+    document.getElementById('extra-shot-price-label').textContent = `(+₺${extraShotPrice.toFixed(0)})`;
 
     document.getElementById('product-image').src = product.image || FALLBACK_IMG;
     document.getElementById('product-image').alt = product.name;
@@ -138,14 +172,22 @@ document.getElementById('qty-plus').addEventListener('click', () => {
   updateTotal();
 });
 
+document.getElementById('extra-shot-check').addEventListener('change', updateTotal);
+
 document.getElementById('add-to-cart-btn').addEventListener('click', () => {
   if (!selectedSize) return;
+  const extraShot = document.getElementById('extra-shot-check').checked;
+  const intensity = document.querySelector('input[name="intensity"]:checked').value;
+  const note = document.getElementById('order-note-input').value.trim();
   addToCart({
     productId: product.id,
     name: product.name,
-    price: selectedSize.price,
+    price: selectedSize.price + (extraShot ? extraShotPrice : 0),
     size: selectedSize.label || null,
     extras: [],
+    intensity,
+    extraShot,
+    note,
     qty,
   });
   const btn = document.getElementById('add-to-cart-btn');

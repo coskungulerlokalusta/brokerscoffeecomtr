@@ -54,11 +54,14 @@
 </div>
 </section>
 
-<section class="bg-white rounded-lg shadow-sm p-5">
+<section id="payment-method-section" class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Ödeme Yöntemi</h2>
 <div id="payment-method-options" class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-1">
 <label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
 <input type="radio" name="paymentMethod" value="card" checked/> Kredi Kartı
+</label>
+<label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
+<input type="radio" name="paymentMethod" value="store"/> 🏪 Mağazada Öde
 </label>
 <label class="payment-method-label flex items-center gap-2 border border-[#d3c3c0] rounded px-3 py-2.5 cursor-pointer text-sm">
 <input type="radio" name="paymentMethod" value="multinet"/> Multinet
@@ -145,6 +148,12 @@ function renderSummary() {
 
 refreshDiscountPreview();
 
+fetch('/api/settings/public').then(r => r.json()).then(s => {
+  if (!s.showPaymentMethodSelector) {
+    document.getElementById('payment-method-section').classList.add('hidden');
+  }
+}).catch(() => {});
+
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio => {
   radio.addEventListener('change', () => {
     const addressInput = document.getElementById('address');
@@ -176,6 +185,11 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
       cardSection.classList.remove('hidden');
       cardInputs.forEach(i => i.required = true);
       note.classList.add('hidden');
+    } else if (method === 'store') {
+      cardSection.classList.add('hidden');
+      cardInputs.forEach(i => i.required = false);
+      note.textContent = 'Siparişin hazırlanacak, ödemeyi mağazadan teslim alırken yapacaksın.';
+      note.classList.remove('hidden');
     } else {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
@@ -186,33 +200,57 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 });
 
 document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-  const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-  if (selectedMethod !== 'card') {
-    e.preventDefault();
-    return;
-  }
   e.preventDefault();
+  const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+  if (selectedMethod !== 'card' && selectedMethod !== 'store') {
+    return; // henüz aktif olmayan yöntemler (Multinet vb.)
+  }
+
   const submitBtn = document.getElementById('submit-btn');
   const errorMsg = document.getElementById('error-msg');
   errorMsg.classList.add('hidden');
   submitBtn.disabled = true;
   submitBtn.textContent = 'İşleniyor...';
 
-  const payload = {
-    items: getCart().map(i => ({ productId: i.productId, name: i.name, size: i.size, price: i.price, qty: i.qty })),
+  const items = getCart().map(i => ({ productId: i.productId, name: i.name, size: i.size, price: i.price, qty: i.qty, intensity: i.intensity, extraShot: i.extraShot, note: i.note }));
+  const basePayload = {
+    items,
     customerName: document.getElementById('customerName').value,
     phone: document.getElementById('phone').value,
     deliveryType: document.querySelector('input[name="deliveryType"]:checked').value,
     address: document.getElementById('address').value || null,
-    total: cartTotal(),
-    cardHolder: document.getElementById('cardHolder').value,
-    pan: document.getElementById('pan').value.replace(/\s/g, ''),
-    month: document.getElementById('month').value,
-    year: document.getElementById('year').value,
-    cvc: document.getElementById('cvc').value,
   };
 
   try {
+    if (selectedMethod === 'store') {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(basePayload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorMsg.textContent = data.error || 'Sipariş oluşturulamadı, tekrar deneyin.';
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Ödemeyi Tamamla';
+        return;
+      }
+      localStorage.removeItem('brokers_coffee_cart');
+      window.location.href = `/payment-result.html?status=success&orderId=${data.id}&method=store`;
+      return;
+    }
+
+    const payload = {
+      ...basePayload,
+      total: cartTotal(),
+      cardHolder: document.getElementById('cardHolder').value,
+      pan: document.getElementById('pan').value.replace(/\s/g, ''),
+      month: document.getElementById('month').value,
+      year: document.getElementById('year').value,
+      cvc: document.getElementById('cvc').value,
+    };
+
     const res = await fetch('/api/payment/init', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

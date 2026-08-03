@@ -48,6 +48,15 @@ app.use('/api/webhooks', instagramWebhookRoutes);
 app.use('/api/webhooks', messengerWebhookRoutes);
 app.use('/api/images', imagesRoutes);
 
+// Herkese açık — checkout sayfasının ihtiyaç duyduğu, hassas olmayan ayarlar
+app.get('/api/settings/public', async (req, res) => {
+  const s = await settings.loadSettings();
+  res.json({
+    showPaymentMethodSelector: s.showPaymentMethodSelector,
+    extraShotPrice: s.extraShotPrice,
+  });
+});
+
 // Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir
 app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const products = await productStore.loadProducts();

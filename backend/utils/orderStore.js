@@ -21,7 +21,8 @@ async function createOrder(data) {
     deliveryType: data.deliveryType,
     address: data.address || null,
     total: data.total,
-    paymentStatus: 'bekliyor',
+    paymentMethod: data.paymentMethod || 'card',
+    paymentStatus: data.paymentMethod === 'store' ? 'magazada-odenecek' : 'bekliyor',
     orderStatus: 'yeni',
     createdAt: new Date().toISOString(),
   };
