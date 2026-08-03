@@ -53,6 +53,7 @@ app.get('/api/settings/public', async (req, res) => {
   const s = await settings.loadSettings();
   res.json({
     showPaymentMethodSelector: s.showPaymentMethodSelector,
+    showOrderPreferences: s.showOrderPreferences,
     extraShotPrice: s.extraShotPrice,
   });
 });

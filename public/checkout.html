@@ -54,7 +54,7 @@
 </div>
 </section>
 
-<section class="bg-white rounded-lg shadow-sm p-5">
+<section id="order-preferences-section" class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Sipariş Tercihleri</h2>
 <div class="flex gap-3 mb-3">
 <label class="flex-1 border border-[#d3c3c0] rounded px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
@@ -175,6 +175,9 @@ document.getElementById('order-extra-shot-check').addEventListener('change', ren
 fetch('/api/settings/public').then(r => r.json()).then(s => {
   if (!s.showPaymentMethodSelector) {
     document.getElementById('payment-method-section').classList.add('hidden');
+  }
+  if (!s.showOrderPreferences) {
+    document.getElementById('order-preferences-section').classList.add('hidden');
   }
   orderExtraShotPrice = s.extraShotPrice ?? 10;
   document.getElementById('order-extra-shot-price-label').textContent = `(+₺${orderExtraShotPrice.toFixed(0)})`;
