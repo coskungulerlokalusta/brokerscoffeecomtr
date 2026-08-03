@@ -7,6 +7,9 @@ const fs = require('fs');
 
 const productStore = require('./backend/utils/productStore');
 const adminAuth = require('./backend/utils/adminAuth');
+const customerAuth = require('./backend/utils/customerAuth');
+const settings = require('./backend/utils/settings');
+const { withEffectivePrices } = require('./backend/utils/discountGroups');
 const kv = require('./backend/utils/kvStore');
 
 const adminRoutes = require('./backend/routes/admin');
@@ -45,17 +48,21 @@ app.use('/api/webhooks', instagramWebhookRoutes);
 app.use('/api/webhooks', messengerWebhookRoutes);
 app.use('/api/images', imagesRoutes);
 
-// Tüm ürünleri getir (opsiyonel ?category= filtresi ile)
-app.get('/api/products', async (req, res) => {
+// Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir
+app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const products = await productStore.loadProducts();
+  const isStaff = !!(req.customer && req.customer.isStaff);
+  const currentSettings = isStaff ? await settings.loadSettings() : null;
+  const withPrices = products.map((p) => withEffectivePrices(p, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
+
   const { category } = req.query;
   if (category) {
-    const filtered = products.filter(
+    const filtered = withPrices.filter(
       (p) => (p.subcategory || p.category).toLowerCase() === category.toLowerCase()
     );
     return res.json(filtered);
   }
-  res.json(products);
+  res.json(withPrices);
 });
 
 // Kategori listesini getir
@@ -66,11 +73,13 @@ app.get('/api/categories', async (req, res) => {
 });
 
 // Tek ürün getir
-app.get('/api/products/:id', async (req, res) => {
+app.get('/api/products/:id', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const products = await productStore.loadProducts();
   const product = products.find((p) => p.id === req.params.id);
   if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
-  res.json(product);
+  const isStaff = !!(req.customer && req.customer.isStaff);
+  const currentSettings = isStaff ? await settings.loadSettings() : null;
+  res.json(withEffectivePrices(product, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
 });
 
 // İlk çalıştırmada: MySQL boşsa, repo içindeki başlangıç verilerini (gerçek menü,

@@ -247,8 +247,12 @@ let activeCategory = 'Hepsi';
 
 function formatPriceLabel(sizes) {
   if (!sizes || !sizes.length) return '';
-  if (sizes.length === 1) return `₺${sizes[0].price.toFixed(0)}`;
-  return `₺${sizes[0].price.toFixed(0)}'den başlıyor`;
+  const s = sizes[0];
+  const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
+  const priceHtml = eff < s.price
+    ? `<span class="line-through opacity-50 mr-1">₺${s.price.toFixed(0)}</span><span class="text-emerald-700 font-semibold">₺${eff.toFixed(0)}</span>`
+    : `₺${eff.toFixed(0)}`;
+  return sizes.length === 1 ? priceHtml : `${priceHtml}'den başlıyor`;
 }
 
 function wireAddToCart(scope) {
@@ -286,7 +290,7 @@ function renderFeatured(products, featuredIds) {
       </div>
       <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
       ${p.sizes.length > 1
-        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}${dupIndex}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`).join('')}</select>`
+        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}${dupIndex}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => { const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price; const priceText = eff < s.price ? `₺${eff.toFixed(0)} (personel)` : `₺${eff.toFixed(0)}`; return `<option value="${i}">${s.label || 'Tek Boy'} — ${priceText}</option>`; }).join('')}</select>`
         : `<p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>`}
       <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}${dupIndex}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
     </div>
@@ -350,9 +354,11 @@ function sizeSelectorHtml(p) {
   if (p.sizes.length <= 1) {
     return `<p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>`;
   }
-  const options = p.sizes.map((s, i) =>
-    `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`
-  ).join('');
+  const options = p.sizes.map((s, i) => {
+    const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
+    const priceText = eff < s.price ? `₺${eff.toFixed(0)} (personel)` : `₺${eff.toFixed(0)}`;
+    return `<option value="${i}">${s.label || 'Tek Boy'} — ${priceText}</option>`;
+  }).join('');
   return `<select class="size-select text-xs border border-outline-variant rounded px-2 py-1.5 mb-2 bg-white" data-product-id="${p.id}" onclick="event.stopPropagation()">${options}</select>`;
 }
 

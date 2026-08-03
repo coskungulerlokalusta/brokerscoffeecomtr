@@ -28,4 +28,25 @@ function getGroupForProduct(product) {
   return found ? found.key : DEFAULT_GROUP_KEY;
 }
 
-module.exports = { GROUPS, DEFAULT_GROUP_KEY, getGroupForProduct };
+// Bir ürünün tüm boyutlarına, personel olup olmamaya göre "gösterilecek fiyat"ı ekler.
+// Öncelik: ürüne özel manuel personel fiyatı (size.staffPrice) > grup indirim yüzdesi > normal fiyat.
+function withEffectivePrices(product, isStaff, staffDiscountByGroup) {
+  const group = getGroupForProduct(product);
+  const groupPercent = (staffDiscountByGroup && staffDiscountByGroup[group]) || 0;
+
+  const sizes = product.sizes.map((s) => {
+    let effectivePrice = s.price;
+    if (isStaff) {
+      if (s.staffPrice !== undefined && s.staffPrice !== null && s.staffPrice !== '') {
+        effectivePrice = Number(s.staffPrice);
+      } else if (groupPercent > 0) {
+        effectivePrice = Math.round(s.price * (1 - groupPercent / 100) * 100) / 100;
+      }
+    }
+    return { ...s, effectivePrice };
+  });
+
+  return { ...product, sizes };
+}
+
+module.exports = { GROUPS, DEFAULT_GROUP_KEY, getGroupForProduct, withEffectivePrices };

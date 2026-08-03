@@ -134,7 +134,8 @@ function renderSummary() {
 
   if (discountPreview && discountPreview.discountBreakdown.length) {
     discountPreview.discountBreakdown.forEach(d => {
-      html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>Personel İndirimi (%${d.percent})</span><span>−₺${d.amount.toFixed(0)}</span></div>`;
+      const label = d.percent !== null ? `Personel İndirimi (%${d.percent})` : 'Personel Özel Fiyatı';
+      html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>${label}</span><span>−₺${d.amount.toFixed(0)}</span></div>`;
     });
   }
 

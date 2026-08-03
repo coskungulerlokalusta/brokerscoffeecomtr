@@ -23,8 +23,21 @@ async function calculateDiscount(items, isStaff) {
 
     for (const item of items) {
       const product = allProducts.find((p) => p.id === item.productId);
+      const lineQty = Number(item.qty);
+      const linePrice = Number(item.price);
+
+      // Bu ürün/boyut için admin'in elle girdiği özel personel fiyatı var mı?
+      const matchedSize = product && product.sizes.find((s) => (s.label || '') === (item.size || ''));
+      if (matchedSize && matchedSize.staffPrice !== undefined && matchedSize.staffPrice !== null && matchedSize.staffPrice !== '') {
+        const staffPrice = Number(matchedSize.staffPrice);
+        const amount = Math.max(0, (linePrice - staffPrice)) * lineQty;
+        discountAmount += amount;
+        if (amount > 0) discountBreakdown.push({ group: 'ozel', percent: null, amount: Math.round(amount * 100) / 100 });
+        continue;
+      }
+
       const group = product ? getGroupForProduct(product) : DEFAULT_GROUP_KEY;
-      const lineTotal = Number(item.price) * Number(item.qty);
+      const lineTotal = linePrice * lineQty;
       groupTotals[group] = (groupTotals[group] || 0) + lineTotal;
     }
 

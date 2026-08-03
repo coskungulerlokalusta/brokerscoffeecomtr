@@ -65,8 +65,8 @@ let selectedSize = null;
 let qty = 1;
 
 function updateTotal() {
-  const price = selectedSize ? selectedSize.price : 0;
-  document.getElementById('total-price').textContent = '₺' + (price * qty).toFixed(0);
+  const eff = selectedSize ? (selectedSize.effectivePrice !== undefined ? selectedSize.effectivePrice : selectedSize.price) : 0;
+  document.getElementById('total-price').textContent = '₺' + (eff * qty).toFixed(0);
 }
 
 function renderSizes() {
@@ -77,11 +77,17 @@ function renderSizes() {
     updateTotal();
     return;
   }
-  wrap.innerHTML = product.sizes.map((s, i) => `
+  wrap.innerHTML = product.sizes.map((s, i) => {
+    const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
+    const priceHtml = eff < s.price
+      ? `<span class="line-through opacity-50 mr-1">₺${s.price.toFixed(0)}</span><span class="text-emerald-700">₺${eff.toFixed(0)}</span>`
+      : `₺${eff.toFixed(0)}`;
+    return `
     <button data-i="${i}" class="size-option border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d]">
-      ${s.label || 'Tek Boy'}<br/><span class="text-xs font-normal">₺${s.price.toFixed(0)}</span>
+      ${s.label || 'Tek Boy'}<br/><span class="text-xs font-normal">${priceHtml}</span>
     </button>
-  `).join('');
+  `;
+  }).join('');
   wrap.querySelectorAll('.size-option').forEach(btn => {
     btn.addEventListener('click', () => {
       wrap.querySelectorAll('.size-option').forEach(b => b.classList.remove('active'));
