@@ -62,4 +62,16 @@ async function deleteProduct(id) {
   return true;
 }
 
-module.exports = { loadProducts, saveProducts, createProduct, updateProduct, deleteProduct };
+// Bir kategori içindeki ürünleri, admin panelde sürükle-bırakla belirlenen yeni sıraya göre dizer.
+// Diğer kategorilerin sırası/konumu değişmez.
+async function reorderCategory(orderedIds) {
+  const products = await loadProducts();
+  const idSet = new Set(orderedIds);
+  const reordered = orderedIds.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+  let i = 0;
+  const result = products.map((p) => (idSet.has(p.id) ? reordered[i++] : p));
+  await saveProducts(result);
+  return result;
+}
+
+module.exports = { loadProducts, saveProducts, createProduct, updateProduct, deleteProduct, reorderCategory };

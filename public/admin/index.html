@@ -529,7 +529,8 @@ function renderOrders(orders) {
         <div class="flex items-start justify-between mb-2">
           <div>
             <p class="font-semibold text-[#0d1b3d]">${o.customerName} · ${o.phone}</p>
-            <p class="text-xs text-[#827472]">${formatDate(o.createdAt)} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${o.address ? ' · ' + o.address : ''}${o.paymentMethod === 'store' ? ' · 🏪 Mağazada Ödeme' : ''}</p>
+            <p class="text-xs text-[#827472]">${formatDate(o.createdAt)} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${o.address ? ' · ' + o.address : ''}${o.paymentMethod === 'store' ? ' · 🏪 Mağazada Ödeme' : ''}${o.orderIntensity === 'yumusak' ? ' · Yumuşak İçim' : ''}${o.orderExtraShot ? ' · Ekstra Shot' : ''}</p>
+            ${o.orderNote ? `<p class="text-xs text-[#735c00] italic">📝 ${o.orderNote}</p>` : ''}
           </div>
           <span class="status-badge ${statusInfo.color}">${statusInfo.label}</span>
         </div>
@@ -740,6 +741,45 @@ document.getElementById('bulk-price-submit').addEventListener('click', async () 
   setTimeout(() => { bulkPriceModal.classList.add('hidden'); loadProducts(); }, 1200);
 });
 
+let draggedProductRow = null;
+
+function wireProductDragAndDrop(scope) {
+  scope.querySelectorAll('.product-row').forEach(row => {
+    row.addEventListener('dragstart', () => {
+      draggedProductRow = row;
+      row.classList.add('opacity-40');
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('opacity-40');
+      draggedProductRow = null;
+    });
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!draggedProductRow || draggedProductRow === row) return;
+      if (draggedProductRow.dataset.category !== row.dataset.category) return; // sadece aynı kategori içinde sıralanır
+      const container = row.parentElement;
+      const rows = Array.from(container.querySelectorAll('.product-row'));
+      const draggedIdx = rows.indexOf(draggedProductRow);
+      const targetIdx = rows.indexOf(row);
+      if (draggedIdx < targetIdx) {
+        container.insertBefore(draggedProductRow, row.nextSibling);
+      } else {
+        container.insertBefore(draggedProductRow, row);
+      }
+    });
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const container = row.parentElement;
+      const orderedIds = Array.from(container.querySelectorAll('.product-row')).map(r => r.dataset.id);
+      await fetch('/api/admin/products/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderedIds }),
+      });
+    });
+  });
+}
+
 async function loadProducts() {
   const res = await fetch('/api/admin/products');
   if (!res.ok) return;
@@ -765,9 +805,10 @@ async function loadProducts() {
         <label class="flex items-center gap-1.5 normal-case font-normal text-[#504442]"><input type="checkbox" class="category-select-all" data-category="${category}"/> Tümü</label>
         ${category} <span class="text-[#827472] font-normal normal-case">(${groups[category].length})</span>
       </h3>
-      <div class="grid md:grid-cols-2 gap-3">
+      <div class="grid md:grid-cols-2 gap-3" data-category-container="${category}">
         ${groups[category].map(p => `
-          <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
+          <div class="product-row bg-white rounded-lg shadow-sm p-3 flex items-center gap-3" draggable="true" data-id="${p.id}" data-category="${category}">
+            <span class="drag-handle text-[#c3b8b0] cursor-grab select-none" title="Sürükleyip sırasını değiştir">⠿</span>
             <input type="checkbox" class="product-select" value="${p.id}" data-category="${category}" ${selectedProductIds.has(p.id) ? 'checked' : ''}/>
             <img data-product-thumb="${p.id}" src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
             <div class="flex-1 min-w-0">
@@ -784,6 +825,8 @@ async function loadProducts() {
       </div>
     </div>
   `).join('');
+
+  wireProductDragAndDrop(list);
 
   list.querySelectorAll('.photo-picker').forEach(input => {
     input.addEventListener('change', async () => {

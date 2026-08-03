@@ -54,6 +54,23 @@
 </div>
 </section>
 
+<section class="bg-white rounded-lg shadow-sm p-5">
+<h2 class="text-lg text-[#0d1b3d] mb-4">Sipariş Tercihleri</h2>
+<div class="flex gap-3 mb-3">
+<label class="flex-1 border border-[#d3c3c0] rounded px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="orderIntensity" value="normal" checked/> Normal İçim
+</label>
+<label class="flex-1 border border-[#d3c3c0] rounded px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="orderIntensity" value="yumusak"/> Yumuşak İçim
+</label>
+</div>
+<label class="flex items-center gap-2 border border-[#d3c3c0] rounded px-4 py-2.5 cursor-pointer w-fit mb-3">
+<input type="checkbox" id="order-extra-shot-check"/>
+<span class="text-sm font-semibold text-[#0d1b3d]">Ekstra Shot <span id="order-extra-shot-price-label" class="text-[#827472] font-normal"></span></span>
+</label>
+<textarea id="order-note-input" placeholder="Not ekle (opsiyonel) — örn: az şekerli olsun" class="w-full border border-[#d3c3c0] rounded px-4 py-2.5 text-sm" rows="2"></textarea>
+</section>
+
 <section id="payment-method-section" class="bg-white rounded-lg shadow-sm p-5">
 <h2 class="text-lg text-[#0d1b3d] mb-4">Ödeme Yöntemi</h2>
 <div id="payment-method-options" class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-1">
@@ -110,6 +127,7 @@ if (!cart.length) {
 }
 
 let discountPreview = null;
+let orderExtraShotPrice = 10;
 
 async function refreshDiscountPreview() {
   try {
@@ -129,7 +147,9 @@ function renderSummary() {
   const items = getCart();
   const subtotal = cartTotal();
   const discountAmount = discountPreview ? discountPreview.discountAmount : 0;
-  const total = subtotal - discountAmount;
+  const extraShotOn = document.getElementById('order-extra-shot-check').checked;
+  const extraShotTotal = extraShotOn ? orderExtraShotPrice : 0;
+  const total = subtotal - discountAmount + extraShotTotal;
 
   let html = items.map(i =>
     `<div class="flex justify-between"><span>${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}</span><span>₺${(i.price * i.qty).toFixed(0)}</span></div>`
@@ -141,17 +161,24 @@ function renderSummary() {
       html += `<div class="flex justify-between text-emerald-600 font-semibold pt-2 border-t border-[#e3e2e0] mt-1"><span>${label}</span><span>−₺${d.amount.toFixed(0)}</span></div>`;
     });
   }
+  if (extraShotOn) {
+    html += `<div class="flex justify-between pt-2 border-t border-[#e3e2e0] mt-1"><span>Ekstra Shot</span><span>+₺${extraShotTotal.toFixed(0)}</span></div>`;
+  }
 
   document.getElementById('order-summary').innerHTML = html;
   document.getElementById('order-total').textContent = '₺' + total.toFixed(0);
 }
 
 refreshDiscountPreview();
+document.getElementById('order-extra-shot-check').addEventListener('change', renderSummary);
 
 fetch('/api/settings/public').then(r => r.json()).then(s => {
   if (!s.showPaymentMethodSelector) {
     document.getElementById('payment-method-section').classList.add('hidden');
   }
+  orderExtraShotPrice = s.extraShotPrice ?? 10;
+  document.getElementById('order-extra-shot-price-label').textContent = `(+₺${orderExtraShotPrice.toFixed(0)})`;
+  renderSummary();
 }).catch(() => {});
 
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio => {
@@ -219,6 +246,9 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
     phone: document.getElementById('phone').value,
     deliveryType: document.querySelector('input[name="deliveryType"]:checked').value,
     address: document.getElementById('address').value || null,
+    orderIntensity: document.querySelector('input[name="orderIntensity"]:checked').value,
+    orderExtraShot: document.getElementById('order-extra-shot-check').checked,
+    orderNote: document.getElementById('order-note-input').value.trim(),
   };
 
   try {
@@ -243,7 +273,7 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
 
     const payload = {
       ...basePayload,
-      total: cartTotal(),
+      total: cartTotal() + (basePayload.orderExtraShot ? orderExtraShotPrice : 0),
       cardHolder: document.getElementById('cardHolder').value,
       pan: document.getElementById('pan').value.replace(/\s/g, ''),
       month: document.getElementById('month').value,

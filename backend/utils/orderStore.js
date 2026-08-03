@@ -24,6 +24,9 @@ async function createOrder(data) {
     paymentMethod: data.paymentMethod || 'card',
     paymentStatus: data.paymentMethod === 'store' ? 'magazada-odenecek' : 'bekliyor',
     orderStatus: 'yeni',
+    orderIntensity: data.orderIntensity || 'normal',
+    orderExtraShot: !!data.orderExtraShot,
+    orderNote: data.orderNote || '',
     createdAt: new Date().toISOString(),
   };
   orders.unshift(order);

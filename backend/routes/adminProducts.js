@@ -152,4 +152,12 @@ router.post('/bulk-price', adminAuth.requireAuth, async (req, res) => {
   res.json({ updated });
 });
 
+// Ürünleri sürükle-bırakla belirlenen yeni sıraya göre dizer (aynı kategori içinde)
+router.post('/reorder', adminAuth.requireAuth, async (req, res) => {
+  const { orderedIds } = req.body;
+  if (!orderedIds || !orderedIds.length) return res.status(400).json({ error: 'Sıra listesi gerekli' });
+  await productStore.reorderCategory(orderedIds);
+  res.json({ ok: true });
+});
+
 module.exports = router;

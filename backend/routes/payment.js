@@ -20,7 +20,7 @@ router.post('/preview-discount', customerAuth.attachCustomerIfPresent, async (re
 
 // Sipariş oluştur + 3D ödeme başlat
 router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc } = req.body;
+  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc, orderIntensity, orderExtraShot, orderNote } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
     return res.status(400).json({ error: 'Eksik sipariş bilgisi' });
@@ -29,12 +29,15 @@ router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
     return res.status(400).json({ error: 'Eksik kart bilgisi' });
   }
 
-  const { subtotal, discountAmount, discountBreakdown, total } = await calculateDiscount(
+  const { subtotal, discountAmount, discountBreakdown, total: itemsTotal } = await calculateDiscount(
     items,
     !!(req.customer && req.customer.isStaff)
   );
+  const currentSettings = await settings.loadSettings();
+  const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
+  const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
 
-  const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total });
+  const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote });
   order.customerId = req.customer ? req.customer.id : null;
   if (discountAmount > 0) {
     order.staffDiscountBreakdown = discountBreakdown;

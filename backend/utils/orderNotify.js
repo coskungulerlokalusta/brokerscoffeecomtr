@@ -10,7 +10,12 @@ async function notifyNewOrder(order) {
 
     const itemsText = order.items.map((i) => `${i.qty}x ${i.name}${i.size ? ' (' + i.size + ')' : ''}`).join(', ');
     const methodText = order.paymentMethod === 'store' ? 'Mağazada Ödeme' : 'Kredi Kartı (Ödendi)';
-    const message = `🔔 Yeni Sipariş!\n\n👤 ${order.customerName} — ${order.phone}\n📦 ${itemsText}\n💰 ₺${order.total}\n💳 ${methodText}\n🚚 ${order.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${order.address ? '\n📍 ' + order.address : ''}`;
+    const prefsParts = [];
+    if (order.orderIntensity === 'yumusak') prefsParts.push('Yumuşak İçim');
+    if (order.orderExtraShot) prefsParts.push('Ekstra Shot');
+    const prefsText = prefsParts.length ? `\n☕ ${prefsParts.join(', ')}` : '';
+    const noteText = order.orderNote ? `\n📝 Not: ${order.orderNote}` : '';
+    const message = `🔔 Yeni Sipariş!\n\n👤 ${order.customerName} — ${order.phone}\n📦 ${itemsText}${prefsText}${noteText}\n💰 ₺${order.total}\n💳 ${methodText}\n🚚 ${order.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}${order.address ? '\n📍 ' + order.address : ''}`;
 
     for (const phone of numbers) {
       try {
