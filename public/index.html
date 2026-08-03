@@ -62,7 +62,7 @@
 
 <main>
 <!-- Hero -->
-<section class="relative w-full h-[480px] md:h-[600px] flex items-center overflow-hidden">
+<section class="hidden relative w-full h-[480px] md:h-[600px] flex items-center overflow-hidden">
 <img id="hero-img" class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?q=80&w=1600&auto=format&fit=crop" alt="Brokers Coffee barista"/>
 <div class="absolute inset-0 hero-gradient"></div>
 <div class="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
@@ -114,7 +114,7 @@ Menümüzü Keşfedin
 </div>
 
 <!-- Value props -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+<div class="hidden grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
 <div class="text-center px-6">
 <span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">eco</span>
 <h3 class="font-headline-md text-[20px] text-primary mb-2">Özenle Seçilmiş Çekirdekler</h3>
@@ -353,8 +353,10 @@ function startFeaturedAutoScroll(itemCount) {
 
 function renderTabs(categories) {
   const wrap = document.getElementById('cat-tabs');
-  const cats = ['Hepsi', ...categories];
-  wrap.innerHTML = cats.map(c =>
+  if (activeCategory === 'Hepsi' && categories.length) {
+    activeCategory = categories[0];
+  }
+  wrap.innerHTML = categories.map(c =>
     `<button class="cat-tab ${c === activeCategory ? 'active' : ''} px-5 py-2 rounded-full border border-outline-variant text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant transition-colors whitespace-nowrap" data-cat="${c}">${c}</button>`
   ).join('');
   wrap.querySelectorAll('.cat-tab').forEach(btn => {
