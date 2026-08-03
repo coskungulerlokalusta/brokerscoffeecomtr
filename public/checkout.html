@@ -119,6 +119,9 @@
 
 <script src="/js/cart.js"></script>
 <script>
+let discountPreview = null;
+let orderExtraShotPrice = 10;
+
 const cart = getCart();
 if (!cart.length) {
   document.getElementById('checkout-form').classList.add('hidden');
@@ -126,9 +129,6 @@ if (!cart.length) {
 } else {
   renderSummary();
 }
-
-let discountPreview = null;
-let orderExtraShotPrice = 10;
 
 async function refreshDiscountPreview() {
   try {
