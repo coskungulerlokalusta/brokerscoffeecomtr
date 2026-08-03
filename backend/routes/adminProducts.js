@@ -2,24 +2,14 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 const adminAuth = require('../utils/adminAuth');
 const productStore = require('../utils/productStore');
+const imageStore = require('../utils/imageStore');
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads', 'products');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, crypto.randomUUID() + ext);
-  },
-});
-
+// Dosyayı diske değil belleğe alıyoruz — buradan MySQL'e (kv_store) yazacağız,
+// böylece deploy'larda silinmeyecek (yerel disk kalıcı değil).
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
@@ -28,6 +18,12 @@ const upload = multer({
     cb(null, true);
   },
 });
+
+async function storeUploadedImage(file) {
+  if (!file) return null;
+  const ext = path.extname(file.originalname).toLowerCase();
+  return imageStore.saveImage(file.buffer, ext);
+}
 
 // Tüm ürünleri listele (admin görünümü)
 router.get('/', adminAuth.requireAuth, async (req, res) => {
@@ -48,7 +44,7 @@ router.post('/', adminAuth.requireAuth, upload.single('image'), async (req, res)
     }
     if (!parsedSizes.length) return res.status(400).json({ error: 'En az bir fiyat girilmeli' });
 
-    const image = req.file ? `/uploads/products/${req.file.filename}` : null;
+    const image = await storeUploadedImage(req.file);
     const product = await productStore.createProduct({ name, category, subcategory, sizes: parsedSizes, description, image });
     res.status(201).json(product);
   } catch (err) {
@@ -72,7 +68,7 @@ router.put('/:id', adminAuth.requireAuth, upload.single('image'), async (req, re
         return res.status(400).json({ error: 'Fiyat/boyut bilgisi hatalı' });
       }
     }
-    if (req.file) updates.image = `/uploads/products/${req.file.filename}`;
+    if (req.file) updates.image = await storeUploadedImage(req.file);
 
     const product = await productStore.updateProduct(req.params.id, updates);
     if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
@@ -97,7 +93,7 @@ router.post('/bulk-image', adminAuth.requireAuth, upload.single('image'), async 
     if (!ids.length) return res.status(400).json({ error: 'Ürün seçilmedi' });
     if (!req.file) return res.status(400).json({ error: 'Resim dosyası gerekli' });
 
-    const image = `/uploads/products/${req.file.filename}`;
+    const image = await storeUploadedImage(req.file);
     let updated = 0;
     for (const id of ids) {
       const result = await productStore.updateProduct(id, { image });

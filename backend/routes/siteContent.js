@@ -2,20 +2,13 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 const adminAuth = require('../utils/adminAuth');
 const siteContent = require('../utils/siteContent');
+const imageStore = require('../utils/imageStore');
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads', 'site');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => cb(null, crypto.randomUUID() + path.extname(file.originalname).toLowerCase()),
-});
+// Belleğe al, MySQL'e yaz — yerel disk deploy'larda silinebiliyor
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
@@ -42,7 +35,9 @@ router.post('/featured', adminAuth.requireAuth, async (req, res) => {
 router.post('/:key', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Resim dosyası gerekli' });
   try {
-    const data = await siteContent.setImage(req.params.key, `/uploads/site/${req.file.filename}`);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const imageUrl = await imageStore.saveImage(req.file.buffer, ext);
+    const data = await siteContent.setImage(req.params.key, imageUrl);
     res.json(data);
   } catch (err) {
     res.status(400).json({ error: err.message });
