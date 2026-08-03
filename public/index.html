@@ -289,9 +289,7 @@ function renderFeatured(products, featuredIds) {
         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
       </div>
       <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
-      ${p.sizes.length > 1
-        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}${dupIndex}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => { const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price; const priceText = eff < s.price ? `₺${eff.toFixed(0)} (personel)` : `₺${eff.toFixed(0)}`; return `<option value="${i}">${s.label || 'Tek Boy'} — ${priceText}</option>`; }).join('')}</select>`
-        : `<p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>`}
+      ${sizeButtonsHtml(p, dupIndex)}
       <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}${dupIndex}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
     </div>
   `;
@@ -300,7 +298,7 @@ function renderFeatured(products, featuredIds) {
   const secondPass = featured.map(p => cardHtml(p, '-dup'));
   wrap.innerHTML = firstPass.concat(secondPass).join('');
   wireAddToCart(wrap);
-  wireSizeSelects(wrap);
+  wireSizeButtons(wrap);
   startFeaturedAutoScroll(featured.length);
 }
 
@@ -350,30 +348,43 @@ function renderTabs(categories) {
   });
 }
 
-function sizeSelectorHtml(p) {
+function sizeButtonsHtml(p, dupIndex = '') {
   if (p.sizes.length <= 1) {
-    return `<p class="font-body-md text-on-surface-variant mb-2 italic">${formatPriceLabel(p.sizes)}</p>`;
+    return `<p class="font-body-md text-on-surface-variant mb-2 italic text-xs">${formatPriceLabel(p.sizes)}</p>`;
   }
-  const options = p.sizes.map((s, i) => {
+  const buttons = p.sizes.map((s, i) => {
     const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
-    const priceText = eff < s.price ? `₺${eff.toFixed(0)} (personel)` : `₺${eff.toFixed(0)}`;
-    return `<option value="${i}">${s.label || 'Tek Boy'} — ${priceText}</option>`;
+    const discounted = eff < s.price;
+    return `
+      <button type="button" class="size-btn flex-1 min-w-0 border rounded px-1 py-1 text-center leading-tight transition-colors ${i === 0 ? 'active border-primary bg-primary/10' : 'border-outline-variant bg-white'}" data-index="${i}" onclick="event.stopPropagation()">
+        <div class="text-[10px] font-semibold text-primary truncate">${s.label || 'Tek Boy'}</div>
+        ${discounted
+          ? `<div class="text-[9px] line-through opacity-50 leading-none">₺${s.price.toFixed(0)}</div><div class="text-[10px] font-bold text-emerald-700 leading-tight">₺${eff.toFixed(0)}</div>`
+          : `<div class="text-[10px] font-bold text-primary leading-tight">₺${eff.toFixed(0)}</div>`}
+      </button>
+    `;
   }).join('');
-  return `<select class="size-select text-xs border border-outline-variant rounded px-2 py-1.5 mb-2 bg-white" data-product-id="${p.id}" onclick="event.stopPropagation()">${options}</select>`;
+  return `<div class="size-btn-group flex gap-1 mb-2" data-product-id="${p.id}${dupIndex}">${buttons}</div>`;
 }
 
-function wireSizeSelects(scope) {
-  scope.querySelectorAll('.size-select').forEach(select => {
-    select.addEventListener('change', () => {
-      const productId = select.dataset.productId;
-      const realId = productId.replace('-dup', '');
-      const btn = scope.querySelector(`.add-to-cart-btn[data-id="${productId}"]`);
-      if (!btn) return;
-      const product = allProducts.find(p => p.id === realId);
-      if (!product) return;
-      const size = product.sizes[Number(select.value)];
-      btn.dataset.price = size.price;
-      btn.dataset.size = size.label || '';
+function wireSizeButtons(scope) {
+  scope.querySelectorAll('.size-btn-group').forEach(group => {
+    const fullId = group.dataset.productId;
+    const realId = fullId.replace('-dup', '');
+    const addBtn = scope.querySelector(`.add-to-cart-btn[data-id="${fullId}"]`);
+    const product = allProducts.find(p => p.id === realId);
+    if (!product) return;
+
+    group.querySelectorAll('.size-btn').forEach(sizeBtn => {
+      sizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        group.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active', 'border-primary', 'bg-primary/10'));
+        sizeBtn.classList.add('active', 'border-primary', 'bg-primary/10');
+        if (!addBtn) return;
+        const size = product.sizes[Number(sizeBtn.dataset.index)];
+        addBtn.dataset.price = size.price;
+        addBtn.dataset.size = size.label || '';
+      });
     });
   });
 }
@@ -392,13 +403,13 @@ function renderGrid() {
       <div class="text-center">
         <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>
         <h3 class="font-headline-md text-[16px] md:text-[18px] text-primary mb-1">${p.name}</h3>
-        ${sizeSelectorHtml(p)}
+        ${sizeButtonsHtml(p)}
         <button class="add-to-cart-btn text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all block mx-auto" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">SİPARİŞE EKLE</button>
       </div>
     </div>
   `).join('');
   wireAddToCart(grid);
-  wireSizeSelects(grid);
+  wireSizeButtons(grid);
 }
 
 async function init() {
