@@ -13,6 +13,12 @@
   @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(13,27,61,0.97) 25%, rgba(13,27,61,0.5) 100%); } }
   .cat-tab.active { background: #0d1b3d; color: #fff; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
+  .featured-auto-scroll { width: max-content; animation: featured-scroll-left 40s linear infinite; }
+  .featured-auto-scroll:hover { animation-play-state: paused; }
+  @keyframes featured-scroll-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   body { padding-bottom: 0; }
   @media (max-width: 768px) { body { padding-bottom: 72px; } }
@@ -64,8 +70,10 @@
 <section id="one-cikanlar" class="py-14 md:py-20 bg-white">
 <div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
 <h2 id="featured-title" class="font-display-lg text-[26px] md:text-[32px] text-primary mb-6">Öne Çıkanlar</h2>
-<div id="featured-scroll" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<div id="featured-viewport" class="overflow-hidden -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<div id="featured-scroll" class="flex gap-4 pb-2 featured-auto-scroll">
 <p class="text-on-surface-variant">Yükleniyor...</p>
+</div>
 </div>
 </div>
 </section>
@@ -253,7 +261,7 @@ function wireAddToCart(scope) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       addToCart({
-        productId: btn.dataset.id,
+        productId: btn.dataset.id.replace('-dup', ''),
         name: btn.dataset.name,
         price: Number(btn.dataset.price),
         size: btn.dataset.size || null,
@@ -275,18 +283,23 @@ function renderFeatured(products, featuredIds) {
   } else {
     featured = products.slice(0, 8);
   }
-  wrap.innerHTML = featured.map(p => `
+
+  const cardHtml = (p, dupIndex) => `
     <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer" onclick="location.href='/product.html?id=${p.id}'">
       <div class="aspect-square overflow-hidden mb-3 rounded-lg bg-surface-container-low">
         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
       </div>
       <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
       ${p.sizes.length > 1
-        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`).join('')}</select>`
+        ? `<select class="size-select text-xs border border-outline-variant rounded px-1.5 py-1 mb-1.5 bg-white" data-product-id="${p.id}${dupIndex}" onclick="event.stopPropagation()">${p.sizes.map((s, i) => `<option value="${i}">${s.label || 'Tek Boy'} — ₺${s.price.toFixed(0)}</option>`).join('')}</select>`
         : `<p class="font-body-md text-[13px] text-on-surface-variant mb-2">${formatPriceLabel(p.sizes)}</p>`}
-      <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
+      <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}${dupIndex}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
     </div>
-  `).join('');
+  `;
+
+  const firstPass = featured.map(p => cardHtml(p, ''));
+  const secondPass = featured.map(p => cardHtml(p, '-dup'));
+  wrap.innerHTML = firstPass.concat(secondPass).join('');
   wireAddToCart(wrap);
   wireSizeSelects(wrap);
 }
@@ -320,9 +333,11 @@ function wireSizeSelects(scope) {
   scope.querySelectorAll('.size-select').forEach(select => {
     select.addEventListener('change', () => {
       const productId = select.dataset.productId;
+      const realId = productId.replace('-dup', '');
       const btn = scope.querySelector(`.add-to-cart-btn[data-id="${productId}"]`);
       if (!btn) return;
-      const product = allProducts.find(p => p.id === productId);
+      const product = allProducts.find(p => p.id === realId);
+      if (!product) return;
       const size = product.sizes[Number(select.value)];
       btn.dataset.price = size.price;
       btn.dataset.size = size.label || '';
