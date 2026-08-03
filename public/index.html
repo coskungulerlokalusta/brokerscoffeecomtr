@@ -13,12 +13,7 @@
   @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(13,27,61,0.97) 25%, rgba(13,27,61,0.5) 100%); } }
   .cat-tab.active { background: #0d1b3d; color: #fff; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
-  .featured-auto-scroll { width: max-content; animation: featured-scroll-left 40s linear infinite; }
-  .featured-auto-scroll:hover { animation-play-state: paused; }
-  @keyframes featured-scroll-left {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
+  .featured-auto-scroll { width: max-content; transition: transform 0.8s ease; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   body { padding-bottom: 0; }
   @media (max-width: 768px) { body { padding-bottom: 72px; } }
@@ -302,6 +297,38 @@ function renderFeatured(products, featuredIds) {
   wrap.innerHTML = firstPass.concat(secondPass).join('');
   wireAddToCart(wrap);
   wireSizeSelects(wrap);
+  startFeaturedAutoScroll(featured.length);
+}
+
+let featuredScrollTimer = null;
+function startFeaturedAutoScroll(itemCount) {
+  const wrap = document.getElementById('featured-scroll');
+  if (featuredScrollTimer) clearInterval(featuredScrollTimer);
+  if (!itemCount) return;
+
+  let step = 0;
+  const isMobile = window.innerWidth < 768;
+  const cardWidth = (isMobile ? 160 : 192) + 16; // kart genişliği + gap (w-40/w-48 + gap-4)
+  let paused = false;
+
+  wrap.parentElement.addEventListener('mouseenter', () => { paused = true; });
+  wrap.parentElement.addEventListener('mouseleave', () => { paused = false; });
+
+  featuredScrollTimer = setInterval(() => {
+    if (paused) return;
+    step++;
+    wrap.style.transform = `translateX(-${step * cardWidth}px)`;
+
+    if (step >= itemCount) {
+      // Döngü kesintisiz görünsün diye, tam bir tur bitince animasyonsuz başa dön
+      setTimeout(() => {
+        wrap.style.transition = 'none';
+        wrap.style.transform = 'translateX(0)';
+        step = 0;
+        requestAnimationFrame(() => { wrap.style.transition = 'transform 0.8s ease'; });
+      }, 850);
+    }
+  }, 1800); // 0.8s kayma + 1s bekleme
 }
 
 function renderTabs(categories) {
