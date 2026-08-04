@@ -26,6 +26,7 @@ const DEFAULTS = {
   ],
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',
+  orderNotifySmsPhones: [],
 };
 
 async function loadSettings() {

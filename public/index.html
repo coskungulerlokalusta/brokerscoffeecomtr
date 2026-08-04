@@ -34,7 +34,7 @@
 <div class="hidden md:flex items-center gap-8 font-label-sm text-label-sm uppercase tracking-widest">
 <a href="/#one-cikanlar" class="text-on-surface-variant hover:text-primary transition-colors">Öne Çıkanlar</a>
 <a href="/#menu" class="text-primary border-b border-tertiary-container pb-1">Menü</a>
-<a href="/#lokasyon" class="text-on-surface-variant hover:text-primary transition-colors">Lokasyon</a>
+<a href="/#lokasyon" id="nav-lokasyon-link" class="text-on-surface-variant hover:text-primary transition-colors">Lokasyon</a>
 <a href="/#hakkimizda" class="text-on-surface-variant hover:text-primary transition-colors">Hakkımızda</a>
 </div>
 <div class="flex items-center gap-5">
@@ -501,6 +501,8 @@ async function updateAccountNav() {
       document.getElementById('value-props-section').classList.add('hidden');
       document.getElementById('lokasyon').classList.add('hidden');
       document.getElementById('footer-section').classList.add('hidden');
+      // Lokasyon bilgisi artık Hesabım sayfasında — "Lokasyon" linkini oraya yönlendir
+      document.getElementById('nav-lokasyon-link').href = '/account.html#lokasyon';
     }
   } catch (e) {}
 }

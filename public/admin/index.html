@@ -308,6 +308,11 @@
 <input id="order-notify-phone1-input" placeholder="Telefon 1 (05xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
 <input id="order-notify-phone2-input" placeholder="Telefon 2 (05xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
 
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Sipariş Bildirim Numaraları (SMS — NetGSM)</label>
+<p class="text-xs text-[#827472] mb-2">Yeni bir sipariş geldiğinde bu numaralara otomatik SMS gider. İstediğin kadar numara ekleyebilirsin.</p>
+<div id="sms-notify-rows" class="flex flex-col gap-2 mb-2"></div>
+<button type="button" id="add-sms-notify-btn" class="text-xs text-[#735c00] font-semibold mb-4">+ Numara Ekle</button>
+
 <button id="save-order-settings-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded">Kaydet</button>
 <span id="order-settings-saved-msg" class="hidden text-emerald-600 text-sm ml-3">Kaydedildi ✓</span>
 </div>
@@ -1701,9 +1706,37 @@ async function loadOrderSettings() {
   document.getElementById('extra-shot-price-input').value = s.extraShotPrice ?? 10;
   document.getElementById('order-notify-phone1-input').value = s.orderNotifyPhone1 || '';
   document.getElementById('order-notify-phone2-input').value = s.orderNotifyPhone2 || '';
+
+  document.getElementById('sms-notify-rows').innerHTML = '';
+  const smsPhones = s.orderNotifySmsPhones && s.orderNotifySmsPhones.length ? s.orderNotifySmsPhones : [''];
+  smsPhones.forEach(p => addSmsNotifyRow(p));
 }
 
+function smsNotifyRowHtml(phone = '') {
+  return `
+    <div class="flex gap-2 sms-notify-row">
+      <input placeholder="Telefon (05xxxxxxxxx)" value="${phone}" class="sms-notify-phone flex-1 border border-[#d3c3c0] rounded px-3 py-2 text-sm"/>
+      <button type="button" class="remove-sms-notify-btn text-red-500 text-sm px-1">✕</button>
+    </div>
+  `;
+}
+
+function addSmsNotifyRow(phone) {
+  const wrap = document.getElementById('sms-notify-rows');
+  const div = document.createElement('div');
+  div.innerHTML = smsNotifyRowHtml(phone);
+  const row = div.firstElementChild;
+  row.querySelector('.remove-sms-notify-btn').addEventListener('click', () => row.remove());
+  wrap.appendChild(row);
+}
+
+document.getElementById('add-sms-notify-btn').addEventListener('click', () => addSmsNotifyRow());
+
 document.getElementById('save-order-settings-btn').addEventListener('click', async () => {
+  const orderNotifySmsPhones = Array.from(document.querySelectorAll('#sms-notify-rows .sms-notify-row'))
+    .map(row => row.querySelector('.sms-notify-phone').value.trim())
+    .filter(Boolean);
+
   const res = await fetch('/api/admin/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1715,12 +1748,14 @@ document.getElementById('save-order-settings-btn').addEventListener('click', asy
       extraShotPrice: document.getElementById('extra-shot-price-input').value,
       orderNotifyPhone1: document.getElementById('order-notify-phone1-input').value,
       orderNotifyPhone2: document.getElementById('order-notify-phone2-input').value,
+      orderNotifySmsPhones,
     }),
   });
   if (res.ok) {
     const msg = document.getElementById('order-settings-saved-msg');
     msg.classList.remove('hidden');
     setTimeout(() => msg.classList.add('hidden'), 2000);
+    loadOrderSettings();
   }
 });
 
