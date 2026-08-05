@@ -1097,7 +1097,9 @@ const INTEGRATION_CONFIG = {
     icon: 'mn',
     color: '#fef3c7', textColor: '#b45309',
     fields: [
-      { key: 'authorizationToken', label: 'Yetki Anahtarı (Authorization Token)', help: '(Multinet\'ten alınır)', type: 'secret' },
+      { key: 'appToken', label: 'AppToken', help: '(Multinet\'ten alınır)', type: 'secret' },
+      { key: 'email', label: 'E-posta', type: 'text' },
+      { key: 'posword', label: 'Şifre (posword)', type: 'secret' },
       { key: 'merchantId', label: 'Üye İşyeri No (Merchant ID)', type: 'text' },
       { key: 'terminalId', label: 'Terminal No (Terminal ID)', type: 'text' },
       { key: 'saltKey', label: 'Salt Key', help: '(imza için, Multinet\'ten alınır)', type: 'secret' },
