@@ -50,6 +50,7 @@ function postJson(url, body) {
         path: u.pathname + u.search,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+        timeout: 15000, // 15 saniye — Multinet'e bağlanılamıyorsa sonsuza kadar beklemeyelim
       },
       (res) => {
         let raw = '';
@@ -61,6 +62,9 @@ function postJson(url, body) {
         });
       }
     );
+    req.on('timeout', () => {
+      req.destroy(new Error(`Multinet sunucusuna bağlanılamadı (zaman aşımı): ${u.hostname}`));
+    });
     req.on('error', reject);
     req.write(data);
     req.end();
