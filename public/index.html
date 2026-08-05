@@ -30,7 +30,10 @@
 <!-- Header -->
 <header class="w-full top-0 sticky z-50 bg-background/95 backdrop-blur-md shadow-sm shadow-primary/5">
 <nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base max-w-container-max mx-auto">
-<a href="/" class="font-display-lg text-[24px] text-primary tracking-tighter">Brokers Coffee</a>
+<a href="/" class="flex items-center gap-2">
+<img id="header-logo" class="hidden h-9 w-9 object-contain rounded" alt="Brokers Coffee logo"/>
+<span class="font-display-lg text-[24px] text-primary tracking-tighter">Brokers Coffee</span>
+</a>
 <div class="hidden md:flex items-center gap-8 font-label-sm text-label-sm uppercase tracking-widest">
 <a href="/#one-cikanlar" class="text-on-surface-variant hover:text-primary transition-colors">Öne Çıkanlar</a>
 <a href="/#menu" class="text-primary border-b border-tertiary-container pb-1">Menü</a>
@@ -445,6 +448,25 @@ async function init() {
 
     const titleEl = document.getElementById('featured-title');
     if (titleEl && content.featuredTitle) titleEl.textContent = content.featuredTitle;
+
+    if (content.logo) {
+      const logoImg = document.getElementById('header-logo');
+      logoImg.src = content.logo;
+      logoImg.classList.remove('hidden');
+
+      // Google'ın işletme logomuzu arama sonuçlarında/bilgi panelinde tanıması için
+      // gereken yapılandırılmış veri (Organization schema)
+      const ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Brokers Coffee',
+        url: 'https://brokerscoffee.com.tr',
+        logo: content.logo.startsWith('http') ? content.logo : `https://brokerscoffee.com.tr${content.logo}`,
+      });
+      document.head.appendChild(ld);
+    }
 
     renderFeatured(allProducts, content.featuredProductIds);
     renderTabs(categories);
