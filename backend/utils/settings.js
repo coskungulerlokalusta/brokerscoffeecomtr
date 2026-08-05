@@ -24,6 +24,7 @@ const DEFAULTS = {
     { threshold: 1000, discount: 150 },
     { threshold: 1500, discount: 250 },
   ],
+  categoryOrder: [],
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',
   orderNotifySmsPhones: [],

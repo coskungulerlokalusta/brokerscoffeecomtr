@@ -90,6 +90,12 @@
 <button id="add-product-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ürün Ekle</button>
 </div>
 
+<div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+<h3 class="font-semibold text-[#0d1b3d] mb-1">Kategori Sırası</h3>
+<p class="text-xs text-[#827472] mb-3">Menüde ve site sekmelerinde kategorilerin hangi sırayla göründüğünü sürükleyerek değiştir.</p>
+<div id="category-order-rows" class="flex flex-col gap-2"></div>
+</div>
+
 <div id="bulk-toolbar" class="hidden sticky top-0 z-30 bg-[#0d1b3d] text-white rounded-lg px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
 <span id="bulk-selected-count" class="text-sm font-semibold">0 ürün seçili</span>
 <button id="bulk-edit-btn" class="text-xs font-semibold uppercase tracking-widest border border-white/40 rounded px-3 py-1.5 hover:bg-white/10">✏️ Toplu Düzenle</button>
@@ -813,6 +819,56 @@ function wireProductDragAndDrop(scope) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderedIds }),
+      });
+    });
+  });
+}
+
+// ---- Kategori Sırası ----
+let draggedCategoryRow = null;
+
+async function loadCategoryOrder() {
+  const [catsRes, settingsRes] = await Promise.all([
+    fetch('/api/categories'),
+    fetch('/api/admin/settings'),
+  ]);
+  const categories = catsRes.ok ? await catsRes.json() : [];
+  const wrap = document.getElementById('category-order-rows');
+  wrap.innerHTML = categories.map(c => `
+    <div class="category-order-row flex items-center gap-2 bg-[#faf9f6] border border-[#e3e2e0] rounded px-3 py-2" draggable="true" data-cat="${c}">
+      <span class="text-[#c3b8b0] cursor-grab select-none">⠿</span>
+      <span class="text-sm font-semibold text-[#0d1b3d]">${c}</span>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.category-order-row').forEach(row => {
+    row.addEventListener('dragstart', () => {
+      draggedCategoryRow = row;
+      row.classList.add('opacity-40');
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('opacity-40');
+      draggedCategoryRow = null;
+    });
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!draggedCategoryRow || draggedCategoryRow === row) return;
+      const rows = Array.from(wrap.querySelectorAll('.category-order-row'));
+      const draggedIdx = rows.indexOf(draggedCategoryRow);
+      const targetIdx = rows.indexOf(row);
+      if (draggedIdx < targetIdx) {
+        wrap.insertBefore(draggedCategoryRow, row.nextSibling);
+      } else {
+        wrap.insertBefore(draggedCategoryRow, row);
+      }
+    });
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const categoryOrder = Array.from(wrap.querySelectorAll('.category-order-row')).map(r => r.dataset.cat);
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryOrder }),
       });
     });
   });
@@ -2205,6 +2261,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadOrders();
     loadSettings();
     loadProducts();
+    loadCategoryOrder();
     loadIntegrations();
     loadRewardsAdmin();
     loadRedemptions();

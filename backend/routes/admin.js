@@ -83,7 +83,7 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, hideDeliveryInfoForStaff, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, monthlySpendTiers,
+    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, hideDeliveryInfoForStaff, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, monthlySpendTiers, categoryOrder,
   } = req.body;
   const updates = {};
   if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
@@ -102,6 +102,9 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
     updates.monthlySpendTiers = monthlySpendTiers
       .map((t) => ({ threshold: Number(t.threshold) || 0, discount: Number(t.discount) || 0 }))
       .filter((t) => t.threshold > 0 && t.discount > 0);
+  }
+  if (categoryOrder !== undefined) {
+    updates.categoryOrder = categoryOrder.filter(Boolean);
   }
   if (extraShotPrice !== undefined) updates.extraShotPrice = Number(extraShotPrice) || 0;
   if (orderNotifyPhone1 !== undefined) updates.orderNotifyPhone1 = orderNotifyPhone1;

@@ -77,10 +77,20 @@ app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) 
   res.json(withPrices);
 });
 
-// Kategori listesini getir
+// Kategori listesini getir — admin panelde belirlenen sıraya göre dizilir
 app.get('/api/categories', async (req, res) => {
   const products = await productStore.loadProducts();
   const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
+  const currentSettings = await settings.loadSettings();
+  const order = currentSettings.categoryOrder || [];
+  cats.sort((a, b) => {
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    if (ia === -1 && ib === -1) return 0;
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
   res.json(cats);
 });
 
