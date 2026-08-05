@@ -1,7 +1,7 @@
 const kv = require('./kvStore');
 
 const KEY = 'site_content';
-const KEYS = ['heroImg', 'aboutImg1', 'aboutImg2', 'locationImg1', 'locationImg2'];
+const KEYS = ['logo', 'heroImg', 'aboutImg1', 'aboutImg2', 'locationImg1', 'locationImg2'];
 
 const FEATURED_DEFAULTS = { featuredTitle: 'Öne Çıkanlar', featuredProductIds: [] };
 
