@@ -76,6 +76,11 @@ document.getElementById('tab-staff').addEventListener('click', () => {
   document.getElementById('staff-code').required = true;
 });
 
+// QR kod ile ?type=staff üzerinden gelindiyse Personel sekmesi otomatik açılsın
+if (new URLSearchParams(window.location.search).get('type') === 'staff') {
+  document.getElementById('tab-staff').click();
+}
+
 document.getElementById('phone-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errorEl = document.getElementById('phone-error');
