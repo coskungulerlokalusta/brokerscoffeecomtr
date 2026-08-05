@@ -1093,12 +1093,16 @@ const INTEGRATION_CONFIG = {
   },
   multinet: {
     title: 'Multinet',
-    subtitle: 'Yemek Kartı',
+    subtitle: 'Yemek Kartı — 3D Ödeme',
     icon: 'mn',
     color: '#fef3c7', textColor: '#b45309',
     fields: [
-      { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
-      { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
+      { key: 'authorizationToken', label: 'Yetki Anahtarı (Authorization Token)', help: '(Multinet\'ten alınır)', type: 'secret' },
+      { key: 'merchantId', label: 'Üye İşyeri No (Merchant ID)', type: 'text' },
+      { key: 'terminalId', label: 'Terminal No (Terminal ID)', type: 'text' },
+      { key: 'saltKey', label: 'Salt Key', help: '(imza için, Multinet\'ten alınır)', type: 'secret' },
+      { key: 'defaultProductId', label: 'Ürün Kodu (Merchant Product ID)', help: '(sözleşmende yazan kategori kodu, örn. 142)', type: 'text' },
+      { key: 'environment', label: 'Ortam', type: 'select', options: [['test', 'Test'], ['live', 'Canlı']] },
     ],
   },
   pluxee: {

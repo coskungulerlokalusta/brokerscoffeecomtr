@@ -288,6 +288,12 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
       note.textContent = 'Siparişin hazırlanacak, ödemeyi mağazadan teslim alırken yapacaksın.';
       note.classList.remove('hidden');
       document.getElementById('submit-btn').textContent = 'Siparişi Oluştur';
+    } else if (method === 'multinet') {
+      cardSection.classList.add('hidden');
+      cardInputs.forEach(i => i.required = false);
+      note.textContent = 'Multinet kartınla ödemek için Multinet\'in güvenli sayfasına yönlendirileceksin.';
+      note.classList.remove('hidden');
+      document.getElementById('submit-btn').textContent = 'Multinet ile Öde';
     } else {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
@@ -301,8 +307,8 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 document.getElementById('checkout-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-  if (selectedMethod !== 'card' && selectedMethod !== 'store') {
-    return; // henüz aktif olmayan yöntemler (Multinet vb.)
+  if (selectedMethod !== 'card' && selectedMethod !== 'store' && selectedMethod !== 'multinet') {
+    return; // henüz aktif olmayan yöntemler (Pluxee/Ticket/Metropol)
   }
 
   const submitBtn = document.getElementById('submit-btn');
@@ -341,6 +347,27 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
       }
       localStorage.removeItem('brokers_coffee_cart');
       window.location.href = `/payment-result.html?status=success&orderId=${data.id}&method=store`;
+      return;
+    }
+
+    if (selectedMethod === 'multinet') {
+      const res = await fetch('/api/payment/multinet/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(basePayload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorMsg.textContent = data.error || 'Multinet ödemesi başlatılamadı, tekrar deneyin.';
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Multinet ile Öde';
+        return;
+      }
+      localStorage.removeItem('brokers_coffee_cart');
+      document.open();
+      document.write(data.htmlContent);
+      document.close();
       return;
     }
 
