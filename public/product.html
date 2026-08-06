@@ -44,6 +44,25 @@
 <div id="size-options" class="flex gap-3 flex-wrap"></div>
 </div>
 
+<div id="sugar-section" class="hidden mb-6">
+<h2 class="text-sm font-bold uppercase tracking-widest text-[#504442] mb-3">Şeker Tercihi <span class="text-red-500">*</span></h2>
+<div class="grid grid-cols-2 gap-3">
+<label class="border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="sugar" value="sade" class="accent-[#0d1b3d]"/> Sade
+</label>
+<label class="border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="sugar" value="az-sekerli" class="accent-[#0d1b3d]"/> Az Şekerli
+</label>
+<label class="border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="sugar" value="orta-sekerli" class="accent-[#0d1b3d]"/> Orta Şekerli
+</label>
+<label class="border border-[#d3c3c0] rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0d1b3d] flex items-center gap-2 cursor-pointer has-[:checked]:border-[#0d1b3d] has-[:checked]:bg-[#0d1b3d] has-[:checked]:text-white">
+<input type="radio" name="sugar" value="cok-sekerli" class="accent-[#0d1b3d]"/> Çok Şekerli
+</label>
+</div>
+<p id="sugar-required-msg" class="hidden text-red-500 text-xs mt-2">Lütfen şeker tercihini seç.</p>
+</div>
+
 <div class="mb-6">
 <h2 class="text-sm font-bold uppercase tracking-widest text-[#504442] mb-3">İçim Tercihi</h2>
 <div class="flex gap-3">
@@ -160,6 +179,10 @@ async function init() {
 
     renderSizes();
 
+    if (product.name && product.name.toLocaleLowerCase('tr').includes('türk kahvesi')) {
+      document.getElementById('sugar-section').classList.remove('hidden');
+    }
+
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('product-content').classList.remove('hidden');
   } catch (e) {
@@ -183,9 +206,23 @@ document.getElementById('extra-shot-check').addEventListener('change', updateTot
 
 document.getElementById('add-to-cart-btn').addEventListener('click', () => {
   if (!selectedSize) return;
+
+  const sugarSection = document.getElementById('sugar-section');
+  const sugarChecked = document.querySelector('input[name="sugar"]:checked');
+  if (!sugarSection.classList.contains('hidden') && !sugarChecked) {
+    document.getElementById('sugar-required-msg').classList.remove('hidden');
+    sugarSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  document.getElementById('sugar-required-msg').classList.add('hidden');
+
   const extraShot = document.getElementById('extra-shot-check').checked;
   const intensity = document.querySelector('input[name="intensity"]:checked').value;
   const note = document.getElementById('order-note-input').value.trim();
+  const sugar = sugarChecked ? sugarChecked.value : null;
+  const sugarLabels = { sade: 'Sade', 'az-sekerli': 'Az Şekerli', 'orta-sekerli': 'Orta Şekerli', 'cok-sekerli': 'Çok Şekerli' };
+  const finalNote = sugar ? `Şeker: ${sugarLabels[sugar]}${note ? ' — ' + note : ''}` : note;
+
   addToCart({
     productId: product.id,
     name: product.name,
@@ -194,7 +231,8 @@ document.getElementById('add-to-cart-btn').addEventListener('click', () => {
     extras: [],
     intensity,
     extraShot,
-    note,
+    note: finalNote,
+    sugar,
     qty,
   });
   const btn = document.getElementById('add-to-cart-btn');

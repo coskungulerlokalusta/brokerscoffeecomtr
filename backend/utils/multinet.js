@@ -84,9 +84,8 @@ async function login(creds, { force } = {}) {
   });
 
   const body = res.json || {};
-  // Multinet'in tam alan adını doğrulamadığımız için birkaç olası ismi deniyoruz
-  const token = body.UserToken || body.userToken || body.Token || body.token
-    || (body.Data && (body.Data.UserToken || body.Data.userToken));
+  const result = body.Result || body.result || body;
+  const token = result.UserToken || result.userToken || result.Token || result.token;
 
   if (!token) {
     throw new Error(
