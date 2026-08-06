@@ -105,6 +105,11 @@
 </label>
 </div>
 <p id="payment-method-note" class="hidden text-xs text-amber-700 bg-amber-50 rounded px-3 py-2 mt-2"></p>
+<div id="pluxee-otp-fields" class="hidden mt-3 flex flex-col gap-2">
+<p class="text-xs text-[#827472]">Pluxee mobil uygulamasından "Ödeme Yap"a basıp aldığın kodu buraya gir.</p>
+<input id="pluxee-gsm" placeholder="Pluxee'ye kayıtlı telefon (5xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-4 py-2.5 text-sm"/>
+<input id="pluxee-otp" placeholder="6 haneli kod" inputmode="numeric" maxlength="6" class="border border-[#d3c3c0] rounded px-4 py-2.5 text-sm"/>
+</div>
 </section>
 
 <section id="card-details-section" class="bg-white rounded-lg shadow-sm p-5">
@@ -282,24 +287,34 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
       cardInputs.forEach(i => i.required = true);
       note.classList.add('hidden');
       document.getElementById('submit-btn').textContent = 'Ödemeyi Tamamla';
+      document.getElementById('pluxee-otp-fields').classList.add('hidden');
     } else if (method === 'store') {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
       note.textContent = 'Siparişin hazırlanacak, ödemeyi mağazadan teslim alırken yapacaksın.';
       note.classList.remove('hidden');
       document.getElementById('submit-btn').textContent = 'Siparişi Oluştur';
+      document.getElementById('pluxee-otp-fields').classList.add('hidden');
     } else if (method === 'multinet') {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
       note.textContent = 'Multinet kartınla ödemek için Multinet\'in güvenli sayfasına yönlendirileceksin.';
       note.classList.remove('hidden');
       document.getElementById('submit-btn').textContent = 'Multinet ile Öde';
+      document.getElementById('pluxee-otp-fields').classList.add('hidden');
+    } else if (method === 'pluxee') {
+      cardSection.classList.add('hidden');
+      cardInputs.forEach(i => i.required = false);
+      note.classList.add('hidden');
+      document.getElementById('pluxee-otp-fields').classList.remove('hidden');
+      document.getElementById('submit-btn').textContent = 'Pluxee ile Öde';
     } else {
       cardSection.classList.add('hidden');
       cardInputs.forEach(i => i.required = false);
       note.textContent = `${PAYMENT_METHOD_LABELS[method]} ile online ödeme yakında aktif olacak. Şimdilik mağazada kartınızı okutabilir ya da Kredi Kartı seçeneğini kullanabilirsiniz.`;
       note.classList.remove('hidden');
       document.getElementById('submit-btn').textContent = 'Ödemeyi Tamamla';
+      document.getElementById('pluxee-otp-fields').classList.add('hidden');
     }
   });
 });
@@ -307,8 +322,8 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 document.getElementById('checkout-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-  if (selectedMethod !== 'card' && selectedMethod !== 'store' && selectedMethod !== 'multinet') {
-    return; // henüz aktif olmayan yöntemler (Pluxee/Ticket/Metropol)
+  if (selectedMethod !== 'card' && selectedMethod !== 'store' && selectedMethod !== 'multinet' && selectedMethod !== 'pluxee') {
+    return; // henüz aktif olmayan yöntemler (Ticket/Metropol)
   }
 
   const submitBtn = document.getElementById('submit-btn');
@@ -368,6 +383,34 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
       document.open();
       document.write(data.htmlContent);
       document.close();
+      return;
+    }
+
+    if (selectedMethod === 'pluxee') {
+      const pluxeeGsm = document.getElementById('pluxee-gsm').value.trim();
+      const pluxeeOtp = document.getElementById('pluxee-otp').value.trim();
+      if (!pluxeeGsm || !pluxeeOtp) {
+        errorMsg.textContent = 'Telefon numarası ve Pluxee kodunu gir.';
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Pluxee ile Öde';
+        return;
+      }
+      const res = await fetch('/api/payment/pluxee/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...basePayload, pluxeeGsm, pluxeeOtp }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorMsg.textContent = data.error || 'Pluxee ödemesi başarısız, tekrar deneyin.';
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Pluxee ile Öde';
+        return;
+      }
+      localStorage.removeItem('brokers_coffee_cart');
+      window.location.href = `/payment-result.html?status=success&orderId=${data.id}&method=pluxee`;
       return;
     }
 

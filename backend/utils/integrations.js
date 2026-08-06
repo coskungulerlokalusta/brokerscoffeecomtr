@@ -10,7 +10,7 @@ const DEFAULTS = {
   instagram: { enabled: false, igBusinessAccountId: '', accessToken: '', verifyToken: '' },
   messenger: { enabled: false, pageAccessToken: '', verifyToken: '' },
   multinet: { enabled: false, appToken: '', email: '', posword: '', merchantId: '', terminalId: '', saltKey: '', defaultProductId: '', environment: 'test' },
-  pluxee: { enabled: false, merchantId: '', apiKey: '' },
+  pluxee: { enabled: false, wsUserName: '', wsPassword: '', merchantNo: '', terminalNo: '', publicKeyPem: '', environment: 'uat' },
   ticket: { enabled: false, merchantId: '', apiKey: '' },
   metropol: { enabled: false, merchantId: '', apiKey: '' },
 };
@@ -23,7 +23,7 @@ const SECRET_FIELDS = {
   instagram: ['accessToken', 'verifyToken'],
   messenger: ['pageAccessToken', 'verifyToken'],
   multinet: ['appToken', 'posword', 'saltKey'],
-  pluxee: ['apiKey'],
+  pluxee: ['wsPassword', 'publicKeyPem'],
   ticket: ['apiKey'],
   metropol: ['apiKey'],
 };
@@ -35,7 +35,7 @@ const ENV_MAP = {
   netgsm: { username: 'NETGSM_USERNAME', password: 'NETGSM_PASSWORD', header: 'NETGSM_HEADER' },
   anthropic: { apiKey: 'ANTHROPIC_API_KEY' },
   multinet: { appToken: 'MULTINET_APP_TOKEN', email: 'MULTINET_EMAIL', posword: 'MULTINET_PASSWORD', merchantId: 'MULTINET_MERCHANT_ID', terminalId: 'MULTINET_TERMINAL_ID', saltKey: 'MULTINET_SALT_KEY', defaultProductId: 'MULTINET_PRODUCT_ID' },
-  pluxee: { merchantId: 'PLUXEE_MERCHANT_ID', apiKey: 'PLUXEE_API_KEY' },
+  pluxee: { wsUserName: 'PLUXEE_WS_USERNAME', wsPassword: 'PLUXEE_WS_PASSWORD', merchantNo: 'PLUXEE_MERCHANT_NO', terminalNo: 'PLUXEE_TERMINAL_NO', publicKeyPem: 'PLUXEE_PUBLIC_KEY' },
   ticket: { merchantId: 'TICKET_MERCHANT_ID', apiKey: 'TICKET_API_KEY' },
   metropol: { merchantId: 'METROPOL_MERCHANT_ID', apiKey: 'METROPOL_API_KEY' },
 };

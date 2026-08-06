@@ -7,6 +7,7 @@ const settings = require('../utils/settings');
 const orderNotify = require('../utils/orderNotify');
 const monthlyTiers = require('../utils/monthlyTiers');
 const multinet = require('../utils/multinet');
+const pluxee = require('../utils/pluxee');
 const crypto = require('crypto');
 const { calculateDiscount } = require('../utils/discountCalc');
 
@@ -204,6 +205,69 @@ router.get('/multinet/callback', async (req, res) => {
     res.redirect(`/payment-result.html?status=${success ? 'success' : 'fail'}&orderId=${orderId}&message=${encodeURIComponent(msg)}`);
   } catch (err) {
     res.redirect(`/payment-result.html?status=fail&message=${encodeURIComponent('Bağlantı hatası')}`);
+  }
+});
+
+// Pluxee ödemesi — 3D yönlendirmesi yok, müşteri telefon + Pluxee uygulamasından aldığı
+// OTP kodunu doğrudan sitede girer, ödeme senkron olarak burada tamamlanır.
+router.post('/pluxee/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
+  const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier, pluxeeGsm, pluxeeOtp } = req.body;
+
+  if (!items || !items.length || !customerName || !phone || !deliveryType) {
+    return res.status(400).json({ error: 'Eksik sipariş bilgisi' });
+  }
+  if (!pluxeeGsm || !pluxeeOtp) {
+    return res.status(400).json({ error: 'Pluxee telefon numarası ve kodu gerekli' });
+  }
+
+  const customerId = req.customer ? req.customer.id : null;
+  const { subtotal, discountAmount, discountBreakdown, total: itemsTotal, appliedTier } = await calculateDiscount(
+    items,
+    !!(req.customer && req.customer.isStaff),
+    { customerId, useMonthlyTier }
+  );
+  const currentSettings = await settings.loadSettings();
+  const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
+  const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
+
+  const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote, paymentMethod: 'pluxee' });
+  order.customerId = customerId;
+  if (discountAmount > 0) {
+    order.staffDiscountBreakdown = discountBreakdown;
+    order.subtotalBeforeDiscount = subtotal;
+  }
+
+  try {
+    const result = await pluxee.makePayment({
+      gsm: pluxeeGsm,
+      otp: pluxeeOtp,
+      amount: total,
+      externalRrn: order.id,
+      externalInfo: 'Brokers Coffee',
+    });
+
+    const orders = await orderStore.loadOrders();
+    const idx = orders.findIndex((o) => o.id === order.id);
+
+    if (!result.success) {
+      if (idx !== -1) { orders[idx].orderStatus = 'iptal'; orders[idx].paymentStatus = 'basarisiz'; await orderStore.saveOrders(orders); }
+      return res.status(400).json({ error: result.resultMessage || 'Pluxee ödemesi başarısız' });
+    }
+
+    order.paymentStatus = 'odendi';
+    order.pluxeeRrn = result.rrn;
+    if (idx !== -1) { orders[idx] = order; await orderStore.saveOrders(orders); }
+
+    if (customerId) {
+      const earned = Math.floor(total / currentSettings.pointsPerTL);
+      if (earned > 0) await customerAuth.addPoints(customerId, earned);
+      if (appliedTier) await monthlyTiers.claimTier(customerId, appliedTier.threshold);
+    }
+    orderNotify.notifyNewOrder(order);
+
+    res.json({ id: order.id });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

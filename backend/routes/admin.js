@@ -208,6 +208,7 @@ router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, r
     instagram: () => require('../utils/instagram').testConnection(),
     messenger: () => require('../utils/messenger').testConnection(),
     multinet: () => require('../utils/multinet').testConnection(),
+    pluxee: () => require('../utils/pluxee').testConnection(),
   };
   if (!testers[provider]) {
     return res.status(400).json({ error: 'Bu sağlayıcı için otomatik bağlantı testi henüz yok.' });

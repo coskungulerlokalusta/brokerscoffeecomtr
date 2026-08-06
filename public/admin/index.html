@@ -1109,12 +1109,16 @@ const INTEGRATION_CONFIG = {
   },
   pluxee: {
     title: 'Pluxee (Sodexo)',
-    subtitle: 'Yemek Kartı',
+    subtitle: 'Yemek Kartı — OTP Ödeme',
     icon: 'px',
     color: '#fee2e2', textColor: '#b91c1c',
     fields: [
-      { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
-      { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
+      { key: 'wsUserName', label: 'Kullanıcı Adı (WsUser)', type: 'text' },
+      { key: 'wsPassword', label: 'Şifre', type: 'secret' },
+      { key: 'merchantNo', label: 'Üye No (Merchant No)', type: 'text' },
+      { key: 'terminalNo', label: 'Terminal No', type: 'text' },
+      { key: 'publicKeyPem', label: 'RSA Public Key (PEM formatında)', help: '(Pluxee ayrıca bir dosya olarak paylaşacak)', type: 'textarea' },
+      { key: 'environment', label: 'Ortam', type: 'select', options: [['uat', 'UAT (Test)'], ['prod', 'Canlı']] },
     ],
   },
   ticket: {
@@ -1146,6 +1150,10 @@ function fieldInputHtml(provider, field, currentValue, isSet) {
       `<option value="${val}" ${currentValue === val ? 'selected' : ''}>${label}</option>`
     ).join('');
     return `<select id="${id}" class="border border-[#d3c3c0] rounded px-3 py-2.5 text-sm w-full">${options}</select>`;
+  }
+  if (field.type === 'textarea') {
+    const placeholder = isSet ? currentValue : '-----BEGIN PUBLIC KEY-----\n...';
+    return `<textarea id="${id}" placeholder="${placeholder}" rows="4" class="border border-[#d3c3c0] rounded px-3 py-2.5 text-xs w-full font-mono"></textarea>`;
   }
   if (field.type === 'secret') {
     const placeholder = isSet ? currentValue : 'sandbox-xxx veya gerçek anahtar';
