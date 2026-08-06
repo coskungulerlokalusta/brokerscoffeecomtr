@@ -14,7 +14,7 @@ const integrations = require('./integrations');
 const LOGIN_URL_TEST = 'https://test-posvent-rest.inventiv.services/RegisterService/Login';
 const LOGIN_URL_LIVE = 'https://posvent-rest.inventiv.services/RegisterService/Login'; // canlıya geçerken Multinet ile teyit edilmeli
 
-const PAYMENT_URL_TEST = 'https://test-multinet-webpos-merchant.inventiv.services/ThreeDPayment/ThreeDPayment';
+const PAYMENT_URL_TEST = 'https://test-multiwebpos.multinet.com.tr/ThreeDPayment/ThreeDPayment'; // dokümanın "Test Sistemi Adresi" ile örnek kodu farklı adresler veriyordu, bu ikincisi denendi
 const PAYMENT_URL_LIVE = 'https://multiwebpos.multinet.com.tr/ThreeDPayment/ThreeDPayment'; // canlıya geçerken Multinet ile teyit edilmeli
 
 const ONLINE_SERVICE_URL_TEST = 'https://test-posvent-rest.inventiv.services/OnlinePaymentService';
