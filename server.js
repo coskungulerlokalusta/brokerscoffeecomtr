@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const productStore = require('./backend/utils/productStore');
+const durakpos = require('./backend/utils/durakpos');
 const adminAuth = require('./backend/utils/adminAuth');
 const customerAuth = require('./backend/utils/customerAuth');
 const settings = require('./backend/utils/settings');
@@ -62,46 +63,61 @@ app.get('/api/settings/public', async (req, res) => {
 
 // Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir
 app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const products = await productStore.loadProducts();
-  const isStaff = !!(req.customer && req.customer.isStaff);
-  const currentSettings = isStaff ? await settings.loadSettings() : null;
-  const withPrices = products.map((p) => withEffectivePrices(p, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
+  try {
+    const { products } = await durakpos.fetchMenu();
+    const isStaff = !!(req.customer && req.customer.isStaff);
+    const currentSettings = isStaff ? await settings.loadSettings() : null;
+    const withPrices = products.map((p) => withEffectivePrices(p, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
 
-  const { category } = req.query;
-  if (category) {
-    const filtered = withPrices.filter(
-      (p) => (p.subcategory || p.category).toLowerCase() === category.toLowerCase()
-    );
-    return res.json(filtered);
+    const { category } = req.query;
+    if (category) {
+      const filtered = withPrices.filter(
+        (p) => (p.subcategory || p.category).toLowerCase() === category.toLowerCase()
+      );
+      return res.json(filtered);
+    }
+    res.json(withPrices);
+  } catch (err) {
+    console.error('DurakPOS menü hatası:', err.message);
+    res.status(502).json({ error: 'Menü şu anda yüklenemiyor, birazdan tekrar dene.' });
   }
-  res.json(withPrices);
 });
 
 // Kategori listesini getir — admin panelde belirlenen sıraya göre dizilir
 app.get('/api/categories', async (req, res) => {
-  const products = await productStore.loadProducts();
-  const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
-  const currentSettings = await settings.loadSettings();
-  const order = currentSettings.categoryOrder || [];
-  cats.sort((a, b) => {
-    const ia = order.indexOf(a);
-    const ib = order.indexOf(b);
-    if (ia === -1 && ib === -1) return 0;
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
-  res.json(cats);
+  try {
+    const { products } = await durakpos.fetchMenu();
+    const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
+    const currentSettings = await settings.loadSettings();
+    const order = currentSettings.categoryOrder || [];
+    cats.sort((a, b) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    res.json(cats);
+  } catch (err) {
+    console.error('DurakPOS kategori hatası:', err.message);
+    res.status(502).json({ error: 'Kategoriler şu anda yüklenemiyor.' });
+  }
 });
 
 // Tek ürün getir
 app.get('/api/products/:id', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const products = await productStore.loadProducts();
-  const product = products.find((p) => p.id === req.params.id);
-  if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
-  const isStaff = !!(req.customer && req.customer.isStaff);
-  const currentSettings = isStaff ? await settings.loadSettings() : null;
-  res.json(withEffectivePrices(product, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
+  try {
+    const { products } = await durakpos.fetchMenu();
+    const product = products.find((p) => p.id === req.params.id);
+    if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
+    const isStaff = !!(req.customer && req.customer.isStaff);
+    const currentSettings = isStaff ? await settings.loadSettings() : null;
+    res.json(withEffectivePrices(product, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
+  } catch (err) {
+    console.error('DurakPOS ürün hatası:', err.message);
+    res.status(502).json({ error: 'Ürün şu anda yüklenemiyor.' });
+  }
 });
 
 // İlk çalıştırmada: MySQL boşsa, repo içindeki başlangıç verilerini (gerçek menü,
