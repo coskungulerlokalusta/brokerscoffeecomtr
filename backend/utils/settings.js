@@ -25,7 +25,6 @@ const DEFAULTS = {
     { threshold: 1500, discount: 250 },
   ],
   categoryOrder: [],
-  durakposApiKey: '8920a0d7c2ffd6727b58717eebf5ded3bf971bd5e7ae2ec4',
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',
   orderNotifySmsPhones: [],

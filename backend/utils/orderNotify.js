@@ -1,22 +1,9 @@
-// Yeni sipariş geldiğinde admin'in belirlediği numaralara WhatsApp + SMS (NetGSM) bildirimi gönderir,
-// ve siparişi DurakPOS'a iletir (menü/sipariş sistemi artık orada).
+// Yeni sipariş geldiğinde admin'in belirlediği numaralara WhatsApp + SMS (NetGSM) bildirimi gönderir.
 const settings = require('./settings');
 const whatsapp = require('./whatsapp');
 const netgsm = require('./netgsm');
-const durakpos = require('./durakpos');
 
 async function notifyNewOrder(order) {
-  try {
-    durakpos.submitOrder({
-      items: order.items,
-      customerName: order.customerName,
-      customerPhone: order.phone,
-      note: order.orderNote || '',
-    }).catch((err) => console.error('DurakPOS sipariş gönderimi başarısız:', err.message));
-  } catch (err) {
-    console.error('DurakPOS sipariş gönderim hatası:', err.message);
-  }
-
   try {
     const s = await settings.loadSettings();
     const waNumbers = [s.orderNotifyPhone1, s.orderNotifyPhone2].filter(Boolean);
