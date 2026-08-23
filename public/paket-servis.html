@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Paket Servis Yönetimi — DurakPOS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{--bg:#F7F4EE; --surface:#FFFFFF; --border:#E1D8C8; --text:#241A0F; --muted:#8A7C67; --accent:#C97A2E; --navy:#0B1F38; --navy2:#173254;}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:Arial,sans-serif; background:var(--bg); color:var(--text);}
+a{text-decoration:none; color:inherit;}
+.nav-outer{padding:20px 32px 0;}
+.nav{max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border-radius:999px; padding:14px 26px; box-shadow:0 8px 24px rgba(11,31,56,0.10); border:1px solid var(--border);}
+.logo{font-size:20px; font-weight:800;}
+.logo span{color:var(--accent);}
+.nav-links{display:flex; gap:26px; font-size:13.5px; color:var(--muted); font-weight:600;}
+.nav-right{display:flex; align-items:center; gap:12px;}
+.btn-login{background:none; border:1.5px solid var(--border); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:700; color:var(--text);}
+.btn-cta{background:var(--navy); color:#fff; padding:10px 20px; border-radius:999px; font-size:13px; font-weight:700;}
+.content{max-width:760px; margin:0 auto; padding:64px 24px 40px;}
+.badge{display:inline-block; background:#EFE3D3; color:var(--accent); font-size:12px; font-weight:700; padding:6px 14px; border-radius:999px; margin-bottom:18px;}
+
+h1{font-size:34px; font-weight:800; line-height:1.2; margin-bottom:12px;}
+.tagline{color:var(--muted); font-size:16px; margin-bottom:30px;}
+.content p{font-size:15px; line-height:1.75; color:#4A4030; margin-bottom:18px;}
+.cta-box{margin-top:36px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:26px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+.cta-box p{margin:0; font-size:14px; color:var(--text); font-weight:600;}
+.cta-box a{background:var(--navy); color:#fff; padding:12px 22px; border-radius:12px; font-size:13.5px; font-weight:700; white-space:nowrap;}
+.back{display:inline-block; margin-top:28px; font-size:13px; color:var(--muted); font-weight:600;}
+
+.site-footer{background:var(--navy); color:#fff; padding:56px 32px 0; margin-top:60px;}
+.footer-inner{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr 1fr; gap:28px; padding-bottom:40px;}
+.fbrand .logo{font-size:19px; font-weight:800; margin-bottom:12px;}
+.fbrand .logo span{color:var(--accent);}
+.fbrand p{font-size:12.5px; opacity:0.65; line-height:1.6; margin-bottom:18px; max-width:230px;}
+.fcta{display:inline-block; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:700;}
+.fcol h5{font-size:12px; font-weight:800; letter-spacing:0.04em; opacity:0.55; margin-bottom:14px; text-transform:uppercase;}
+.fcol a{display:block; font-size:13px; opacity:0.8; margin-bottom:11px;}
+.fcol a:hover{opacity:1;}
+.footer-bottom{max-width:1180px; margin:0 auto; border-top:1px solid rgba(255,255,255,0.12); padding:18px 0; font-size:12px; opacity:0.5; text-align:center;}
+@media (max-width:900px){.footer-inner{grid-template-columns:1fr 1fr;}}
+
+@media (max-width:800px){.nav-links{display:none;} .nav-outer{padding:16px 16px 0;} .footer-inner{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="nav-outer"><div class="nav">
+    <a class="logo" href="/">Durak<span>POS</span></a>
+    <div class="nav-links"><a href="/#hero">POS Sistemi</a><a href="/#features">Özellikler</a><a href="/#pricing">Fiyatlandırma</a></div>
+    <div class="nav-right"><a class="btn-login" href="/panel">Giriş Yap</a><a class="btn-cta" href="/demo-talep">Demo Talep Et</a></div>
+  </div></div>
+<div class="content">
+  <div class="badge">POS Sistemleri</div>
+  <div class="badge" style="background:#FCEFDD; color:#B5651D; margin-left:8px;">Yakında</div>
+  <h1>Paket Servis Yönetimi</h1>
+  <p class="tagline">Yemeksepeti, Trendyol Yemek ve Getir siparişlerini tek panelden yönetin.</p>
+  <p>Paket servis platformlarıyla entegrasyon için aracı servisler (API Merkezi, Posentegra gibi) üzerinden bağlantı kuruyoruz — tüm platformlardan gelen siparişler tek bir ekranda toplanacak.</p><p>Bu özellik şu an geliştirme aşamasında. İşletmeniz için önceliklendirilmesini isterseniz demo talebinde belirtin.</p>
+  <div class="cta-box">
+    <p>DurakPOS'u işletmenizde denemek ister misiniz?</p>
+    <a href="/demo-talep">Demo Talep Et</a>
+  </div>
+  <a class="back" href="/">← Ana sayfaya dön</a>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="fbrand">
+      <div class="logo">Durak<span>POS</span></div>
+      <p>İstanbul merkezli bir kahve dükkanının ihtiyacından doğan, çok şubeli işletmeler için bulut tabanlı kasa ve yönetim platformu.</p>
+      <a class="fcta" href="/demo-talep">Demo Talep Et →</a>
+    </div>
+    <div class="fcol"><h5>POS Sistemleri</h5><a href="/kafe">Kafe</a><a href="/restoran">Restoran</a><a href="/paket-servis">Paket Servis</a><a href="/entegrasyonlar">Entegrasyonlar</a><a href="/qr-menu">QR Menü</a></div><div class="fcol"><h5>Sipariş Çözümleri</h5><a href="/mobil">DurakPOS Mobil</a><a href="/qr-menu">QR Menü</a><a href="/kiosk-siparis">Kiosk Sipariş</a></div><div class="fcol"><h5>İşletme Çözümleri</h5><a href="/personel-yonetimi">Personel Yönetimi</a><a href="/stok-takibi">Stok Takibi</a><a href="/muhasebe">Muhasebe</a><a href="/sube-yonetimi">Şube Yönetimi</a><a href="/akilli-raporlar">Akıllı Raporlar</a></div><div class="fcol"><h5>Kurumsal</h5><a href="/hakkimizda">Hakkımızda</a><a href="/kariyer">Kariyer</a><a href="/ortaklik">Ortaklık</a><a href="/#blog">Blog</a><a href="/#pricing">Fiyatlandırma</a></div><div class="fcol"><h5>Yasal</h5><a href="/gizlilik-politikasi">Gizlilik Politikası</a><a href="/kullanim-sartlari">Kullanım Şartları</a><a href="/cerez-politikasi">Çerez Politikası</a><a href="/kvkk">KVKK</a><a href="/vergi-uyumlulugu">Vergi Uyumluluğu</a></div>
+  </div>
+  <div class="footer-bottom">© 2026 DurakPOS. Tüm hakları saklıdır.</div>
+</footer>
+</body>
+</html>

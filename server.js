@@ -1,163 +1,144 @@
-const express = require('express');
-require('express-async-errors'); // async route hatalarını otomatik yakalar, sunucu çökmesini önler
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const path = require('path');
-const fs = require('fs');
+// Durak POS — Multi-tenant SaaS Backend
+// Hostinger'da "Deploy Web App" ile yüklenmek üzere hazırlanmıştır.
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import authRoutes from './routes/auth.js';
+import menuRoutes from './routes/menu.js';
+import orderRoutes from './routes/orders.js';
+import reportRoutes from './routes/reports.js';
+import tenantRoutes from './routes/tenants.js';
+import adminRoutes from './routes/admin.js';
+import contentRoutes from './routes/content.js';
+import deliveryRoutes from './routes/delivery.js';
+import staffRoutes from './routes/staff.js';
+import posConfigRoutes from './routes/posconfig.js';
+import billingRoutes from './routes/billing.js';
+import printerRoutes from './routes/printers.js';
+import storeApiRoutes from './routes/storeapi.js';
+import taskRoutes from './routes/tasks.js';
+import { runMigrations } from './runMigrations.js';
+import { fixExistingImageCaching, fixLegacyR2Urls } from './imageStorage.js';
+import { cleanupCancelledItemsGlobal } from './routes/orders.js';
+import { runAutoDayCloseForAllTenants } from './dayCloseAuto.js';
+import { checkAndSendTaskReminders } from './taskReminders.js';
+import { seedDefaultPaymentMethods } from './seedPaymentMethods.js';
+import { verifyAndCompletePayment } from './iyzicoPayment.js';
+import { runAutoInvoicing } from './autoInvoicing.js';
+import { checkOverduePayments } from './overduePayments.js';
 
-const productStore = require('./backend/utils/productStore');
-const adminAuth = require('./backend/utils/adminAuth');
-const customerAuth = require('./backend/utils/customerAuth');
-const settings = require('./backend/utils/settings');
-const { withEffectivePrices } = require('./backend/utils/discountGroups');
-const kv = require('./backend/utils/kvStore');
-
-const adminRoutes = require('./backend/routes/admin');
-const orderRoutes = require('./backend/routes/orders');
-const paymentRoutes = require('./backend/routes/payment');
-const customerRoutes = require('./backend/routes/customer');
-const adminProductRoutes = require('./backend/routes/adminProducts');
-const rewardsRoutes = require('./backend/routes/rewards');
-const siteContentRoutes = require('./backend/routes/siteContent');
-const pushRoutes = require('./backend/routes/push');
-const whatsappWebhookRoutes = require('./backend/routes/whatsappWebhook');
-const instagramWebhookRoutes = require('./backend/routes/instagramWebhook');
-const messengerWebhookRoutes = require('./backend/routes/messengerWebhook');
-const imagesRoutes = require('./backend/routes/images');
+dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-app.set('trust proxy', 1); // Hostinger reverse proxy arkasında doğru IP/protokol algılama için
-
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Paynet'in 3D geri dönüşü form-post olarak gelir
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json({ limit: '5mb' })); // ürün fotoğrafları için biraz geniş
+app.use(express.urlencoded({ extended: true })); // iyzico'nun ödeme callback'i form-encoded veri gönderiyor
 
-app.use('/api/admin', adminRoutes);
+app.get('/api/health', (req, res) => res.json({ ok: true, service: 'durak-pos-backend' }));
+
+// iyzico'nun ödeme sonrası yönlendirdiği geri bildirim adresi — kimlik
+// doğrulaması GEREKTİRMEZ, çünkü bunu çağıran tarayıcı değil iyzico'nun
+// kendisi. Güvenlik, ödemenin GERÇEKTEN başarılı olup olmadığını iyzico'ya
+// SORARAK (token doğrulama) sağlanıyor — gelen veriye asla güvenilmiyor.
+app.post('/billing/payment-callback', async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).send('Eksik bilgi.');
+  const result = await verifyAndCompletePayment(token);
+  const redirectUrl = result.ok
+    ? `/panel?odeme=basarili`
+    : `/panel?odeme=basarisiz&hata=${encodeURIComponent(result.error || '')}`;
+  res.redirect(redirectUrl);
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/payment', paymentRoutes);
-app.use('/api/account', customerRoutes);
-app.use('/api/admin/products', adminProductRoutes);
-app.use('/api/rewards', rewardsRoutes);
-app.use('/api/site-content', siteContentRoutes);
-app.use('/api/push', pushRoutes);
-app.use('/api/webhooks', whatsappWebhookRoutes);
-app.use('/api/webhooks', instagramWebhookRoutes);
-app.use('/api/webhooks', messengerWebhookRoutes);
-app.use('/api/images', imagesRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/public', contentRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/staff-mgmt', staffRoutes);
+app.use('/api/pos-config', posConfigRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/printers', printerRoutes);
+app.use('/api/store-api-key', storeApiRoutes);
 
-// Herkese açık — checkout sayfasının ihtiyaç duyduğu, hassas olmayan ayarlar
-app.get('/api/settings/public', async (req, res) => {
-  const s = await settings.loadSettings();
-  res.json({
-    showPaymentMethodSelector: s.showPaymentMethodSelector,
-    paymentMethodsEnabled: s.paymentMethodsEnabled,
-    showOrderPreferences: s.showOrderPreferences,
-    hideDeliveryInfoForStaff: s.hideDeliveryInfoForStaff,
-    extraShotPrice: s.extraShotPrice,
-  });
+// durakpos.com'a tarayıcıdan girildiğinde önce tanıtım sayfası, "/panel" adresinde
+// giriş ekranı ve yönetim paneli, "/patron" adresinde telefon PWA'sı,
+// "/admin" adresinde ise platform sahibi (süper admin) paneli sunulur.
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/panel', (req, res) => res.sendFile(path.join(__dirname, 'public', 'panel.html')));
+app.get('/patron', (req, res) => res.sendFile(path.join(__dirname, 'public', 'patron.html')));
+app.get('/asistan', (req, res) => res.sendFile(path.join(__dirname, 'public', 'asistan.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/demo-talep', (req, res) => res.sendFile(path.join(__dirname, 'public', 'demo-talep.html')));
+app.get('/qr/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'qr.html')));
+app.get('/kasa', (req, res) => res.sendFile(path.join(__dirname, 'public', 'kasa.html')));
+app.get('/ekran/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'ekran.html')));
+
+// Footer/tanıtım alt sayfaları — POS Sistemleri, İşletme Çözümleri, Kurumsal, Yasal
+const FOOTER_SLUGS = [
+  'kafe','restoran','paket-servis','entegrasyonlar','qr-menu','mobil','kiosk-siparis',
+  'personel-yonetimi','stok-takibi','muhasebe','sube-yonetimi','akilli-raporlar',
+  'hakkimizda','kariyer','ortaklik',
+  'gizlilik-politikasi','kullanim-sartlari','cerez-politikasi','kvkk','vergi-uyumlulugu'
+];
+FOOTER_SLUGS.forEach(slug => {
+  app.get('/' + slug, (req, res) => res.sendFile(path.join(__dirname, 'public', slug + '.html')));
 });
 
-// Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir
-app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const products = await productStore.loadProducts();
-  const isStaff = !!(req.customer && req.customer.isStaff);
-  const currentSettings = isStaff ? await settings.loadSettings() : null;
-  const withPrices = products.map((p) => withEffectivePrices(p, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
-
-  const { category } = req.query;
-  if (category) {
-    const filtered = withPrices.filter(
-      (p) => (p.subcategory || p.category).toLowerCase() === category.toLowerCase()
-    );
-    return res.json(filtered);
-  }
-  res.json(withPrices);
-});
-
-// Kategori listesini getir — admin panelde belirlenen sıraya göre dizilir
-app.get('/api/categories', async (req, res) => {
-  const products = await productStore.loadProducts();
-  const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
-  const currentSettings = await settings.loadSettings();
-  const order = currentSettings.categoryOrder || [];
-  cats.sort((a, b) => {
-    const ia = order.indexOf(a);
-    const ib = order.indexOf(b);
-    if (ia === -1 && ib === -1) return 0;
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
-  res.json(cats);
-});
-
-// Tek ürün getir
-app.get('/api/products/:id', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const products = await productStore.loadProducts();
-  const product = products.find((p) => p.id === req.params.id);
-  if (!product) return res.status(404).json({ error: 'Ürün bulunamadı' });
-  const isStaff = !!(req.customer && req.customer.isStaff);
-  const currentSettings = isStaff ? await settings.loadSettings() : null;
-  res.json(withEffectivePrices(product, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
-});
-
-// İlk çalıştırmada: MySQL boşsa, repo içindeki başlangıç verilerini (gerçek menü,
-// admin kullanıcısı) bir kereliğine aktarır. Sonraki her deploy'da MySQL'deki
-// gerçek veri korunur, bu tohumlama tekrar çalışmaz.
-async function seedIfEmpty() {
-  try {
-    const existingProducts = await kv.getJSON('products', null);
-    if (!existingProducts) {
-      const seedPath = path.join(__dirname, 'data', 'products.json');
-      if (fs.existsSync(seedPath)) {
-        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf-8'));
-        await kv.setJSON('products', seed);
-        console.log(`Başlangıç menüsü aktarıldı: ${seed.length} ürün`);
-      }
-    }
-
-    const existingAdmins = await kv.getJSON('admin_users', null);
-    if (!existingAdmins) {
-      const seedPath = path.join(__dirname, 'data', 'admin-users.json');
-      if (fs.existsSync(seedPath)) {
-        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf-8'));
-        if (seed.length) {
-          await kv.setJSON('admin_users', seed);
-          console.log('Başlangıç admin kullanıcısı aktarıldı');
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Tohumlama sırasında hata (MySQL bağlantısını kontrol edin):', err.message);
-  }
-}
-
-// Genel hata yakalayıcı — hiçbir hata sunucuyu çökertmesin, düzgün 500 dönsün
 app.use((err, req, res, next) => {
-  console.error('İstek hatası:', err);
-  if (res.headersSent) return next(err);
-  res.status(500).json({ error: 'Sunucu hatası, lütfen tekrar deneyin.' });
+  console.error(err);
+  res.status(500).json({ error: 'Sunucu hatası', detail: err.message });
 });
 
-// Son çare güvenlik ağı: beklenmeyen bir hata sunucuyu asla tamamen çökertmesin
-process.on('unhandledRejection', (err) => {
-  console.error('Yakalanmamış promise hatası:', err);
-});
-process.on('uncaughtException', (err) => {
-  console.error('Yakalanmamış hata:', err);
-});
+const PORT = process.env.PORT || 3000;
+// Sunucu açılırken önce eksik tablo/sütun varsa otomatik ekliyoruz — bu geceki
+// gibi "SQL çalıştırmayı unuttum" hatasını kalıcı olarak ortadan kaldırıyor.
+// Ardından resim önbellek ayarlarını da (bir yükleme ekstra tık gerektirmesin
+// diye) kendiliğinden düzeltiyoruz — zararsız, tekrar tekrar çalışsa da sorun
+// çıkarmaz.
+// ÖNEMLİ: Sunucu önce HEMEN dinlemeye başlıyor, migration/kontroller ARKA
+// PLANDA devam ediyor — böylece Hostinger'ın "3 saniye içinde listen()
+// çağrılmadı" uyarısı hiç oluşmuyor. Migration sayısı ilerde artsa bile
+// (95 satırdan daha fazlası), sunucunun başlaması buna bağımlı kalmıyor.
+app.listen(PORT, () => console.log(`Durak POS backend ${PORT} portunda çalışıyor`));
 
-seedIfEmpty().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Brokers Coffee sunucusu ${PORT} portunda çalışıyor`);
+runMigrations()
+  .catch(e => console.error('Migration çalıştırılamadı:', e.message))
+  .then(() => fixExistingImageCaching().then(n => console.log(`Resim önbellek düzeltmesi: ${n} dosya kontrol edildi.`)).catch(e => console.error('Resim önbellek düzeltmesi atlandı:', e.message)))
+  .then(() => fixLegacyR2Urls().then(n => console.log(`Eski r2.dev adresleri düzeltildi: ${n} ürün.`)).catch(e => console.error('r2.dev adres düzeltmesi atlandı:', e.message)))
+  .then(() => seedDefaultPaymentMethods().then(n => console.log(`Varsayılan ödeme tipleri oluşturuldu: ${n} işletme.`)).catch(e => console.error('Ödeme tipi kurulumu atlandı:', e.message)))
+  .then(() => cleanupCancelledItemsGlobal().then(n => console.log(`İptal edilen ürün temizliği: ${n} kayıt düzeltildi.`)).catch(e => console.error('İptal ürün temizliği atlandı:', e.message)))
+  .then(() => runAutoDayCloseForAllTenants().then(n => console.log(`Otomatik gün sonu: ${n} işletme için kapanış yapıldı.`)).catch(e => console.error('Otomatik gün sonu atlandı:', e.message)))
+  .finally(() => {
+    // Sunucu günlerce yeniden başlamadan açık kalsa bile (Redeploy olmasa,
+    // kimse giriş yapmasa da) her saat başı otomatik gün sonu kontrolü yapılır.
+    setInterval(() => {
+      runAutoDayCloseForAllTenants().catch(e => console.error('Saatlik otomatik gün sonu kontrolü başarısız:', e.message));
+    }, 60 * 60 * 1000);
+    // Görev hatırlatma bildirimleri — her 3 dakikada bir, saati gelmiş
+    // görevleri kontrol edip personele push bildirimi gönderir.
+    setInterval(() => {
+      checkAndSendTaskReminders().catch(e => console.error('Görev hatırlatma kontrolü başarısız:', e.message));
+    }, 3 * 60 * 1000);
+    checkAndSendTaskReminders().catch(e => console.error('Görev hatırlatma kontrolü başarısız:', e.message));
+    // Otomatik aylık faturalama — günde bir kere yeterli, kesim günü geldiyse
+    // fatura oluşturur (aynı güne denk gelen açılışlarda mükerrer kesmez).
+    setInterval(() => {
+      runAutoInvoicing().then(r => { if(r.created>0) console.log(`Otomatik fatura: ${r.created} işletme için oluşturuldu, ${r.autoCharged} tanesi kayıtlı kartla otomatik tahsil edildi.`); }).catch(e => console.error('Otomatik faturalama başarısız:', e.message));
+    }, 24 * 60 * 60 * 1000);
+    runAutoInvoicing().then(r => { if(r.created>0) console.log(`Otomatik fatura: ${r.created} işletme için oluşturuldu, ${r.autoCharged} tanesi kayıtlı kartla otomatik tahsil edildi.`); }).catch(e => console.error('Otomatik faturalama başarısız:', e.message));
+    // Ödemesi geciken faturalar — günde bir kere: yeni gecikenlere uyarı
+    // gönderir, 3 günü dolanları otomatik askıya alır.
+    setInterval(() => {
+      checkOverduePayments().then(r => { if(r.remindersSent||r.suspended) console.log(`Gecikme kontrolü: ${r.remindersSent} uyarı, ${r.suspended} askıya alma.`); }).catch(e => console.error('Gecikme kontrolü başarısız:', e.message));
+    }, 24 * 60 * 60 * 1000);
+    checkOverduePayments().then(r => { if(r.remindersSent||r.suspended) console.log(`Gecikme kontrolü: ${r.remindersSent} uyarı, ${r.suspended} askıya alma.`); }).catch(e => console.error('Gecikme kontrolü başarısız:', e.message));
   });
-
-  // Zamanlanmış/yayılmış mesajları her dakika kontrol edip zamanı gelenleri gönderir
-  const messageQueue = require('./backend/utils/messageQueue');
-  setInterval(() => {
-    messageQueue.processDue().catch((err) => console.error('Mesaj kuyruğu hatası:', err.message));
-  }, 60 * 1000);
-});

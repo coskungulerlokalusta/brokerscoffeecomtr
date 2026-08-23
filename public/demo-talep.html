@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Demo Talep Et — DurakPOS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#F7F4EE; --surface:#FFFFFF; --border:#E1D8C8; --text:#241A0F; --muted:#8A7C67;
+  --accent:#C97A2E; --navy:#0B1F38; --navy2:#173254;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:Arial,sans-serif; background:linear-gradient(160deg, var(--navy) 0%, var(--navy) 42%, var(--bg) 42%, var(--bg) 100%); color:var(--text); min-height:100vh;}
+a{text-decoration:none; color:inherit;}
+
+.nav-outer{padding:22px 32px 0;}
+.nav{max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
+  background:rgba(255,255,255,0.97); border-radius:999px; padding:14px 26px;
+  box-shadow:0 10px 30px rgba(11,31,56,0.28);}
+.logo{font-size:20px; font-weight:800; color:var(--navy);}
+.logo span{color:var(--accent);}
+.btn-login{background:none; border:1.5px solid var(--border); padding:10px 20px; border-radius:999px; font-size:13px; font-weight:700; color:var(--text);}
+
+.wrap{max-width:1180px; margin:0 auto; display:flex; gap:0; min-height:calc(100vh - 90px); align-items:stretch;}
+.left{flex:1; color:#fff; padding:56px 20px 56px 32px; display:flex; flex-direction:column; justify-content:center;}
+.left .pill{display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); font-size:12px; font-weight:700; padding:8px 16px; border-radius:999px; margin-bottom:26px; width:fit-content;}
+.left h1{font-size:40px; line-height:1.18; font-weight:800; margin-bottom:18px; letter-spacing:-0.5px;}
+.left p{opacity:0.75; font-size:15px; line-height:1.65; margin-bottom:40px; max-width:440px;}
+.benefits{display:grid; grid-template-columns:1fr 1fr; gap:22px; max-width:480px;}
+.benefit{display:flex; flex-direction:column; gap:10px;}
+.benefit .ico{width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px;}
+.ico-1{background:rgba(201,122,46,0.22);}
+.ico-2{background:rgba(90,170,150,0.22);}
+.ico-3{background:rgba(120,150,220,0.22);}
+.ico-4{background:rgba(220,180,90,0.22);}
+.benefit h4{font-size:13.5px; font-weight:700;}
+.benefit p{font-size:12px; opacity:0.7; margin:0; line-height:1.55;}
+
+.right{flex:1; background:var(--surface); border-radius:24px; padding:52px 48px; margin:24px 0; box-shadow:0 20px 50px rgba(11,31,56,0.18); display:flex; flex-direction:column; justify-content:center;}
+.form-inner{max-width:420px; width:100%; margin:0 auto;}
+.right h2{font-size:27px; font-weight:800; margin-bottom:10px;}
+.right .sub{color:var(--muted); font-size:13.5px; margin-bottom:30px; line-height:1.55;}
+label{display:block; font-size:12.5px; font-weight:700; margin-bottom:8px; margin-top:18px; color:var(--text);}
+label:first-of-type{margin-top:0;}
+.req{color:var(--accent);}
+
+.field{position:relative;}
+.field svg{position:absolute; left:15px; top:50%; transform:translateY(-50%); width:16px; height:16px; opacity:0.5;}
+.field input{width:100%; padding:13px 16px 13px 42px; border:1.5px solid var(--border); border-radius:11px; font-size:14px; background:var(--bg); color:var(--text); font-family:Arial,sans-serif;}
+.field input::placeholder{color:#B5A990;}
+.field input:focus{outline:none; border-color:var(--navy2); background:#fff;}
+
+.btn-submit{margin-top:26px; width:100%; background:var(--navy); color:#fff; border:none; padding:15px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; transition:background .15s;}
+.btn-submit:hover:not(:disabled){background:var(--navy2);}
+.btn-submit:disabled{opacity:0.6; cursor:default;}
+.msg{margin-top:16px; font-size:13px; padding:12px 14px; border-radius:10px; display:none;}
+.msg.ok{background:#E7F5EA; color:#2E7D46; display:block;}
+.msg.err{background:#FCEAEA; color:#B4302E; display:block;}
+
+@media (max-width: 900px){
+  .wrap{flex-direction:column;}
+  .right{margin:16px 0 32px;}
+  .left{padding:44px 24px 24px;}
+  .left h1{font-size:30px;}
+  .nav-outer{padding:16px 16px 0;}
+}
+
+.site-footer{background:var(--navy); color:#fff; padding:56px 32px 0; margin-top:60px;}
+.footer-inner{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr 1fr; gap:28px; padding-bottom:40px;}
+.fbrand .logo{font-size:19px; font-weight:800; margin-bottom:12px;}
+.fbrand .logo span{color:var(--accent);}
+.fbrand p{font-size:12.5px; opacity:0.65; line-height:1.6; margin-bottom:18px; max-width:230px;}
+.fcta{display:inline-block; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:700;}
+.fcol h5{font-size:12px; font-weight:800; letter-spacing:0.04em; opacity:0.55; margin-bottom:14px; text-transform:uppercase;}
+.fcol a{display:block; font-size:13px; opacity:0.8; margin-bottom:11px;}
+.fcol a:hover{opacity:1;}
+.footer-bottom{max-width:1180px; margin:0 auto; border-top:1px solid rgba(255,255,255,0.12); padding:18px 0; font-size:12px; opacity:0.5; text-align:center;}
+@media (max-width:900px){.footer-inner{grid-template-columns:1fr 1fr;}}
+
+</style>
+</head>
+<body>
+
+<div class="nav-outer">
+  <div class="nav">
+    <a class="logo" href="/">Durak<span>POS</span></a>
+    <a class="btn-login" href="/panel">Giriş Yap</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="left">
+    <div class="pill">✦ Ücretsiz Danışmanlık</div>
+    <h1>İşletmeniz İçin<br>En Doğru Çözümü<br>Bulalım</h1>
+    <p>DurakPOS ile operasyonlarını kolaylaştıran işletmelere katılın. Bilgilerinizi bırakın, uzmanlarımız sizi hemen arasın.</p>
+    <div class="benefits">
+      <div class="benefit"><div class="ico ico-1">⏱</div><h4>Ücretsiz İhtiyaç Analizi</h4><p>İşletmenizin yapısına en uygun paketi birlikte belirleyelim.</p></div>
+      <div class="benefit"><div class="ico ico-2">💳</div><h4>Özel Fiyatlandırma</h4><p>Şube sayınıza ve ihtiyaçlarınıza göre size özel teklif alın.</p></div>
+      <div class="benefit"><div class="ico ico-3">🛠</div><h4>Hızlı Kurulum Desteği</h4><p>Sistem geçişini adım adım birlikte tamamlıyoruz.</p></div>
+      <div class="benefit"><div class="ico ico-4">☁</div><h4>Bulut Tabanlı Altyapı</h4><p>Kasa, panel ve patron uygulaması aynı veriyi anlık paylaşır.</p></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="form-inner">
+      <h2>Sizi Arayalım</h2>
+      <p class="sub">DurakPOS'un işletmenize nasıl değer katabileceğini telefonda detaylıca konuşalım.</p>
+
+      <form id="demoForm">
+        <label>Ad Soyad <span class="req">*</span></label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+          <input type="text" id="fName" placeholder="Örn: Ahmet Yılmaz" required>
+        </div>
+
+        <label>Telefon Numarası <span class="req">*</span></label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.6a16 16 0 0 0 6 6l1.1-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.9 2.1Z"/></svg>
+          <input type="tel" id="fPhone" placeholder="Örn: 0532 000 00 00" required>
+        </div>
+
+        <label>E-posta (İsteğe Bağlı)</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 6 10 7L22 6"/></svg>
+          <input type="email" id="fEmail" placeholder="ornek@sirket.com">
+        </div>
+
+        <label>İşletme Adı <span class="req">*</span></label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="1"/><path d="M8 7V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3"/></svg>
+          <input type="text" id="fBusiness" placeholder="Örn: Kahve Durağı" required>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Bilgi Talebi Gönder</button>
+        <div class="msg" id="formMsg"></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('demoForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const msg = document.getElementById('formMsg');
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const businessName = document.getElementById('fBusiness').value.trim();
+
+  if(!name || !phone || !businessName){
+    msg.className = 'msg err';
+    msg.textContent = 'Lütfen zorunlu alanları doldurun.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Gönderiliyor...';
+  msg.className = 'msg';
+  msg.textContent = '';
+
+  try{
+    const res = await fetch('/api/public/demo-request', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, phone, email, businessName })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Bir hata oluştu');
+
+    msg.className = 'msg ok';
+    msg.textContent = 'Talebiniz alındı! En kısa sürede sizi arayacağız.';
+    document.getElementById('demoForm').reset();
+    btn.textContent = 'Gönderildi ✓';
+  }catch(err){
+    msg.className = 'msg err';
+    msg.textContent = err.message || 'Talep gönderilemedi, lütfen tekrar deneyin.';
+    btn.disabled = false;
+    btn.textContent = 'Bilgi Talebi Gönder';
+  }
+});
+</script>
+
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="fbrand">
+      <div class="logo">Durak<span>POS</span></div>
+      <p>İstanbul merkezli bir kahve dükkanının ihtiyacından doğan, çok şubeli işletmeler için bulut tabanlı kasa ve yönetim platformu.</p>
+      <a class="fcta" href="/demo-talep">Demo Talep Et →</a>
+    </div>
+    <div class="fcol"><h5>POS Sistemleri</h5><a href="/kafe">Kafe</a><a href="/restoran">Restoran</a><a href="/paket-servis">Paket Servis</a><a href="/entegrasyonlar">Entegrasyonlar</a><a href="/qr-menu">QR Menü</a></div><div class="fcol"><h5>Sipariş Çözümleri</h5><a href="/mobil">DurakPOS Mobil</a><a href="/qr-menu">QR Menü</a><a href="/kiosk-siparis">Kiosk Sipariş</a></div><div class="fcol"><h5>İşletme Çözümleri</h5><a href="/personel-yonetimi">Personel Yönetimi</a><a href="/stok-takibi">Stok Takibi</a><a href="/muhasebe">Muhasebe</a><a href="/sube-yonetimi">Şube Yönetimi</a><a href="/akilli-raporlar">Akıllı Raporlar</a></div><div class="fcol"><h5>Kurumsal</h5><a href="/hakkimizda">Hakkımızda</a><a href="/kariyer">Kariyer</a><a href="/ortaklik">Ortaklık</a><a href="/#blog">Blog</a><a href="/#pricing">Fiyatlandırma</a></div><div class="fcol"><h5>Yasal</h5><a href="/gizlilik-politikasi">Gizlilik Politikası</a><a href="/kullanim-sartlari">Kullanım Şartları</a><a href="/cerez-politikasi">Çerez Politikası</a><a href="/kvkk">KVKK</a><a href="/vergi-uyumlulugu">Vergi Uyumluluğu</a></div>
+  </div>
+  <div class="footer-bottom">© 2026 DurakPOS. Tüm hakları saklıdır.</div>
+</footer>
+</body>
+</html>

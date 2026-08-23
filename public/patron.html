@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>DurakPOS Patron</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0B1F38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DurakPOS Patron">
+<style>
+:root{
+  --navy:#0B1F38; --navy2:#173254; --bg:#F2F0EA; --surface:#fff; --border:#E7E2D8;
+  --text:#241A0F; --muted:#8A7C67; --accent:#C97A2E; --success:#2E7D46; --danger:#B4302E;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; overflow:hidden;}
+body{font-family:-apple-system,Arial,sans-serif; background:var(--bg); color:var(--text);}
+button,input{font-family:inherit;}
+.app-shell{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+.login-wrap{max-width:420px; margin:0 auto; padding:24px;}
+.logo{font-size:24px; font-weight:800; text-align:center; margin:40px 0 30px;}
+.logo span{color:var(--accent);}
+.login-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px;}
+.login-card label{font-size:12px; color:var(--muted); display:block; margin-bottom:5px; margin-top:14px;}
+.login-card label:first-of-type{margin-top:0;}
+.login-card input{width:100%; background:#F7F5F0; border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-size:15px; outline:none;}
+.login-err{color:var(--danger); font-size:12px; margin-top:10px; min-height:14px;}
+.login-btn{width:100%; background:var(--navy); color:#fff; font-weight:800; padding:13px; border-radius:12px; font-size:15px; border:none; margin-top:16px;}
+
+.header{background:linear-gradient(160deg, var(--navy), var(--navy2)); color:#fff; padding:10px 16px 10px; position:relative; flex-shrink:0;}
+.header-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.biz-badge{background:rgba(255,255,255,0.12); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; color:#fff;}
+.header-icons{display:flex; gap:14px; font-size:18px; opacity:0.9;}
+.revenue-row{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;}
+.revenue-big{font-size:28px; font-weight:800;}
+.revenue-label{font-size:12px; opacity:0.7; margin-top:2px;}
+.date-range{font-size:11px; opacity:0.7; text-align:right;}
+.chart-wrap{margin:0 -4px 10px;}
+.range-tabs{display:flex; gap:8px; align-items:center;}
+.range-tab{flex:1; background:rgba(255,255,255,0.08); color:#fff; border:none; padding:8px 0; border-radius:10px; font-size:12px; font-weight:700; text-align:center;}
+.range-tab.active{background:var(--accent);}
+.range-more{width:40px; flex-shrink:0; background:rgba(255,255,255,0.08); border:none; border-radius:10px; padding:10px 0; color:#fff; font-size:15px;}
+
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px 12px; flex:1; overflow-y:auto; align-content:start; min-height:0;}
+.stat-box{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 10px;}
+.stat-box .ico{font-size:15px; margin-bottom:4px; opacity:0.6;}
+.stat-box .v{font-size:16px; font-weight:800;}
+.stat-box .l{font-size:10.5px; color:var(--muted); margin-top:1px;}
+
+.bottom-nav{flex-shrink:0; background:var(--navy); display:flex; box-shadow:0 -2px 10px rgba(0,0,0,0.15);}
+.bottom-nav button{flex:1; background:none; border:none; color:rgba(255,255,255,0.55); font-size:12.5px; font-weight:700; padding:14px 0;}
+.bottom-nav button.active{color:#fff; border-top:2.5px solid var(--accent);}
+
+.sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; display:flex; align-items:flex-end;}
+.sheet{background:var(--surface); border-radius:20px 20px 0 0; width:100%; max-height:82vh; overflow-y:auto; padding-bottom:24px;}
+.sheet-head{display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid var(--border);}
+.sheet-head h3{font-size:17px;}
+.sheet-head button{background:none; border:none; font-size:20px; color:var(--muted);}
+.report-row{display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border);}
+.report-row .arrow{color:var(--muted);}
+.report-detail{padding:18px 20px;}
+.report-detail-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13.5px;}
+.report-table-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;}
+.report-table-card h4{font-size:15px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);}
+.report-detail-row b{font-weight:800;}
+.refresh-note{text-align:center; color:var(--muted); font-size:9.5px; flex-shrink:0;}
+.logout-row{text-align:center; flex-shrink:0;}
+.bottom-info-row{display:flex; align-items:center; justify-content:center; gap:10px; padding:4px; flex-shrink:0;}
+.logout-row button{background:none; border:none; color:var(--muted); font-size:12.5px; font-weight:700;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/shared.js"></script>
+<script>
+const API_BASE = '/api';
+let token = localStorage.getItem('panel_token') || null;
+let tenant = JSON.parse(localStorage.getItem('panel_tenant') || 'null');
+let branches = JSON.parse(localStorage.getItem('panel_branches') || '[]');
+
+async function switchBranch(targetTenantId){
+  try{
+    const res = await fetch(API_BASE+'/auth/switch-branch', {
+      method:'POST', headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+token},
+      body: JSON.stringify({ targetTenantId })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    token = data.token; tenant = data.tenant;
+    localStorage.setItem('panel_token', token);
+    localStorage.setItem('panel_tenant', JSON.stringify(tenant));
+    dashData = null; render(); loadDashboard();
+  }catch(e){ alert(e.message); }
+}
+let err = '';
+let activeRange = 'today';
+let customRange = null; // {start, end} | null — moreBtn ile seçilirse
+let customPickerOpen = false;
+let branchPickerOpen = false;
+let profilePanelOpen = false;
+let adisyonListOpen = false;
+let adisyonListData = null;
+let openChecksListOpen = false;
+let openChecksData = null;
+let orderDetailOpen = false; // adisyon/açık çek satırına tıklayınca detay ekranı
+let orderDetailData = null;
+let dashData = null;
+let bottomTab = 'ozet';
+let reportSheetOpen = false;
+let selectedReportKey = 'odeme';
+
+// api(): bkz. /public/shared.js — tüm arayüzler ortak kullanıyor
+
+function cur(){ return tenant ? tenant.currency : '₺'; }
+
+function render(){ document.getElementById('app').innerHTML = token ? renderDash() : renderLogin(); attach(); }
+
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="logo">Durak<span>POS</span> Patron</div>
+    <div class="login-card">
+      <div class="login-err">${err}</div>
+      <label>E-posta</label>
+      <input type="email" id="email" autocomplete="username">
+      <label>Şifre</label>
+      <input type="password" id="pass" autocomplete="current-password">
+      <button class="login-btn" id="loginBtn">Giriş Yap</button>
+    </div>
+    <p class="refresh-note">Yönetim panelinde kullandığınız e-posta/şifre ile giriş yapın.</p>
+  </div>`;
+}
+
+function renderDash(){
+  if(!dashData){
+    return `<div class="app-shell"><div class="header"><div class="header-top"><div class="biz-badge">${tenant?tenant.name:''} ▾</div></div></div><p class="refresh-note" style="padding:16px;">Yükleniyor…</p></div>`;
+  }
+  const d = dashData;
+  const maxRev = Math.max(1, ...d.trend.map(t=>t.revenue));
+  const points = d.trend.map((t,i)=>{
+    const x = d.trend.length>1 ? (i/(d.trend.length-1))*100 : 50;
+    const y = 100 - (t.revenue/maxRev*90);
+    return `${x},${y}`;
+  }).join(' ');
+  const areaPoints = d.trend.length ? `0,100 ${points} 100,100` : '';
+
+  const rangeLabels = {today:'Bugün', yesterday:'Dün', week:'Hafta', month:'Ay'};
+
+  return `
+  <div class="app-shell">
+  <div class="header">
+    <div class="header-top">
+      ${branches.length>1
+        ? `<button id="openBranchPicker" class="biz-badge" style="border:none; cursor:pointer;">${tenant?tenant.name:''} ▾</button>`
+        : `<div class="biz-badge">${tenant?tenant.name:''}</div>`}
+      <div class="header-icons"><span>🔔</span><span id="openProfile" style="cursor:pointer;">👤</span></div>
+    </div>
+    <div class="revenue-row">
+      <div>
+        <div class="revenue-big">${cur()}${d.revenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+        <div class="revenue-label">Toplam Gelir</div>
+      </div>
+      <div class="date-range">${new Date(d.rangeStart).toLocaleDateString('tr-TR')} - ${new Date(d.rangeEnd).toLocaleDateString('tr-TR')}</div>
+    </div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%; height:56px;">
+        ${areaPoints ? `<polygon points="${areaPoints}" fill="rgba(90,140,230,0.35)"/><polyline points="${points}" fill="none" stroke="#5A9CE6" stroke-width="1.5" vector-effect="non-scaling-stroke"/>` : ''}
+      </svg>
+    </div>
+    <div class="range-tabs">
+      ${Object.entries(rangeLabels).map(([k,l])=>`<button class="range-tab ${activeRange===k?'active':''}" data-range="${k}">${l}</button>`).join('')}
+      <button class="range-more" id="moreBtn">☰</button>
+    </div>
+  </div>
+  ${bottomTab==='satis' ? renderSatisReportsTab() : `
+  <div class="stat-grid">
+    <div class="stat-box"><div class="ico">💰</div><div class="v">${cur()}${d.revenue.toFixed(2)}</div><div class="l">Ciro</div></div>
+    <div class="stat-box" id="openAdisyonList" style="cursor:pointer;"><div class="ico">📄</div><div class="v">${d.orderCount}</div><div class="l">Adisyon Sayısı</div></div>
+    <div class="stat-box"><div class="ico">💳</div><div class="v">${cur()}${d.avgTicket.toFixed(2)}</div><div class="l">Ortalama Hesap Tutarı</div></div>
+    <div class="stat-box" id="openChecksList" style="cursor:pointer;"><div class="ico">📂</div><div class="v">${d.openCheckCount}</div><div class="l">Açık Çek Sayısı</div></div>
+    <div class="stat-box" id="openChecksList2" style="cursor:pointer;"><div class="ico">📂</div><div class="v">${cur()}${d.openCheckAmount.toFixed(2)}</div><div class="l">Açık Çek Tutarı</div></div>
+    <div class="stat-box"><div class="ico">🏷️</div><div class="v">${cur()}${d.discountTotal.toFixed(2)}</div><div class="l">İndirim Tutarı</div></div>
+    <div class="stat-box"><div class="ico">📦</div><div class="v">${d.itemsPerCheck.toFixed(2)}</div><div class="l">Hesap Başı Ürün Sayısı</div></div>
+  </div>
+  `}
+  <div class="bottom-nav">
+    <button class="${bottomTab==='ozet'?'active':''}" id="tabOzet">Özet Raporlar</button>
+    <button class="${bottomTab==='satis'?'active':''}" id="tabSatis">Satış Raporları</button>
+  </div>
+  </div>
+
+  ${reportSheetOpen ? renderReportSheet() : ''}
+  ${customPickerOpen ? renderCustomPicker() : ''}
+  ${adisyonListOpen ? renderAdisyonList() : ''}
+  ${openChecksListOpen ? renderOpenChecksList() : ''}
+  ${orderDetailOpen ? renderOrderDetail() : ''}
+  ${profilePanelOpen ? renderProfilePanel() : ''}
+  ${branchPickerOpen ? renderBranchPicker() : ''}`;
+}
+
+function renderAdisyonList(){
+  const d = adisyonListData;
+  return `<div class="sheet-overlay" id="adisyonListOverlay">
+    <div class="sheet" style="max-height:88vh;">
+      <div class="sheet-head"><h3>Adisyon Sayısı</h3><button id="closeAdisyonList">✕</button></div>
+      ${d && d.orders.some(o=>o.reopenedCount>0) ? '<p style="font-size:11px; color:var(--muted); padding:0 20px 8px;">🔵 Lacivert satırlar, kapandıktan sonra yeniden açılıp değiştirilmiş adisyonları gösterir.</p>' : ''}
+      <div style="padding:0 4px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; padding:12px 16px; font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;">
+          <span>Adisyon / Masa</span><span style="text-align:center;">Tarih</span><span style="text-align:right;">Toplam</span>
+        </div>
+        ${!d || d.orders.length===0 ? '<p class="refresh-note">Bu aralıkta kapanmış adisyon yok.</p>' : d.orders.map(o=>`
+          <div data-orderid="${o.id}" style="display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center; padding:12px 16px; border-top:1px solid var(--border); font-size:13px; cursor:pointer; ${o.reopenedCount>0?'background:#0B1F38; color:#fff;':''}">
+            <span>${o.reopenedCount>0?'🔵':'🟢'} <b>${String(o.dailyNumber||o.id).padStart(3,'0')}</b><br><span style="font-size:11px; ${o.reopenedCount>0?'color:#cbd5e1;':'color:var(--muted);'} margin-left:18px;">${o.tableName}${o.reopenedCount>0?' · ↺ '+o.reopenedCount+'x — '+(o.lastReopenedBy||'?'):''}</span></span>
+            <span style="text-align:center; font-size:11.5px; ${o.reopenedCount>0?'color:#cbd5e1;':'color:var(--muted);'}">${new Date(o.createdAt).toLocaleDateString('tr-TR')}<br>${new Date(o.createdAt).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</span>
+            <span style="text-align:right; font-weight:700;">${cur()}${o.total.toFixed(2)}</span>
+          </div>`).join('')}
+      </div>
+      ${d ? `<div style="display:flex; justify-content:space-around; padding:16px; margin-top:10px; background:var(--navy); color:#fff; border-radius:0;">
+        <div style="text-align:center;"><div style="font-size:18px; font-weight:800;">${d.totalMasa}</div><div style="font-size:11px; opacity:0.7;">Toplam Masa</div></div>
+        <div style="text-align:center;"><div style="font-size:18px; font-weight:800;">${cur()}${d.totalAmount.toFixed(2)}</div><div style="font-size:11px; opacity:0.7;">Toplam Tutar</div></div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderOpenChecksList(){
+  const d = openChecksData;
+  return `<div class="sheet-overlay" id="openChecksOverlay">
+    <div class="sheet" style="max-height:88vh;">
+      <div class="sheet-head"><h3>Açık Çekler</h3><button id="closeOpenChecksList">✕</button></div>
+      <div style="padding:0 4px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; padding:12px 16px; font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;">
+          <span>Adisyon / Masa</span><span style="text-align:center;">Açılış</span><span style="text-align:right;">Tutar</span>
+        </div>
+        ${!d || d.orders.length===0 ? '<p class="refresh-note">Şu an açık çek yok.</p>' : d.orders.map(o=>`
+          <div data-orderid="${o.id}" style="display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center; padding:12px 16px; border-top:1px solid var(--border); font-size:13px; cursor:pointer;">
+            <span>🟠 <b>${String(o.dailyNumber||o.id).padStart(3,'0')}</b><br><span style="font-size:11px; color:var(--muted); margin-left:18px;">${o.tableName}</span></span>
+            <span style="text-align:center; font-size:11.5px; color:var(--muted);">${new Date(o.createdAt).toLocaleDateString('tr-TR')}<br>${new Date(o.createdAt).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</span>
+            <span style="text-align:right; font-weight:700;">${cur()}${o.total.toFixed(2)}</span>
+          </div>`).join('')}
+      </div>
+      ${d ? `<div style="display:flex; justify-content:center; padding:16px; margin-top:10px; background:var(--navy); color:#fff;">
+        <div style="text-align:center;"><div style="font-size:18px; font-weight:800;">${cur()}${d.totalAmount.toFixed(2)}</div><div style="font-size:11px; opacity:0.7;">Toplam Açık Tutar</div></div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderOrderDetail(){
+  const o = orderDetailData;
+  return `<div class="sheet-overlay" id="orderDetailOverlay">
+    <div class="sheet" style="max-height:88vh;">
+      <div class="sheet-head"><h3>${o ? 'Adisyon #'+String(o.daily_number||o.id).padStart(3,'0') : 'Yükleniyor…'}</h3><button id="closeOrderDetail">✕</button></div>
+      ${!o ? '<p class="refresh-note" style="padding:20px;">Yükleniyor…</p>' : `
+      <div class="report-detail">
+        <p style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">
+          ${o.table_name || 'Self Servis'} · ${new Date(o.created_at).toLocaleString('tr-TR')}
+          ${o.customer_name ? '<br>👤 '+o.customer_name : ''}
+          ${o.note ? '<br>📝 '+o.note : ''}
+          ${o.status==='open' ? '<br><span style="color:var(--accent); font-weight:700;">⚠ Henüz açık (ödenmemiş)</span>' : ''}
+        </p>
+        ${(o.items||[]).map(it=>`
+          <div class="report-detail-row">
+            <span>${it.qty}x ${it.product_name}${it.size_label?' ('+it.size_label+')':''}</span>
+            <b>${cur()}${(Number(it.unit_price)*Number(it.qty)).toFixed(2)}</b>
+          </div>`).join('')}
+        <div class="report-detail-row" style="border-top:2px solid var(--navy); margin-top:8px; padding-top:12px;">
+          <span style="font-weight:800;">Toplam</span><b>${cur()}${Number(o.total).toFixed(2)}</b>
+        </div>
+        ${(o.payments||[]).length>0 ? `
+        <p style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-top:16px; margin-bottom:8px;">Ödemeler</p>
+        ${o.payments.map(p=>`<div class="report-detail-row"><span>${p.pay_label}</span><b>${cur()}${Number(p.amount).toFixed(2)}</b></div>`).join('')}
+        ` : ''}
+      </div>`}
+    </div>
+  </div>`;
+}
+
+function renderProfilePanel(){
+  return `<div class="sheet-overlay" id="profileOverlay">
+    <div class="sheet">
+      <div class="sheet-head"><h3>Profil</h3><button id="closeProfile">✕</button></div>
+      <div class="report-detail">
+        <p style="font-size:15px; font-weight:800; margin-bottom:4px;">${tenant ? tenant.name : ''}</p>
+        <p style="font-size:12.5px; color:var(--muted); margin-bottom:20px;">${tenant ? tenant.slug : ''}</p>
+        <button id="logoutBtn" style="width:100%; padding:13px; border-radius:12px; background:var(--danger); color:#fff; font-weight:800; font-size:14px;">Çıkış Yap</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderBranchPicker(){
+  return `<div class="sheet-overlay" id="branchOverlay">
+    <div class="sheet">
+      <div class="sheet-head"><h3>Şubeler</h3><button id="closeBranchPicker">✕</button></div>
+      ${branches.map(b=>`<div class="report-row" data-branch="${b.tenantId}"><span>${b.name}</span><span class="arrow">›</span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderCustomPicker(){
+  return `<div class="sheet-overlay" id="customOverlay">
+    <div class="sheet">
+      <div class="sheet-head"><h3>Özel Tarih Aralığı</h3><button id="closeCustomPicker">✕</button></div>
+      <div class="report-detail">
+        <label style="font-size:11.5px; color:var(--muted); display:block; margin-bottom:6px;">Başlangıç</label>
+        <input type="date" id="customStart" style="width:100%; padding:11px; border-radius:10px; border:1px solid var(--border); margin-bottom:14px; font-size:14px;">
+        <label style="font-size:11.5px; color:var(--muted); display:block; margin-bottom:6px;">Bitiş</label>
+        <input type="date" id="customEnd" style="width:100%; padding:11px; border-radius:10px; border:1px solid var(--border); margin-bottom:16px; font-size:14px;">
+        <button id="applyCustomRange" class="login-btn">Uygula</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const REPORTS_LIST = [
+  {key:'urun', label:'Ürün Raporu'},
+  {key:'odeme', label:'Ödeme Tipi Raporu'},
+  {key:'kategori', label:'Kategori Raporu'},
+  {key:'indirim', label:'İndirim Raporu'},
+  {key:'indirimli_urun', label:'İndirimli Ürün Raporu'},
+  {key:'iptal_urun', label:'İptal Ürün Raporu'},
+];
+
+function getReportRows(key){
+  const d = dashData;
+  if(key==='odeme'){
+    return (window._kasaReportCache&&window._kasaReportCache.odemeTipiKirilimi||[]).map(k=>({label:k.tip, value:cur()+k.tutar.toFixed(2)}));
+  }
+  if(key==='kategori'){
+    return (window._kasaReportCache&&window._kasaReportCache.kategoriKirilimi||[]).map(k=>({label:k.kategori, value:cur()+k.tutar.toFixed(2)}));
+  }
+  if(key==='indirim'){
+    return [{label:'Toplam İndirim', value:cur()+d.discountTotal.toFixed(2)}];
+  }
+  if(key==='indirimli_urun'){
+    return (window._discountedItemsCache||[]).map(r=>({label:`${r.urun} (${r.adet} adet)`, value:cur()+r.indirim.toFixed(2)}));
+  }
+  if(key==='iptal_urun'){
+    return (window._cancelledItemsCache||[]).map(r=>({label:`${r.urun} (${r.adet} adet)`, value:cur()+r.tutar.toFixed(2)}));
+  }
+  return [];
+}
+
+function renderSatisReportsTab(){
+  const current = REPORTS_LIST.find(r=>r.key===selectedReportKey) || REPORTS_LIST[0];
+  const dropdown = `
+  <div style="padding:12px 16px 0;">
+    <button id="reportDropdownBtn" style="width:100%; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1.5px solid var(--border); border-radius:10px; padding:11px 16px; font-size:13.5px; font-weight:700; color:var(--text);">
+      ${current.label} <span style="color:var(--muted);">⌄</span>
+    </button>
+  </div>`;
+
+  if(current.key==='urun'){
+    const products = window._productReportCache || [];
+    return dropdown + `
+    <div style="padding:14px 16px; flex:1; overflow-y:auto;">
+      ${products.length===0 ? '<p class="refresh-note" style="padding:10px 0;">Bu aralıkta satış yok.</p>' : products.map(p=>`
+        <div class="report-table-card" style="max-width:none; margin-bottom:12px;">
+          <h4>${p.urun}</h4>
+          <div class="report-detail-row"><span>Satış Adeti</span><b>${p.satisAdet} Adet</b></div>
+          <div class="report-detail-row"><span>Satış Tutarı</span><b>${cur()}${p.satisTutar.toFixed(2)}</b></div>
+          <div class="report-detail-row"><span>İndirim Adeti</span><b>${p.indirimAdet} Adet</b></div>
+          <div class="report-detail-row"><span>İndirim Tutarı</span><b>${cur()}${p.indirimTutar.toFixed(2)}</b></div>
+        </div>`).join('')}
+      <p class="refresh-note" style="padding:6px 4px;">İkram ve personel tüketimi bu sistemde henüz ayrıca takip edilmiyor.</p>
+    </div>`;
+  }
+
+  const rows = getReportRows(current.key);
+  return dropdown + `
+  <div style="padding:14px 16px; flex:1; overflow-y:auto;">
+    <div class="report-table-card" style="max-width:none;">
+      <h4>${tenant?tenant.name:''}</h4>
+      ${rows.length===0 ? '<p class="refresh-note" style="padding:10px 0;">Bu aralıkta veri yok.</p>' : rows.map(r=>`<div class="report-detail-row"><span>${r.label}</span><b>${r.value}</b></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderReportSheet(){
+  return `<div class="sheet-overlay" id="sheetOverlay">
+    <div class="sheet">
+      <div class="sheet-head"><h3>Raporlar</h3><button id="closeSheet">✕</button></div>
+      ${REPORTS_LIST.map(r=>`<div class="report-row" data-report="${r.key}"><span>${r.label}</span><span class="arrow">›</span></div>`).join('')}
+      <p class="refresh-note" style="padding:16px 20px 0;">Not: Satış Kanalı ve Kampanya raporları henüz bu sistemde takip edilmiyor.</p>
+    </div>
+  </div>`;
+}
+
+async function loadDashboard(){
+  try{
+    const query = customRange ? `start=${customRange.start}&end=${customRange.end}` : `range=${activeRange}`;
+    dashData = await api(`/reports/patron-dashboard?${query}`);
+    if(bottomTab==='satis'){
+      const isoStart = new Date(dashData.rangeStart).toISOString(), isoEnd = new Date(dashData.rangeEnd).toISOString();
+      const [kr, disc, canc, prod] = await Promise.all([
+        api(`/reports/kasa-report?start=${isoStart}&end=${isoEnd}`),
+        api(`/reports/discounted-items-report?start=${isoStart}&end=${isoEnd}`),
+        api(`/reports/cancelled-items-report?start=${isoStart}&end=${isoEnd}`),
+        api(`/reports/product-report?start=${isoStart}&end=${isoEnd}`),
+      ]);
+      window._kasaReportCache = kr;
+      window._discountedItemsCache = disc;
+      window._cancelledItemsCache = canc;
+      window._productReportCache = prod;
+    }
+    render();
+  }catch(e){
+    document.getElementById('app').innerHTML = `<p class="refresh-note">Veri alınamadı: ${e.message}</p>`;
+  }
+}
+
+function attach(){
+  const openBranchPicker = document.getElementById('openBranchPicker');
+  if(openBranchPicker) openBranchPicker.onclick = ()=>{ branchPickerOpen=true; render(); };
+  const closeBranchPicker = document.getElementById('closeBranchPicker');
+  if(closeBranchPicker) closeBranchPicker.onclick = ()=>{ branchPickerOpen=false; render(); };
+  const branchOverlay = document.getElementById('branchOverlay');
+  if(branchOverlay) branchOverlay.onclick = (e)=>{ if(e.target.id==='branchOverlay'){ branchPickerOpen=false; render(); } };
+  document.querySelectorAll('[data-branch]').forEach(row=>row.onclick=()=>{
+    branchPickerOpen=false;
+    switchBranch(Number(row.dataset.branch));
+  });
+  const loginBtn = document.getElementById('loginBtn');
+  if(loginBtn) loginBtn.onclick = async ()=>{
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('pass').value;
+    try{
+      const res = await fetch(API_BASE+'/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error);
+      token = data.token; tenant = data.tenant; branches = data.branches || [];
+      localStorage.setItem('panel_token', token);
+      localStorage.setItem('panel_tenant', JSON.stringify(tenant));
+      localStorage.setItem('panel_branches', JSON.stringify(branches));
+      err=''; render(); loadDashboard();
+    }catch(e){ err = e.message; render(); }
+  };
+  const openProfile = document.getElementById('openProfile');
+  if(openProfile) openProfile.onclick = ()=>{ profilePanelOpen=true; render(); };
+  const closeProfile = document.getElementById('closeProfile');
+  if(closeProfile) closeProfile.onclick = ()=>{ profilePanelOpen=false; render(); };
+  const profileOverlay = document.getElementById('profileOverlay');
+  if(profileOverlay) profileOverlay.onclick = (e)=>{ if(e.target.id==='profileOverlay'){ profilePanelOpen=false; render(); } };
+  const logoutBtn = document.getElementById('logoutBtn');
+  if(logoutBtn) logoutBtn.onclick = ()=>{
+    token=null; branches=[];
+    localStorage.removeItem('panel_token'); localStorage.removeItem('panel_tenant'); localStorage.removeItem('panel_branches');
+    render();
+  };
+  document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>{
+    activeRange = b.dataset.range; customRange=null; render(); loadDashboard();
+  });
+  const moreBtn = document.getElementById('moreBtn');
+  if(moreBtn) moreBtn.onclick = ()=>{ customPickerOpen=true; render(); };
+  const closePicker = document.getElementById('closeCustomPicker');
+  if(closePicker) closePicker.onclick = ()=>{ customPickerOpen=false; render(); };
+  const applyPicker = document.getElementById('applyCustomRange');
+  if(applyPicker) applyPicker.onclick = ()=>{
+    const s = document.getElementById('customStart').value;
+    const e = document.getElementById('customEnd').value;
+    if(!s || !e){ alert('Başlangıç ve bitiş tarihini seçin.'); return; }
+    customRange = { start: new Date(s+'T00:00:00').toISOString(), end: new Date(e+'T23:59:59').toISOString() };
+    activeRange = null;
+    customPickerOpen = false; render(); loadDashboard();
+  };
+  const tabOzet = document.getElementById('tabOzet');
+  if(tabOzet) tabOzet.onclick = ()=>{ bottomTab='ozet'; reportSheetOpen=false; render(); };
+  const tabSatis = document.getElementById('tabSatis');
+  if(tabSatis) tabSatis.onclick = ()=>{ bottomTab='satis'; reportSheetOpen=false; loadDashboard(); };
+  const reportDropdownBtn = document.getElementById('reportDropdownBtn');
+  if(reportDropdownBtn) reportDropdownBtn.onclick = ()=>{ reportSheetOpen=true; render(); };
+  const closeSheet = document.getElementById('closeSheet');
+  if(closeSheet) closeSheet.onclick = ()=>{ reportSheetOpen=false; render(); };
+  document.querySelectorAll('[data-report]').forEach(row=>row.onclick=()=>{
+    selectedReportKey = row.dataset.report; reportSheetOpen=false; render();
+  });
+  const overlay = document.getElementById('sheetOverlay');
+  if(overlay) overlay.onclick = (e)=>{ if(e.target.id==='sheetOverlay'){ reportSheetOpen=false; render(); } };
+  const customOverlay = document.getElementById('customOverlay');
+  if(customOverlay) customOverlay.onclick = (e)=>{ if(e.target.id==='customOverlay'){ customPickerOpen=false; render(); } };
+  const openAdisyonList = document.getElementById('openAdisyonList');
+  if(openAdisyonList) openAdisyonList.onclick = async ()=>{
+    adisyonListOpen = true; adisyonListData = null; render();
+    try{
+      adisyonListData = await api(`/reports/patron-orders?start=${new Date(dashData.rangeStart).toISOString()}&end=${new Date(dashData.rangeEnd).toISOString()}`);
+    }catch(e){ /* boş listeyle göster, sessiz geç */ }
+    render();
+  };
+  const closeAdisyonList = document.getElementById('closeAdisyonList');
+  if(closeAdisyonList) closeAdisyonList.onclick = ()=>{ adisyonListOpen=false; render(); };
+  const adisyonListOverlay = document.getElementById('adisyonListOverlay');
+  if(adisyonListOverlay) adisyonListOverlay.onclick = (e)=>{ if(e.target.id==='adisyonListOverlay'){ adisyonListOpen=false; render(); } };
+  const openChecksHandler = async ()=>{
+    openChecksListOpen = true; openChecksData = null; render();
+    try{ openChecksData = await api('/reports/patron-open-checks'); }catch(e){ /* sessiz geç */ }
+    render();
+  };
+  const openChecksList = document.getElementById('openChecksList');
+  if(openChecksList) openChecksList.onclick = openChecksHandler;
+  const openChecksList2 = document.getElementById('openChecksList2');
+  if(openChecksList2) openChecksList2.onclick = openChecksHandler;
+  const closeOpenChecksList = document.getElementById('closeOpenChecksList');
+  if(closeOpenChecksList) closeOpenChecksList.onclick = ()=>{ openChecksListOpen=false; render(); };
+  const openChecksOverlay = document.getElementById('openChecksOverlay');
+  if(openChecksOverlay) openChecksOverlay.onclick = (e)=>{ if(e.target.id==='openChecksOverlay'){ openChecksListOpen=false; render(); } };
+  document.querySelectorAll('[data-orderid]').forEach(row=>row.onclick=async()=>{
+    orderDetailOpen = true; orderDetailData = null; render();
+    try{ orderDetailData = await api(`/orders/${row.dataset.orderid}`); }catch(e){ /* sessiz geç */ }
+    render();
+  });
+  const closeOrderDetail = document.getElementById('closeOrderDetail');
+  if(closeOrderDetail) closeOrderDetail.onclick = ()=>{ orderDetailOpen=false; render(); };
+  const orderDetailOverlay = document.getElementById('orderDetailOverlay');
+  if(orderDetailOverlay) orderDetailOverlay.onclick = (e)=>{ if(e.target.id==='orderDetailOverlay'){ orderDetailOpen=false; render(); } };
+  if(token && !dashData){ loadDashboard(); registerForPushNotifications(); }
+}
+
+// Native uygulama (Capacitor) içinde çalışıyorsak bildirim izni isteyip
+// cihaz jetonunu sunucuya kaydediyoruz. Normal tarayıcıda sessizce atlanır.
+function registerForPushNotifications(){
+  if(!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.PushNotifications) return;
+  const { PushNotifications } = window.Capacitor.Plugins;
+  PushNotifications.requestPermissions().then(res=>{
+    if(res.receive === 'granted') PushNotifications.register();
+  });
+  PushNotifications.addListener('registration', (tok)=>{
+    api('/menu/push-token', {method:'POST', body:JSON.stringify({token: tok.value, app:'patron'})}).catch(()=>{});
+  });
+}
+
+render();
+setInterval(()=>{ if(token) loadDashboard(); }, 60000);
+</script>
+</body>
+</html>
