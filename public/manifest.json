@@ -1,15 +1,15 @@
 {
-  "name": "DurakPOS Patron",
-  "short_name": "DurakPOS",
-  "start_url": "/patron",
+  "name": "Brokers Coffee",
+  "short_name": "Brokers Coffee",
+  "description": "Çukurova'da taze kahve, sipariş ve sadakat programı",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#17110D",
-  "theme_color": "#1F160F",
+  "orientation": "portrait",
+  "background_color": "#faf9f6",
+  "theme_color": "#0d1b3d",
   "icons": [
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F160F'/%3E%3Ctext x='50' y='62' font-size='40' text-anchor='middle' fill='%23E0912F'%3E☕%3C/text%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

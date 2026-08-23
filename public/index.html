@@ -1,356 +1,561 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html class="scroll-smooth" lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>DurakPOS — Kahve Dükkanınız İçin Akıllı Kasa</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0d1b3d"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+<title>Brokers Coffee | Çukurova</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="/js/tailwind-config.js"></script>
 <style>
-:root{
-  --bg:#F7F4EE; --surface:#FFFFFF; --border:#E1D8C8; --text:#2B2016; --muted:#7A6E5C;
-  --accent:#C97A2E; --navy:#0D2440;
-}
-*{box-sizing:border-box; margin:0; padding:0;}
-body{font-family:Arial,sans-serif; background:var(--bg); color:var(--text);}
-a{text-decoration:none; color:inherit;}
-
-.nav-outer{padding:20px 32px 0;}
-.nav{max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
-  background:var(--surface); border-radius:999px; padding:14px 26px;
-  box-shadow:0 8px 24px rgba(11,31,56,0.10); border:1px solid var(--border);}
-.logo{font-size:20px; font-weight:800;}
-.logo span{color:var(--accent);}
-.nav-links{display:flex; gap:28px; font-size:14px; color:var(--muted); font-weight:600;}
-.nav-links a{cursor:pointer;}
-.nav-links a:hover{color:var(--text);}
-.nav-right{display:flex; align-items:center; gap:12px;}
-.btn-login{background:none; border:1.5px solid var(--border); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:700; color:var(--text);}
-.btn-cta{background:var(--navy); color:#fff; padding:10px 20px; border-radius:999px; font-size:13px; font-weight:700;}
-
-.hero{display:flex; align-items:center; gap:60px; padding:70px 48px; max-width:1200px; margin:0 auto;}
-.hero-text{flex:1;}
-.pill{display:inline-block; background:#EFE3D3; color:var(--accent); font-size:12px; font-weight:700; padding:6px 14px; border-radius:999px; margin-bottom:18px;}
-.hero h1{font-size:44px; line-height:1.15; font-weight:800; margin-bottom:18px;}
-.hero p{color:var(--muted); font-size:16px; line-height:1.6; margin-bottom:26px; max-width:480px;}
-.hero-cta{display:flex; gap:12px;}
-.btn-primary{background:var(--navy); color:#fff; padding:14px 26px; border-radius:12px; font-size:14px; font-weight:700;}
-.btn-secondary{background:none; border:1px solid var(--border); padding:14px 26px; border-radius:12px; font-size:14px; font-weight:700;}
-
-.hero-visual{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:26px; text-align:center;}
-.hero-visual .emoji{font-size:80px; margin-bottom:10px;}
-.hero-visual p{color:var(--muted); font-size:13px;}
-
-.features{background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:56px 48px;}
-.features-inner{max-width:1100px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:28px;}
-.feature-card{padding:20px;}
-.feature-card .ico{font-size:28px; margin-bottom:12px;}
-.feature-card h3{font-size:16px; margin-bottom:8px;}
-.feature-card p{color:var(--muted); font-size:13px; line-height:1.5;}
-
-.stats{display:flex; justify-content:center; gap:60px; padding:40px 48px; max-width:900px; margin:0 auto;}
-.stat{text-align:center;}
-.stat .n{font-size:28px; font-weight:800; color:var(--navy);}
-.stat .l{font-size:12px; color:var(--muted); margin-top:4px;}
-
-.footer{text-align:center; padding:30px; color:var(--muted); font-size:12px; border-top:1px solid var(--border);}
-
-.industries{padding:56px 48px; max-width:1180px; margin:0 auto;}
-.industries h2{text-align:center; font-size:28px; margin-bottom:8px;}
-.industries .sub{text-align:center; color:var(--muted); font-size:14px; margin-bottom:36px;}
-.ind-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
-.ind-card{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:26px; transition:transform .15s, box-shadow .15s;}
-.ind-card:hover{transform:translateY(-3px); box-shadow:0 12px 28px rgba(11,31,56,0.10);}
-.ind-card .ico{width:46px; height:46px; border-radius:13px; background:#EFE3D3; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;}
-.ind-card h3{font-size:16px; margin-bottom:8px;}
-.ind-card p{color:var(--muted); font-size:13px; line-height:1.55; margin-bottom:14px;}
-.ind-card a{font-size:13px; font-weight:700; color:var(--navy);}
-
-.benefits2{background:var(--navy); padding:64px 48px;}
-.benefits2-inner{max-width:1100px; margin:0 auto;}
-.benefits2 h2{text-align:center; color:#fff; font-size:28px; margin-bottom:36px;}
-.b2-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:24px;}
-.b2-card{color:#fff;}
-.b2-card .ico{font-size:24px; margin-bottom:12px;}
-.b2-card h4{font-size:14.5px; margin-bottom:8px;}
-.b2-card p{font-size:12.5px; opacity:0.7; line-height:1.55;}
-
-.faq{padding:60px 48px; max-width:820px; margin:0 auto;}
-.faq h2{text-align:center; font-size:28px; margin-bottom:8px;}
-.faq .sub{text-align:center; color:var(--muted); font-size:14px; margin-bottom:34px;}
-.faq-item{border-bottom:1px solid var(--border);}
-.faq-q{padding:18px 4px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-size:14.5px; font-weight:700;}
-.faq-q .arrow{transition:transform .2s; color:var(--accent); font-size:18px;}
-.faq-item.open .faq-q .arrow{transform:rotate(45deg);}
-.faq-a{max-height:0; overflow:hidden; transition:max-height .25s ease;}
-.faq-item.open .faq-a{max-height:200px;}
-.faq-a p{padding:0 4px 18px; color:var(--muted); font-size:13.5px; line-height:1.6;}
-
-@media (max-width: 800px){
-  .ind-grid{grid-template-columns:1fr;}
-  .b2-grid{grid-template-columns:1fr 1fr;}
-}
-
-.pricing{padding:60px 48px; max-width:1000px; margin:0 auto;}
-.pricing h2{text-align:center; font-size:28px; margin-bottom:8px;}
-.pricing .sub{text-align:center; color:var(--muted); font-size:14px; margin-bottom:36px;}
-.pricing-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
-.price-card{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:28px 24px; text-align:center;}
-.price-card.featured{border-color:var(--navy); box-shadow:0 8px 24px rgba(27,58,99,0.12); position:relative;}
-.price-card .badge{position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; font-size:11px; font-weight:700; padding:5px 14px; border-radius:999px;}
-.price-card h3{font-size:16px; margin-bottom:6px;}
-.price-card .price{font-size:32px; font-weight:800; margin:14px 0 4px;}
-.price-card .price span{font-size:13px; font-weight:400; color:var(--muted);}
-.price-card ul{list-style:none; text-align:left; margin:20px 0; font-size:13px; color:var(--muted); line-height:2;}
-.price-card ul li:before{content:"✓ "; color:var(--accent); font-weight:800;}
-.price-card .btn-primary{display:block; width:100%;}
-
-@media (max-width: 800px){
-  .hero{flex-direction:column; padding:40px 24px;}
-  .hero h1{font-size:30px;}
-  .features-inner{grid-template-columns:1fr;}
-  .nav-outer{padding:16px 16px 0;}
-  .nav-links{display:none;}
-}
-
-.site-footer{background:var(--navy); color:#fff; padding:56px 32px 0; margin-top:60px;}
-.footer-inner{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr 1fr; gap:28px; padding-bottom:40px;}
-.fbrand .logo{font-size:19px; font-weight:800; margin-bottom:12px;}
-.fbrand .logo span{color:var(--accent);}
-.fbrand p{font-size:12.5px; opacity:0.65; line-height:1.6; margin-bottom:18px; max-width:230px;}
-.fcta{display:inline-block; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:700;}
-.fcol h5{font-size:12px; font-weight:800; letter-spacing:0.04em; opacity:0.55; margin-bottom:14px; text-transform:uppercase;}
-.fcol a{display:block; font-size:13px; opacity:0.8; margin-bottom:11px;}
-.fcol a:hover{opacity:1;}
-.footer-bottom{max-width:1180px; margin:0 auto; border-top:1px solid rgba(255,255,255,0.12); padding:18px 0; font-size:12px; opacity:0.5; text-align:center;}
-@media (max-width:900px){.footer-inner{grid-template-columns:1fr 1fr;}}
-
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hero-gradient { background: linear-gradient(to right, rgba(13,27,61,0.95) 25%, rgba(13,27,61,0.35) 100%); }
+  @media (max-width: 768px) { .hero-gradient { background: linear-gradient(to top, rgba(13,27,61,0.97) 25%, rgba(13,27,61,0.5) 100%); } }
+  .cat-tab.active { background: #0d1b3d; color: #fff; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .featured-auto-scroll { width: max-content; transition: transform 0.8s ease; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  body { padding-bottom: 0; }
+  @media (max-width: 768px) { body { padding-bottom: 72px; } }
 </style>
 </head>
-<body>
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
 
-<div class="nav-outer">
-  <div class="nav">
-    <div class="logo">Durak<span>POS</span></div>
-    <div class="nav-links">
-      <a href="#hero">POS Sistemi</a>
-      <a href="#industries">İşletme Çözümleri</a>
-      <a href="#features">Özellikler</a>
-      <a href="#pricing">Fiyatlandırma</a>
-    </div>
-    <div class="nav-right">
-      <a class="btn-login" href="/panel">Giriş Yap</a>
-      <a class="btn-cta" href="/demo-talep">Demo Talep Et</a>
-    </div>
-  </div>
+<!-- Header -->
+<header class="w-full top-0 sticky z-50 bg-background/95 backdrop-blur-md shadow-sm shadow-primary/5">
+<nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base max-w-container-max mx-auto">
+<a href="/" class="flex items-center gap-2">
+<img id="header-logo" class="hidden h-9 w-9 object-contain rounded" alt="Brokers Coffee logo"/>
+<span class="font-display-lg text-[24px] text-primary tracking-tighter">Brokers Coffee</span>
+</a>
+<div class="hidden md:flex items-center gap-8 font-label-sm text-label-sm uppercase tracking-widest">
+<a href="/#one-cikanlar" class="text-on-surface-variant hover:text-primary transition-colors">Öne Çıkanlar</a>
+<a href="/#menu" class="text-primary border-b border-tertiary-container pb-1">Menü</a>
+<a href="/#lokasyon" id="nav-lokasyon-link" class="text-on-surface-variant hover:text-primary transition-colors">Lokasyon</a>
+<a href="/#hakkimizda" class="text-on-surface-variant hover:text-primary transition-colors">Hakkımızda</a>
+</div>
+<div class="flex items-center gap-5">
+<a href="/cart.html" class="relative text-primary">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span data-cart-badge class="hidden absolute -top-2 -right-2 bg-tertiary-container text-on-tertiary-fixed text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+</a>
+<span id="account-nav-link" class="text-xs md:text-sm font-semibold uppercase tracking-widest text-primary whitespace-nowrap">
+<a href="/login.html" class="hover:text-tertiary transition-colors">Giriş</a> / <a href="/register.html" class="hover:text-tertiary transition-colors">Üye Ol</a>
+</span>
+</div>
+</nav>
+</header>
+
+<div id="tier-banner-wrap" class="hidden bg-white border-b border-[#e3e2e0]">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto py-4">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-bold text-[#0d1b3d]">🎉 Yedikçe İndirim Kazan</h3>
+<a href="/loyalty.html" class="text-xs text-[#735c00] font-semibold underline">Detay</a>
+</div>
+<div id="home-tier-progress-bar" class="relative h-1.5 bg-[#e3e2e0] rounded-full mb-2"></div>
+<p id="home-tier-status-text" class="text-xs text-[#504442]"></p>
+</div>
 </div>
 
-<div class="hero" id="hero">
-  <div class="hero-text">
-    <div class="pill">Kahve Dükkanları İçin</div>
-    <h1 id="heroTitle">Hızlı Satış Yapın,<br>Karmaşaya Son Verin.</h1>
-    <p id="heroSubtitle">Menü yönetiminden ödemeye, raporlardan anlık ciro takibine kadar her şey tek bir sistemde. Kasa, yönetim paneli ve patron uygulaması aynı veriyi anlık paylaşır.</p>
-    <div class="hero-cta">
-      <a class="btn-primary" href="/demo-talep">Demo Talep Et</a>
-      <a class="btn-secondary" href="#features">Özellikleri Gör</a>
-    </div>
-  </div>
-  <div class="hero-visual" id="heroVisual">
-    <div class="emoji">☕</div>
-    <p>Kasa · Yönetim Paneli · Patron Uygulaması<br>hepsi tek çatı altında</p>
-  </div>
+<main>
+<!-- Hero -->
+<section id="hero-section" class="relative w-full h-[480px] md:h-[600px] flex items-center overflow-hidden">
+<img id="hero-img" class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?q=80&w=1600&auto=format&fit=crop" alt="Brokers Coffee barista"/>
+<div class="absolute inset-0 hero-gradient"></div>
+<div class="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="max-w-lg">
+<span class="font-label-sm text-label-sm text-tertiary-fixed uppercase tracking-widest mb-3 block">Çukurova/Adana</span>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-white mb-4">Günün Ritüeli, Kapına Kadar.</h1>
+<p class="font-body-lg text-body-lg text-white/80 mb-8">Taze demlenmiş kahveler, el yapımı kruvasanlar — ister mağazadan al, ister adresine gelsin.</p>
+<div class="flex gap-4 flex-wrap">
+<a href="#menu" class="px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">Menüyü Keşfet</a>
+<a href="#lokasyon" class="px-8 py-3 border border-white text-white font-bold text-label-sm uppercase tracking-widest hover:bg-white/10 transition-colors">Bize Ulaş</a>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Öne Çıkanlar -->
+<section id="one-cikanlar" class="py-14 md:py-20 bg-white">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<h2 id="featured-title" class="font-display-lg text-[26px] md:text-[32px] text-primary mb-6">Öne Çıkanlar</h2>
+<div id="featured-viewport" class="overflow-hidden -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<div id="featured-scroll" class="flex gap-4 pb-2 featured-auto-scroll">
+<p class="text-on-surface-variant">Yükleniyor...</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- About Us -->
+<section id="hakkimizda" class="py-20 md:py-28 bg-surface-container-low">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row items-center gap-16">
+<div class="w-full md:w-1/2 order-2 md:order-1">
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-widest mb-3 block">Hikayemiz</span>
+<h2 class="font-display-lg text-[32px] md:text-[40px] text-primary mb-6">Sipariş Üzerine, O An Pişer.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6">Kruvasanlarımızı önceden pişirip vitrinde bekletmiyoruz. Siz sipariş verdiğiniz anda fırına giriyor; sıcacık, çıtır ve tam kıvamında elinize ulaşıyor. Her müşterimiz için ayrı, taze ve anlık — bu bizim için bir detay değil, işin özü.</p>
+<a href="#menu" class="inline-flex items-center gap-2 font-body-md text-primary font-bold group">
+Menümüzü Keşfedin
+<span class="material-symbols-outlined transition-transform duration-300 group-hover:translate-x-1">arrow_right_alt</span>
+</a>
+</div>
+<div class="w-full md:w-1/2 order-1 md:order-2 grid grid-cols-2 gap-4">
+<div class="aspect-square bg-surface-container overflow-hidden rounded-lg">
+<img id="about-img-1" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=800&auto=format&fit=crop" alt="Barista kahve hazırlıyor"/>
+</div>
+<div class="aspect-square bg-surface-container overflow-hidden rounded-lg">
+<img id="about-img-2" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop" alt="Kahve dükkanı iç mekan"/>
+</div>
+</div>
 </div>
 
-<div class="stats">
-  <div class="stat"><div class="n">Anlık</div><div class="l">Ciro Takibi</div></div>
-  <div class="stat"><div class="n">Bulut</div><div class="l">Tabanlı Senkron</div></div>
-  <div class="stat"><div class="n">Çevrimdışı</div><div class="l">Kesintisiz Çalışma</div></div>
+<!-- Value props -->
+<div id="value-props-section" class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">eco</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Özenle Seçilmiş Çekirdekler</h3>
+<p class="font-body-md text-on-surface-variant">Her parti kahvemiz, kavurma tazeliği için düzenli aralıklarla yenileniyor.</p>
+</div>
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">bakery_dining</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Günlük Taze Fırın</h3>
+<p class="font-body-md text-on-surface-variant">Kruvasanlarımız her gün sipariş üzerine, taze pişirilir.</p>
+</div>
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-tertiary text-[36px] mb-4 block">local_shipping</span>
+<h3 class="font-headline-md text-[20px] text-primary mb-2">Kapına Kadar</h3>
+<p class="font-body-md text-on-surface-variant">Çukurova çevresine hızlı teslimat, 750 TL üzeri kurye ücretsiz.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Menu -->
+<section id="menu" class="py-20 md:py-28">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+<div>
+<h2 class="font-display-lg text-[32px] md:text-[40px] text-primary mb-2">Online Menü</h2>
+<p class="font-body-md text-on-surface-variant max-w-md">Sıcak/soğuk kahvelerimiz ve el yapımı kruvasanlarımızdan seçiminizi yapın.</p>
+</div>
 </div>
 
-<div class="features" id="features">
-  <div class="features-inner">
-    <div class="feature-card">
-      <div class="ico">🧾</div>
-      <h3>Hızlı Satış Ekranı</h3>
-      <p>Kategoriler, boy seçenekleri, indirimler ve yemek kartı desteğiyle saniyeler içinde sipariş alın.</p>
-    </div>
-    <div class="feature-card">
-      <div class="ico">📊</div>
-      <h3>Detaylı Raporlar</h3>
-      <p>Kategori ve ödeme tipine göre kırılım, KDV takibi, tarih aralıklı analiz — hepsi bulutta saklanır.</p>
-    </div>
-    <div class="feature-card">
-      <div class="ico">📱</div>
-      <h3>Patron Uygulaması</h3>
-      <p>Dükkanda olmasanız bile telefonunuzdan anlık ciro ve sipariş sayısını takip edin.</p>
-    </div>
-    <div class="feature-card">
-      <div class="ico">☁️</div>
-      <h3>Çok Şubeli Altyapı</h3>
-      <p>Her şube kendi verisine izole erişir — büyüdükçe yeni şubeler kolayca eklenir.</p>
-    </div>
-    <div class="feature-card">
-      <div class="ico">🔌</div>
-      <h3>POS Cihazı Entegrasyonu</h3>
-      <p>Banka POS cihazınızla doğrudan haberleşerek ödeme ve fiş kesimini otomatikleştirin.</p>
-    </div>
-    <div class="feature-card">
-      <div class="ico">✨</div>
-      <h3>Yapay Zeka Asistanı</h3>
-      <p>Menünüzü yazıp yapıştırın, yapay zeka sizin için ürünleri otomatik oluştursun.</p>
-    </div>
-  </div>
+<!-- Category tabs -->
+<div id="cat-tabs" class="flex gap-3 flex-wrap mb-12 overflow-x-auto no-scrollbar"></div>
+
+<!-- Product grid -->
+<div id="product-grid" class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
+<p class="col-span-full text-on-surface-variant">Menü yükleniyor...</p>
+</div>
+</div>
+</section>
+
+<!-- About / Location -->
+<section id="lokasyon" class="py-24 bg-primary text-secondary-fixed overflow-hidden relative">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto flex flex-col md:flex-row items-center gap-16 relative z-10">
+<div class="w-full md:w-1/2">
+<h2 class="font-display-lg text-[32px] md:text-display-lg mb-6 text-secondary-fixed">Bizi Ziyaret Edin</h2>
+<p class="font-body-lg text-body-lg text-secondary-fixed/80 mb-2">Beyazevler Mah. 80040 Sk. Mutlu Apt. No:4 İç Kapı No:11, Çukurova/Adana</p>
+<p class="font-body-md text-secondary-fixed/70 mb-8">Her gün 10:30 - 21:30 arası sipariş alıyoruz. 750 TL üzeri siparişlerde kurye ücreti bizden.</p>
+<a href="https://wa.me/905424457306" class="inline-flex px-8 py-3 bg-tertiary-container text-on-tertiary-fixed font-bold text-label-sm uppercase tracking-widest hover:bg-tertiary-fixed transition-colors">WhatsApp'tan Yaz</a>
+</div>
+<div class="w-full md:w-1/2 grid grid-cols-2 gap-4">
+<div class="aspect-square bg-primary-container overflow-hidden">
+<img id="location-img-1" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=800&auto=format&fit=crop" alt="Kahve çekirdekleri"/>
+</div>
+<div class="aspect-square bg-primary-container mt-8 overflow-hidden">
+<img id="location-img-2" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=800&auto=format&fit=crop" alt="Filtre kahve demleme"/>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer id="footer-section" class="w-full bg-primary text-secondary-fixed mt-auto">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto py-14">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+
+<div class="col-span-2 md:col-span-1">
+<div class="font-display-lg text-[26px] text-secondary-fixed tracking-tighter mb-3">Brokers Coffee</div>
+<p class="text-sm text-secondary-fixed/60 mb-4">Çukurova'da her gün taze demlenen kahve.</p>
+<div class="flex gap-3">
+<a href="https://wa.me/905424457306" class="w-9 h-9 rounded-full border border-secondary-fixed/30 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="WhatsApp">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</a>
+<a href="https://instagram.com" class="w-9 h-9 rounded-full border border-secondary-fixed/30 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Instagram">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+</a>
+</div>
 </div>
 
-<div class="industries" id="industries">
-  <h2>İşletmenizin Türünü Seçin</h2>
-  <p class="sub">DurakPOS, farklı işletme tiplerinin ihtiyacına göre şekilleniyor.</p>
-  <div class="ind-grid">
-    <div class="ind-card">
-      <div class="ico">☕</div>
-      <h3>Kafe</h3>
-      <p>Hızlı kasa ekranı, boy/varyant seçimi ve yemek kartı desteğiyle kahve dükkanınız için tasarlandı.</p>
-      <a href="/kafe">Detayları Gör →</a>
-    </div>
-    <div class="ind-card">
-      <div class="ico">🍽</div>
-      <h3>Restoran</h3>
-      <p>Adisyon yönetimi, kısmi ödeme ve indirim uygulama — restoran işletmeleri için genişleyen özellikler.</p>
-      <a href="/restoran">Detayları Gör →</a>
-    </div>
-    <div class="ind-card">
-      <div class="ico">🛵</div>
-      <h3>Paket Servis</h3>
-      <p>Yemeksepeti, Trendyol Yemek ve Getir siparişlerini tek panelden yönetmeyi hedefliyoruz.</p>
-      <a href="/paket-servis">Detayları Gör →</a>
-    </div>
-  </div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-tertiary-fixed mb-4">Kurumsal</h3>
+<div class="flex flex-col gap-2.5 text-sm text-secondary-fixed/70">
+<a href="/#hakkimizda" class="hover:text-tertiary-fixed transition-colors">Hakkımızda</a>
+<a href="/subeler.html" class="hover:text-tertiary-fixed transition-colors">Şubelerimiz</a>
+<a href="/blog.html" class="hover:text-tertiary-fixed transition-colors">Blog</a>
+<a href="/loyalty.html" class="hover:text-tertiary-fixed transition-colors">Sadakat Programı</a>
+</div>
 </div>
 
-<div class="benefits2">
-  <div class="benefits2-inner">
-    <h2>Neden DurakPOS?</h2>
-    <div class="b2-grid">
-      <div class="b2-card"><div class="ico">💸</div><h4>Gizli Ücret Yok</h4><p>Kurulum ücreti veya sürpriz maliyet yok — ne göreceğinizi baştan bilirsiniz.</p></div>
-      <div class="b2-card"><div class="ico">📶</div><h4>İnternetsiz de Çalışır</h4><p>Bağlantı kesilse bile satış durmaz, kasa yerelde çalışmaya devam eder, bağlantı gelince senkronize olur.</p></div>
-      <div class="b2-card"><div class="ico">⚡</div><h4>Hızlı Kurulum</h4><p>İndirin, menünüzü tanımlayın, satmaya başlayın — teknik servis beklemeden.</p></div>
-      <div class="b2-card"><div class="ico">🤝</div><h4>Gerçek Destek</h4><p>Botla değil, gerçek biriyle konuşursunuz — ihtiyacınız olduğunda yanınızdayız.</p></div>
-    </div>
-  </div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-tertiary-fixed mb-4">Yardım</h3>
+<div class="flex flex-col gap-2.5 text-sm text-secondary-fixed/70">
+<a href="/contact.html" class="hover:text-tertiary-fixed transition-colors">İletişim</a>
+<a href="/register.html" class="hover:text-tertiary-fixed transition-colors">Üye Ol / Giriş Yap</a>
+<a href="/privacy-policy.html" class="hover:text-tertiary-fixed transition-colors">Gizlilik Politikası</a>
+<a href="/terms.html" class="hover:text-tertiary-fixed transition-colors">Kullanım Koşulları</a>
+</div>
 </div>
 
-<div class="faq" id="faq">
-  <h2>Sıkça Sorulan Sorular</h2>
-  <p class="sub">DurakPOS hakkında merak edilenler</p>
-  <div class="faq-item">
-    <div class="faq-q">DurakPOS hangi işletmelere uygun?<span class="arrow">+</span></div>
-    <div class="faq-a"><p>Kafe ve kahve dükkanları için tasarlandı; restoran ve paket servis işletmeleri için özellikler genişletiliyor.</p></div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Ekstra bir donanım almam gerekiyor mu?<span class="arrow">+</span></div>
-    <div class="faq-a"><p>Hayır, mevcut bilgisayar veya tabletinizde tarayıcı üzerinden çalışır. Fiziksel POS cihazı entegrasyonu isteğe bağlıdır.</p></div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">İnternet kesilirse satış yapabilir miyim?<span class="arrow">+</span></div>
-    <div class="faq-a"><p>Evet. Kasa uygulaması yerel olarak çalışmaya devam eder, bağlantı geri geldiğinde siparişler otomatik olarak buluta senkronize edilir.</p></div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Verilerim nerede saklanıyor?<span class="arrow">+</span></div>
-    <div class="faq-a"><p>Verileriniz bulutta, çok şubeli (multi-tenant) bir veritabanında güvenle saklanır — her işletme yalnızca kendi verisini görür.</p></div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Kaç şubede kullanabilirim?<span class="arrow">+</span></div>
-    <div class="faq-a"><p>Planınıza göre değişir. Başlangıç paketi tek şube için, Profesyonel ve Kurumsal paketler çoklu şube desteği sunar.</p></div>
-  </div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-tertiary-fixed mb-4">Bize Ulaşın</h3>
+<div class="flex flex-col gap-2.5 text-sm text-secondary-fixed/70">
+<p>Beyazevler Mah. 80040 Sk. Mutlu Apt. No:4 İç Kapı No:11, Çukurova/Adana</p>
+<p>Her gün 10:30 - 21:30</p>
+<a href="https://wa.me/905424457306" class="hover:text-tertiary-fixed transition-colors font-semibold">0542 445 73 06</a>
+</div>
 </div>
 
-<div class="features" id="blog" style="display:none; border-top:none;">
-  <div class="blog-grid" style="max-width:1100px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:28px;"></div>
 </div>
 
-<div class="pricing" id="pricing">
-  <h2>Fiyatlandırma</h2>
-  <p class="sub">İşletmenizin büyüklüğüne göre seçin, istediğiniz zaman değiştirin.</p>
-  <div class="pricing-grid">
-    <div class="price-card">
-      <h3>Başlangıç</h3>
-      <div class="price"><span id="priceBaslangic">₺499</span><span>/ay</span></div>
-      <ul>
-        <li>1 şube</li>
-        <li>Kasa uygulaması</li>
-        <li>Temel raporlar</li>
-        <li>E-posta destek</li>
-      </ul>
-      <a class="btn-primary" href="/demo-talep">Demo Talep Et</a>
-    </div>
-    <div class="price-card featured">
-      <div class="badge">En Popüler</div>
-      <h3>Profesyonel</h3>
-      <div class="price"><span id="pricePro">₺999</span><span>/ay</span></div>
-      <ul>
-        <li>3 şubeye kadar</li>
-        <li>Patron mobil uygulaması</li>
-        <li>Detaylı raporlar + KDV takibi</li>
-        <li>POS cihazı entegrasyonu</li>
-        <li>Öncelikli destek</li>
-      </ul>
-      <a class="btn-primary" href="/demo-talep">Demo Talep Et</a>
-    </div>
-    <div class="price-card">
-      <h3>Kurumsal</h3>
-      <div class="price"><span id="priceKurumsal">Özel</span><span> teklif</span></div>
-      <ul>
-        <li>Sınırsız şube</li>
-        <li>Yapay zeka asistanı</li>
-        <li>Özel entegrasyonlar</li>
-        <li>Hesap yöneticisi</li>
-      </ul>
-      <a class="btn-primary" href="/demo-talep">Bize Ulaşın</a>
-    </div>
-  </div>
+<div class="pt-6 border-t border-secondary-fixed/15 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-xs text-secondary-fixed/50 uppercase tracking-widest">© 2026 Brokers Coffee. Çukurova.</p>
 </div>
-
-
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="fbrand">
-      <div class="logo">Durak<span>POS</span></div>
-      <p>İstanbul merkezli bir kahve dükkanının ihtiyacından doğan, çok şubeli işletmeler için bulut tabanlı kasa ve yönetim platformu.</p>
-      <a class="fcta" href="/demo-talep">Demo Talep Et →</a>
-    </div>
-    <div class="fcol"><h5>POS Sistemleri</h5><a href="/kafe">Kafe</a><a href="/restoran">Restoran</a><a href="/paket-servis">Paket Servis</a><a href="/entegrasyonlar">Entegrasyonlar</a><a href="/qr-menu">QR Menü</a></div><div class="fcol"><h5>Sipariş Çözümleri</h5><a href="/mobil">DurakPOS Mobil</a><a href="/qr-menu">QR Menü</a><a href="/kiosk-siparis">Kiosk Sipariş</a></div><div class="fcol"><h5>İşletme Çözümleri</h5><a href="/personel-yonetimi">Personel Yönetimi</a><a href="/stok-takibi">Stok Takibi</a><a href="/muhasebe">Muhasebe</a><a href="/sube-yonetimi">Şube Yönetimi</a><a href="/akilli-raporlar">Akıllı Raporlar</a></div><div class="fcol"><h5>Kurumsal</h5><a href="/hakkimizda">Hakkımızda</a><a href="/kariyer">Kariyer</a><a href="/ortaklik">Ortaklık</a><a href="/#blog">Blog</a><a href="/#pricing">Fiyatlandırma</a></div><div class="fcol"><h5>Yasal</h5><a href="/gizlilik-politikasi">Gizlilik Politikası</a><a href="/kullanim-sartlari">Kullanım Şartları</a><a href="/cerez-politikasi">Çerez Politikası</a><a href="/kvkk">KVKK</a><a href="/vergi-uyumlulugu">Vergi Uyumluluğu</a></div>
-  </div>
-  <div class="footer-bottom">© 2026 DurakPOS. Tüm hakları saklıdır.</div>
+</div>
 </footer>
 
+<!-- Köşede sabit WhatsApp butonu -->
+<a href="https://wa.me/905424457306?text=Merhaba%2C%20sipari%C5%9F%20vermek%20istiyorum" target="_blank" rel="noopener" class="fixed z-40 bottom-24 md:bottom-6 right-5 w-14 h-14 rounded-full bg-[#25D366] shadow-lg flex items-center justify-center hover:scale-105 transition-transform" aria-label="WhatsApp'tan yaz">
+<svg viewBox="0 0 32 32" class="w-8 h-8" fill="white"><path d="M16.001 3C9.373 3 4 8.373 4 15c0 2.386.688 4.611 1.875 6.489L4 29l7.719-1.837A11.94 11.94 0 0 0 16.001 27C22.628 27 28 21.627 28 15S22.628 3 16.001 3zm6.964 16.876c-.293.822-1.452 1.508-2.373 1.703-.632.133-1.457.238-4.236-.91-3.554-1.469-5.84-5.058-6.017-5.293-.17-.235-1.442-1.92-1.442-3.66 0-1.74.912-2.596 1.235-2.951.323-.355.706-.444.941-.444.235 0 .47.002.676.012.216.01.507-.082.793.605.293.703.998 2.428 1.086 2.604.088.176.147.382.03.617-.117.235-.176.382-.352.588-.176.206-.371.46-.53.618-.176.176-.36.367-.155.719.206.352.914 1.508 1.963 2.443 1.35 1.204 2.488 1.577 2.84 1.753.352.176.558.147.764-.088.206-.235.881-1.03 1.117-1.383.235-.353.47-.294.793-.176.323.117 2.047.966 2.399 1.142.352.176.587.264.674.412.088.147.088.851-.205 1.673z"/></svg>
+</a>
+
+<!-- Mobil uygulama tarzı alt gezinme -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-surface-container-high flex items-stretch justify-around" style="padding-bottom: env(safe-area-inset-bottom);">
+<a href="/" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-primary">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Ana Sayfa</span>
+</a>
+<a href="/#menu" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">restaurant_menu</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Menü</span>
+</a>
+<a href="/cart.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant relative">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+<span data-cart-badge-mobile class="hidden absolute top-1 right-[calc(50%-18px)] bg-tertiary-container text-on-tertiary-fixed text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Sepet</span>
+</a>
+<a href="/account.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Hesabım</span>
+</a>
+</nav>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
 <script>
-fetch('/api/public/content').then(r=>r.json()).then(data=>{
-  const c = data.content || {};
-  if(c.hero_title) document.getElementById('heroTitle').innerHTML = c.hero_title.replace(/\n/g,'<br>');
-  if(c.hero_subtitle) document.getElementById('heroSubtitle').textContent = c.hero_subtitle;
-  if(c.banner_image){
-    document.getElementById('heroVisual').innerHTML = `<img src="${c.banner_image}" style="max-width:100%; border-radius:16px;">`;
-  }
-  if(c.price_baslangic) document.getElementById('priceBaslangic').textContent = '₺'+c.price_baslangic;
-  if(c.price_pro) document.getElementById('pricePro').textContent = '₺'+c.price_pro;
-  if(c.price_kurumsal) document.getElementById('priceKurumsal').textContent = c.price_kurumsal;
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=800&auto=format&fit=crop';
+let allProducts = [];
+let activeCategory = 'Hepsi';
 
-  if(data.posts && data.posts.length){
-    const blogSection = document.getElementById('blog');
-    blogSection.style.display = 'block';
-    blogSection.querySelector('.blog-grid').innerHTML = data.posts.slice(0,3).map(p=>`
-      <div class="feature-card"><h3>${p.title}</h3><p>${(p.body||'').slice(0,120)}${p.body && p.body.length>120?'…':''}</p></div>
-    `).join('');
-  }
-}).catch(()=>{ /* içerik alınamazsa sayfa varsayılan metinlerle görünmeye devam eder */ });
+function formatPriceLabel(sizes) {
+  if (!sizes || !sizes.length) return '';
+  const s = sizes[0];
+  const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
+  const priceHtml = eff < s.price
+    ? `<span class="line-through opacity-50 mr-1">₺${s.price.toFixed(0)}</span><span class="text-emerald-700 font-semibold">₺${eff.toFixed(0)}</span>`
+    : `₺${eff.toFixed(0)}`;
+  return sizes.length === 1 ? priceHtml : `${priceHtml}'den başlıyor`;
+}
 
-document.querySelectorAll('.faq-item').forEach(item=>{
-  item.querySelector('.faq-q').addEventListener('click', ()=>{
-    const wasOpen = item.classList.contains('open');
-    document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
-    if(!wasOpen) item.classList.add('open');
+function wireAddToCart(scope) {
+  scope.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addToCart({
+        productId: btn.dataset.id.replace('-dup', ''),
+        name: btn.dataset.name,
+        price: Number(btn.dataset.price),
+        size: btn.dataset.size || null,
+        extras: [],
+        qty: 1,
+      });
+      const original = btn.textContent;
+      btn.textContent = 'EKLENDİ ✓';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
   });
-});
+}
+
+function renderFeatured(products, featuredIds) {
+  const wrap = document.getElementById('featured-scroll');
+  let featured;
+  if (featuredIds && featuredIds.length) {
+    featured = featuredIds.map(id => products.find(p => p.id === id)).filter(Boolean);
+  } else {
+    featured = products.slice(0, 8);
+  }
+
+  const cardHtml = (p, dupIndex) => `
+    <div class="group flex-shrink-0 w-40 md:w-48 flex flex-col cursor-pointer" onclick="location.href='/product.html?id=${p.id}'">
+      <div class="aspect-square overflow-hidden mb-3 rounded-lg bg-surface-container-low">
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
+      </div>
+      <h3 class="font-headline-md text-[14px] text-primary mb-1 leading-snug">${p.name}</h3>
+      ${sizeButtonsHtml(p, dupIndex)}
+      <button class="add-to-cart-btn text-[11px] font-bold uppercase tracking-widest text-tertiary self-start" data-id="${p.id}${dupIndex}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">+ Sepete Ekle</button>
+    </div>
+  `;
+
+  const firstPass = featured.map(p => cardHtml(p, ''));
+  const secondPass = featured.map(p => cardHtml(p, '-dup'));
+  wrap.innerHTML = firstPass.concat(secondPass).join('');
+  wireAddToCart(wrap);
+  wireSizeButtons(wrap);
+  startFeaturedAutoScroll(featured.length);
+}
+
+let featuredScrollTimer = null;
+function startFeaturedAutoScroll(itemCount) {
+  const wrap = document.getElementById('featured-scroll');
+  if (featuredScrollTimer) clearInterval(featuredScrollTimer);
+  if (!itemCount) return;
+
+  let step = 0;
+  const isMobile = window.innerWidth < 768;
+  const cardWidth = (isMobile ? 160 : 192) + 16; // kart genişliği + gap (w-40/w-48 + gap-4)
+  let paused = false;
+
+  wrap.parentElement.addEventListener('mouseenter', () => { paused = true; });
+  wrap.parentElement.addEventListener('mouseleave', () => { paused = false; });
+
+  featuredScrollTimer = setInterval(() => {
+    if (paused) return;
+    step++;
+    wrap.style.transform = `translateX(-${step * cardWidth}px)`;
+
+    if (step >= itemCount) {
+      // Döngü kesintisiz görünsün diye, tam bir tur bitince animasyonsuz başa dön
+      setTimeout(() => {
+        wrap.style.transition = 'none';
+        wrap.style.transform = 'translateX(0)';
+        step = 0;
+        requestAnimationFrame(() => { wrap.style.transition = 'transform 0.8s ease'; });
+      }, 850);
+    }
+  }, 1800); // 0.8s kayma + 1s bekleme
+}
+
+function renderTabs(categories) {
+  const wrap = document.getElementById('cat-tabs');
+  if (activeCategory === 'Hepsi' && categories.length) {
+    activeCategory = categories[0];
+  }
+  wrap.innerHTML = categories.map(c =>
+    `<button class="cat-tab ${c === activeCategory ? 'active' : ''} px-5 py-2 rounded-full border border-outline-variant text-label-sm font-label-sm uppercase tracking-widest text-on-surface-variant transition-colors whitespace-nowrap" data-cat="${c}">${c}</button>`
+  ).join('');
+  wrap.querySelectorAll('.cat-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.cat;
+      renderTabs(categories);
+      renderGrid();
+    });
+  });
+}
+
+function sizeButtonsHtml(p, dupIndex = '') {
+  if (p.sizes.length <= 1) {
+    return `<p class="font-body-md text-on-surface-variant mb-2 italic text-xs">${formatPriceLabel(p.sizes)}</p>`;
+  }
+  const buttons = p.sizes.map((s, i) => {
+    const eff = s.effectivePrice !== undefined ? s.effectivePrice : s.price;
+    const discounted = eff < s.price;
+    return `
+      <button type="button" class="size-btn flex-1 min-w-0 border rounded px-1 py-1 text-center leading-tight transition-colors ${i === 0 ? 'active border-primary bg-primary/10' : 'border-outline-variant bg-white'}" data-index="${i}" onclick="event.stopPropagation()">
+        <div class="text-[10px] font-semibold text-primary truncate">${s.label || 'Tek Boy'}</div>
+        ${discounted
+          ? `<div class="text-[9px] line-through opacity-50 leading-none">₺${s.price.toFixed(0)}</div><div class="text-[10px] font-bold text-emerald-700 leading-tight">₺${eff.toFixed(0)}</div>`
+          : `<div class="text-[10px] font-bold text-primary leading-tight">₺${eff.toFixed(0)}</div>`}
+      </button>
+    `;
+  }).join('');
+  return `<div class="size-btn-group flex gap-1 mb-2" data-product-id="${p.id}${dupIndex}">${buttons}</div>`;
+}
+
+function wireSizeButtons(scope) {
+  scope.querySelectorAll('.size-btn-group').forEach(group => {
+    const fullId = group.dataset.productId;
+    const realId = fullId.replace('-dup', '');
+    const addBtn = scope.querySelector(`.add-to-cart-btn[data-id="${fullId}"]`);
+    const product = allProducts.find(p => p.id === realId);
+    if (!product) return;
+
+    group.querySelectorAll('.size-btn').forEach(sizeBtn => {
+      sizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        group.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active', 'border-primary', 'bg-primary/10'));
+        sizeBtn.classList.add('active', 'border-primary', 'bg-primary/10');
+        if (!addBtn) return;
+        const size = product.sizes[Number(sizeBtn.dataset.index)];
+        addBtn.dataset.price = size.price;
+        addBtn.dataset.size = size.label || '';
+      });
+    });
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById('product-grid');
+  const filtered = activeCategory === 'Hepsi'
+    ? allProducts
+    : allProducts.filter(p => (p.subcategory || p.category) === activeCategory);
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="group flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-2" onclick="location.href='/product.html?id=${p.id}'">
+      <div class="aspect-[4/5] overflow-hidden mb-4 bg-surface-container-low">
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="${p.image || FALLBACK_IMG}" alt="${p.name}"/>
+      </div>
+      <div class="text-center">
+        <span class="font-label-sm text-label-sm text-tertiary mb-1 block uppercase tracking-widest">${p.subcategory || p.category}</span>
+        <h3 class="font-headline-md text-[16px] md:text-[18px] text-primary mb-1">${p.name}</h3>
+        ${sizeButtonsHtml(p)}
+        <button class="add-to-cart-btn text-label-sm font-bold border-b border-primary text-primary hover:text-tertiary hover:border-tertiary transition-all block mx-auto" data-id="${p.id}" data-name="${p.name}" data-price="${p.sizes[0].price}" data-size="${p.sizes[0].label || ''}">SİPARİŞE EKLE</button>
+      </div>
+    </div>
+  `).join('');
+  wireAddToCart(grid);
+  wireSizeButtons(grid);
+}
+
+async function init() {
+  try {
+    const [productsRes, categoriesRes, contentRes] = await Promise.all([
+      fetch('/api/products'),
+      fetch('/api/categories'),
+      fetch('/api/site-content'),
+    ]);
+    allProducts = await productsRes.json();
+    const categories = await categoriesRes.json();
+    const content = await contentRes.json();
+
+    const titleEl = document.getElementById('featured-title');
+    if (titleEl && content.featuredTitle) titleEl.textContent = content.featuredTitle;
+
+    if (content.logo) {
+      const logoImg = document.getElementById('header-logo');
+      logoImg.src = content.logo;
+      logoImg.classList.remove('hidden');
+
+      // Google'ın işletme logomuzu arama sonuçlarında/bilgi panelinde tanıması için
+      // gereken yapılandırılmış veri (Organization schema)
+      const ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Brokers Coffee',
+        url: 'https://brokerscoffee.com.tr',
+        logo: content.logo.startsWith('http') ? content.logo : `https://brokerscoffee.com.tr${content.logo}`,
+      });
+      document.head.appendChild(ld);
+    }
+
+    renderFeatured(allProducts, content.featuredProductIds);
+    renderTabs(categories);
+    renderGrid();
+  } catch (e) {
+    document.getElementById('product-grid').innerHTML = '<p class="col-span-full text-on-surface-variant">Menü yüklenemedi, lütfen sayfayı yenileyin.</p>';
+  }
+}
+
+function syncMobileCartBadge() {
+  const badge = document.querySelector('[data-cart-badge-mobile]');
+  if (badge) {
+    const count = cartCount();
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+}
+document.addEventListener('DOMContentLoaded', syncMobileCartBadge);
+const origSaveCart = saveCart;
+saveCart = function(cart) { origSaveCart(cart); syncMobileCartBadge(); };
+
+async function loadSiteImages() {
+  try {
+    const res = await fetch('/api/site-content');
+    const data = await res.json();
+    const map = {
+      heroImg: 'hero-img',
+      aboutImg1: 'about-img-1',
+      aboutImg2: 'about-img-2',
+      locationImg1: 'location-img-1',
+      locationImg2: 'location-img-2',
+    };
+    Object.keys(map).forEach(key => {
+      if (data[key]) {
+        const el = document.getElementById(map[key]);
+        if (el) el.src = data[key];
+      }
+    });
+  } catch (e) {}
+}
+loadSiteImages();
+
+async function updateAccountNav() {
+  const el = document.getElementById('account-nav-link');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/account/me');
+    if (res.ok) {
+      const data = await res.json();
+      el.innerHTML = `<a href="/account.html" class="hover:text-tertiary transition-colors">${data.name.split(' ')[0]}</a>`;
+      loadHomeTierProgress();
+      // Giriş yapmış kullanıcı için hero, özellik kutuları, lokasyon ve footer'ı gizle
+      document.getElementById('hero-section').classList.add('hidden');
+      document.getElementById('value-props-section').classList.add('hidden');
+      document.getElementById('lokasyon').classList.add('hidden');
+      document.getElementById('footer-section').classList.add('hidden');
+      // Lokasyon bilgisi artık Hesabım sayfasında — "Lokasyon" linkini oraya yönlendir
+      document.getElementById('nav-lokasyon-link').href = '/account.html#lokasyon';
+    }
+  } catch (e) {}
+}
+updateAccountNav();
+
+async function loadHomeTierProgress() {
+  try {
+    const res = await fetch('/api/account/monthly-progress');
+    if (!res.ok) return;
+    const progress = await res.json();
+    const { spend, tiers, nextTier, unclaimedTier } = progress;
+    if (!tiers.length) return;
+
+    document.getElementById('tier-banner-wrap').classList.remove('hidden');
+    const maxTier = tiers[tiers.length - 1].threshold;
+    const pct = Math.min(100, (spend / maxTier) * 100);
+    document.getElementById('home-tier-progress-bar').innerHTML =
+      `<div class="absolute inset-y-0 left-0 bg-[#c9a227] rounded-full" style="width:${pct}%"></div>`;
+
+    const statusEl = document.getElementById('home-tier-status-text');
+    if (unclaimedTier) {
+      statusEl.textContent = `🎉 ₺${unclaimedTier.discount} indirim kazandın! Bir sonraki siparişinde kullanabilirsin.`;
+    } else if (nextTier) {
+      statusEl.textContent = `₺${(nextTier.threshold - spend).toFixed(0)} daha harca, ₺${nextTier.discount} indirim kazan. (Bu ay ₺${spend.toFixed(0)} harcandı)`;
+    } else {
+      statusEl.textContent = `Bu ay ₺${spend.toFixed(0)} harcadın — tüm kademeleri tamamladın! 🎉`;
+    }
+  } catch (e) {}
+}
+
+init();
 </script>
-
-
 </body>
 </html>
