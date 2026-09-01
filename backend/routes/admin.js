@@ -185,7 +185,6 @@ router.get('/messages/queue', adminAuth.requireAuth, async (req, res) => {
 
 router.get('/integrations', adminAuth.requireAuth, async (req, res) => {
   const data = await integrations.loadMasked();
-  data.paynet = { envConnected: !!process.env.PAYNET_SECRET_KEY };
   res.json(data);
 });
 
