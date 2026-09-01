@@ -4,6 +4,7 @@ const KEY = 'integrations';
 
 const DEFAULTS = {
   iyzico: { enabled: false, apiKey: '', secretKey: '', environment: 'sandbox' },
+  paynet: { enabled: false, secretKey: '', publishableKey: '', environment: 'test' },
   whatsapp: { enabled: false, phoneNumberId: '', accessToken: '', verifyToken: '' },
   netgsm: { enabled: false, username: '', password: '', header: '' },
   anthropic: { enabled: false, apiKey: '' },
@@ -17,6 +18,7 @@ const DEFAULTS = {
 
 const SECRET_FIELDS = {
   iyzico: ['apiKey', 'secretKey'],
+  paynet: ['secretKey'],
   whatsapp: ['accessToken', 'verifyToken'],
   netgsm: ['password'],
   anthropic: ['apiKey'],
@@ -31,6 +33,7 @@ const SECRET_FIELDS = {
 // Ortam değişkeni eşlemesi — tanımlıysa panel/DB değerinin önüne geçer, deploy'lardan etkilenmez
 const ENV_MAP = {
   iyzico: { apiKey: 'IYZICO_API_KEY', secretKey: 'IYZICO_SECRET_KEY' },
+  paynet: { secretKey: 'PAYNET_SECRET_KEY', publishableKey: 'PAYNET_PUBLISHABLE_KEY' },
   whatsapp: { phoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID', accessToken: 'WHATSAPP_ACCESS_TOKEN', verifyToken: 'WHATSAPP_VERIFY_TOKEN' },
   netgsm: { username: 'NETGSM_USERNAME', password: 'NETGSM_PASSWORD', header: 'NETGSM_HEADER' },
   anthropic: { apiKey: 'ANTHROPIC_API_KEY' },

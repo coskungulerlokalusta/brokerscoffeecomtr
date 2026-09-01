@@ -113,17 +113,8 @@
 </section>
 
 <section id="card-details-section" class="bg-white rounded-lg shadow-sm p-5">
-<h2 class="text-lg text-[#0d1b3d] mb-4">Kart Bilgileri</h2>
-<div class="flex flex-col gap-3">
-<input required id="cardHolder" placeholder="Kart Üzerindeki İsim" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<input required id="pan" inputmode="numeric" maxlength="19" placeholder="Kart Numarası" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
-<div class="flex gap-3">
-<input required id="month" inputmode="numeric" maxlength="2" placeholder="AA" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-1/3"/>
-<input required id="year" inputmode="numeric" maxlength="2" placeholder="YY" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-1/3"/>
-<input required id="cvc" inputmode="numeric" maxlength="4" placeholder="CVC" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-1/3"/>
-</div>
-</div>
-<p class="text-xs text-[#827472] mt-3">Kart bilgileriniz güvenli bağlantı üzerinden doğrudan Paynet'e iletilir, sitemizde saklanmaz.</p>
+<h2 class="text-lg text-[#0d1b3d] mb-2">Kart ile Ödeme</h2>
+<p class="text-sm text-[#504442]">"Ödemeyi Tamamla"ya bastığında, kart bilgilerini Paynet'in kendi güvenli ödeme penceresinde gireceksin — kart numaran hiçbir zaman bizim sunucumuza uğramıyor.</p>
 </section>
 
 <p id="error-msg" class="text-red-600 text-sm hidden"></p>
@@ -417,11 +408,6 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
     const payload = {
       ...basePayload,
       total: cartTotal() + (basePayload.orderExtraShot ? orderExtraShotPrice : 0),
-      cardHolder: document.getElementById('cardHolder').value,
-      pan: document.getElementById('pan').value.replace(/\s/g, ''),
-      month: document.getElementById('month').value,
-      year: document.getElementById('year').value,
-      cvc: document.getElementById('cvc').value,
     };
 
     const res = await fetch('/api/payment/init', {
@@ -437,15 +423,9 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
       submitBtn.textContent = 'Ödemeyi Tamamla';
       return;
     }
-    // Sepeti temizle, 3D doğrulama sayfasına yönlendir
+    // Sepeti temizle, Paynet'in güvenli ödeme penceresini aç
     localStorage.removeItem('brokers_coffee_cart');
-    if (data.htmlContent) {
-      document.open();
-      document.write(data.htmlContent);
-      document.close();
-    } else if (data.postUrl) {
-      window.location.href = data.postUrl;
-    }
+    openPaynetCheckoutModal(data);
   } catch (err) {
     errorMsg.textContent = 'Bağlantı hatası, tekrar deneyin.';
     errorMsg.classList.remove('hidden');
@@ -453,6 +433,34 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
     submitBtn.textContent = 'Ödemeyi Tamamla';
   }
 });
+
+// Paynet'in "Hazır Form" widget'ını açar — kart bilgileri doğrudan Paynet'in
+// kendi güvenli formunda girilir, hiçbir zaman bizim sunucumuza uğramaz.
+function openPaynetCheckoutModal({ amount, publishableKey, checkoutToken, callbackUrl }) {
+  const holder = document.createElement('div');
+  document.body.appendChild(holder);
+  holder.innerHTML = `<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <p class="text-sm text-[#504442] mb-4">Ödemeni tamamlamak için aşağıya bas:</p>
+      <form action="${callbackUrl}" method="POST">
+        <input type="hidden" name="checkout_token" value="${checkoutToken}">
+        <script class="paynet-button" type="text/javascript"
+          src="https://pj.paynet.com.tr/public/js/paynet.min.js"
+          data-key="${publishableKey}"
+          data-amount="${Math.round(amount * 100)}"
+          data-button_label="${amount.toFixed(2)}₺ Öde"><\/script>
+      </form>
+    </div>
+  </div>`;
+
+  // Bir HTML <script> etiketi innerHTML ile eklenirse tarayıcı güvenliği
+  // gereği otomatik çalışmaz — Paynet'in widget'ının gerçekten yüklenmesi
+  // için script'i elle yeniden oluşturup DOM'a koymamız gerekiyor.
+  const oldScript = holder.querySelector('script.paynet-button');
+  const newScript = document.createElement('script');
+  for (const attr of oldScript.attributes) newScript.setAttribute(attr.name, attr.value);
+  oldScript.replaceWith(newScript);
+}
 </script>
 
 <a href="https://wa.me/905424457306?text=Merhaba%2C%20sipari%C5%9F%20vermek%20istiyorum" target="_blank" rel="noopener" class="fixed z-40 bottom-6 right-5 w-14 h-14 rounded-full bg-[#25D366] shadow-lg flex items-center justify-center hover:scale-105 transition-transform" aria-label="WhatsApp'tan yaz">

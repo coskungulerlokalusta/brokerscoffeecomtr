@@ -1021,12 +1021,14 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
 const INTEGRATION_CONFIG = {
   paynet: {
     title: 'Paynet',
-    subtitle: 'Ödeme Sistemi',
+    subtitle: 'Ödeme Sistemi — Hazır Form',
     icon: 'pn',
     color: '#e0e7ff', textColor: '#3730a3',
-    envOnly: true, // Paynet zaten sadece ortam değişkeni ile çalışıyor (backend/utils/paynet.js)
-    envVarNames: ['PAYNET_SECRET_KEY'],
-    fields: [],
+    fields: [
+      { key: 'secretKey', label: 'Secret Key', help: '(Paynet panelinden, sunucu tarafı)', type: 'secret' },
+      { key: 'publishableKey', label: 'Publishable Key', help: '(Paynet panelinden, tarayıcı tarafı)', type: 'text' },
+      { key: 'environment', label: 'Ortam', type: 'select', options: [['test', 'Test'], ['live', 'Canlı']] },
+    ],
   },
   iyzico: {
     title: 'iyzico',

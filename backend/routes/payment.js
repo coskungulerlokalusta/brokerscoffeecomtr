@@ -23,15 +23,17 @@ router.post('/preview-discount', customerAuth.attachCustomerIfPresent, async (re
   res.json(result);
 });
 
-// Sipariş oluştur + 3D ödeme başlat
+// Sipariş oluştur + Paynet ödemesi başlat (güvenli checkout token akışı)
 router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
-  const { items, customerName, phone, deliveryType, address, cardHolder, pan, month, year, cvc, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
+  const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
     return res.status(400).json({ error: 'Eksik sipariş bilgisi' });
   }
-  if (!cardHolder || !pan || !month || !year || !cvc) {
-    return res.status(400).json({ error: 'Eksik kart bilgisi' });
+
+  const publishableKey = await paynet.getPublishableKey();
+  if (!publishableKey) {
+    return res.status(400).json({ error: 'Ödeme sistemi henüz yapılandırılmadı.' });
   }
 
   const customerId = req.customer ? req.customer.id : null;
@@ -59,62 +61,63 @@ router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
     if (idx !== -1) { orders[idx] = order; await orderStore.saveOrders(orders); }
   }
 
-  try {
-    const result = await paynet.initiateTdsPayment({
-      amount: total,
-      referenceNo: order.id,
-      returnUrl: `${SITE_BASE_URL}/api/payment/callback?orderId=${order.id}`,
-      domain: SITE_DOMAIN,
-      cardHolder,
-      pan,
-      month,
-      year,
-      cvc,
-      description: `Brokers Coffee Sipariş #${order.id.slice(0, 8)}`,
-    });
+  // İstemciden gelen tutara güvenmiyoruz — token'ın içine sunucuda hesapladığımız
+  // gerçek tutarı ve sipariş id'sini koyuyoruz, callback'te sadece bu eşleşir.
+  const checkoutToken = paynet.createCheckoutToken({ orderId: order.id, amount: total });
 
-    if (result.code !== 0) {
-      return res.status(402).json({ error: result.message || 'Ödeme başlatılamadı', orderId: order.id });
-    }
-
-    res.json({
-      orderId: order.id,
-      postUrl: result.post_url,
-      htmlContent: result.html_content,
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Paynet bağlantı hatası: ' + err.message, orderId: order.id });
-  }
+  res.json({
+    orderId: order.id,
+    publishableKey,
+    amount: total,
+    checkoutToken,
+    callbackUrl: `${SITE_BASE_URL}/api/payment/callback`,
+  });
 });
 
-// Bankanın 3D doğrulama sonrası post ettiği geri dönüş adresi
+// Paynet.js widget'ının, müşteri kart bilgilerini onayladıktan sonra post ettiği
+// geri dönüş adresi. GİRİŞ GEREKTİRMEZ — Paynet bizim sitemize kimlik bilgisiyle gelmez.
 router.post('/callback', async (req, res) => {
-  const { session_id, token_id } = req.body;
-  const orderId = req.query.orderId;
+  const { session_id: sessionId, token_id: tokenId, checkout_token: checkoutToken } = req.body;
+
+  const pending = checkoutToken ? paynet.consumeCheckoutToken(checkoutToken) : null;
+  if (!pending) {
+    return res.redirect(`/payment-result.html?status=fail&message=${encodeURIComponent('Oturum geçersiz veya süresi dolmuş.')}`);
+  }
+  if (!sessionId || !tokenId) {
+    return res.redirect(`/payment-result.html?status=fail&orderId=${pending.orderId}&message=${encodeURIComponent('Kart bilgisi alınamadı.')}`);
+  }
+
+  const chargeResult = await paynet.chargeTransaction({
+    sessionId,
+    tokenId,
+    amount: pending.amount,
+    referenceNo: pending.orderId,
+  });
 
   try {
-    const result = await paynet.completeTdsPayment({ sessionId: session_id, tokenId: token_id });
-    const success = result.is_succeed === true;
-    if (orderId) {
-      const orders = await orderStore.loadOrders();
-      const order = orders.find((o) => o.id === orderId);
-      if (order) {
-        order.orderStatus = success ? 'yeni' : 'iptal';
-        order.paymentStatus = success ? 'odendi' : 'basarisiz';
-        await orderStore.saveOrders(orders);
-        if (success && order.customerId) {
-          const currentSettings = await settings.loadSettings();
-          const earned = Math.floor(order.total / currentSettings.pointsPerTL);
-          if (earned > 0) await customerAuth.addPoints(order.customerId, earned);
-          if (order.monthlyTierApplied) await monthlyTiers.claimTier(order.customerId, order.monthlyTierApplied);
-        }
-        if (success) orderNotify.notifyNewOrder(order);
+    const orders = await orderStore.loadOrders();
+    const order = orders.find((o) => o.id === pending.orderId);
+    if (order) {
+      const success = chargeResult.ok;
+      order.orderStatus = success ? 'yeni' : 'iptal';
+      order.paymentStatus = success ? 'odendi' : 'basarisiz';
+      await orderStore.saveOrders(orders);
+      if (success && order.customerId) {
+        const currentSettings = await settings.loadSettings();
+        const earned = Math.floor(order.total / currentSettings.pointsPerTL);
+        if (earned > 0) await customerAuth.addPoints(order.customerId, earned);
+        if (order.monthlyTierApplied) await monthlyTiers.claimTier(order.customerId, order.monthlyTierApplied);
       }
+      if (success) orderNotify.notifyNewOrder(order);
     }
-    res.redirect(`/payment-result.html?status=${success ? 'success' : 'fail'}&orderId=${orderId || ''}&message=${encodeURIComponent(result.message || '')}`);
   } catch (err) {
-    res.redirect(`/payment-result.html?status=fail&orderId=${orderId || ''}&message=${encodeURIComponent('Bağlantı hatası')}`);
+    console.error('Paynet callback sipariş güncelleme hatası:', err.message);
   }
+
+  if (!chargeResult.ok) {
+    return res.redirect(`/payment-result.html?status=fail&orderId=${pending.orderId}&message=${encodeURIComponent(chargeResult.error)}`);
+  }
+  res.redirect(`/payment-result.html?status=success&orderId=${pending.orderId}`);
 });
 
 // Sipariş oluştur + Multinet 3D ödeme başlat
