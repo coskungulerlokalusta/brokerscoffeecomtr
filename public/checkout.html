@@ -75,10 +75,14 @@
 <input type="radio" name="orderIntensity" value="yumusak"/> Yumuşak İçim
 </label>
 </div>
-<label class="flex items-center gap-2 border border-[#d3c3c0] rounded px-4 py-2.5 cursor-pointer w-fit mb-3">
+<label class="flex items-center gap-2 border border-[#d3c3c0] rounded px-4 py-2.5 cursor-pointer w-fit">
 <input type="checkbox" id="order-extra-shot-check"/>
 <span class="text-sm font-semibold text-[#0d1b3d]">Ekstra Shot <span id="order-extra-shot-price-label" class="text-[#827472] font-normal"></span></span>
 </label>
+</section>
+
+<section id="order-note-section" class="bg-white rounded-lg shadow-sm p-5">
+<h2 class="text-lg text-[#0d1b3d] mb-3">Sipariş Notu</h2>
 <textarea id="order-note-input" placeholder="Not ekle (opsiyonel) — örn: az şekerli olsun" class="w-full border border-[#d3c3c0] rounded px-4 py-2.5 text-sm" rows="2"></textarea>
 </section>
 
