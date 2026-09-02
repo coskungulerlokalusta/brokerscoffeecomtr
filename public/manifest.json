@@ -1,7 +1,7 @@
 {
   "name": "Brokers Coffee",
   "short_name": "Brokers Coffee",
-  "description": "Çukurova'da taze kahve, sipariş ve sadakat programı",
+  "description": "Torium AVM'de taze kahve, sipariş ve sadakat programı",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -37,6 +37,8 @@ const DEFAULTS = {
     staff: { ...AUDIENCE_VIEW_DEFAULTS, paymentMethodsEnabled: { ...AUDIENCE_VIEW_DEFAULTS.paymentMethodsEnabled }, monthlySpendTiers: AUDIENCE_VIEW_DEFAULTS.monthlySpendTiers.map((t) => ({ ...t })) },
   },
   extraShotPrice: 10,
+  deliveryFeeThreshold: 750, // bu tutarın üzerindeki siparişlerde kargo/kurye ücretsiz
+  deliveryFee: 150, // eşiğin altında kalan kurye siparişlerine eklenen ücret
   categoryOrder: [],
   orderNotifyPhone1: '',
   orderNotifyPhone2: '',
@@ -81,4 +83,13 @@ async function updateSettings(partial) {
   return updated;
 }
 
-module.exports = { loadSettings, saveSettings, updateSettings };
+// Kurye siparişi eşiğin altındaysa kargo ücreti ekler, üstündeyse ücretsizdir.
+// Gel Al siparişlerinde her zaman 0 döner.
+function calculateDeliveryFee(itemsTotal, deliveryType, currentSettings) {
+  if (deliveryType !== 'kurye') return 0;
+  const threshold = currentSettings.deliveryFeeThreshold ?? 750;
+  const fee = currentSettings.deliveryFee ?? 150;
+  return itemsTotal >= threshold ? 0 : fee;
+}
+
+module.exports = { loadSettings, saveSettings, updateSettings, calculateDeliveryFee };

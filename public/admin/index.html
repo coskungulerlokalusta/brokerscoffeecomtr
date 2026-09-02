@@ -355,6 +355,14 @@
 <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Ekstra Shot Fiyatı (₺)</label>
 <input id="extra-shot-price-input" type="number" min="0" step="0.01" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
 
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Kurye — Ücretsiz Kargo Eşiği (₺)</label>
+<p class="text-xs text-[#827472] mb-2">Bu tutar ve üzerindeki kurye siparişlerinde kargo ücreti alınmaz.</p>
+<input id="delivery-fee-threshold-input" type="number" min="0" step="0.01" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
+
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Kurye — Kargo Ücreti (₺)</label>
+<p class="text-xs text-[#827472] mb-2">Eşiğin altında kalan kurye siparişlerine eklenir.</p>
+<input id="delivery-fee-amount-input" type="number" min="0" step="0.01" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-4 text-sm"/>
+
 <label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Sipariş Bildirim Numaraları (WhatsApp)</label>
 <p class="text-xs text-[#827472] mb-2">Yeni bir sipariş geldiğinde bu numaralara otomatik WhatsApp mesajı gider.</p>
 <input id="order-notify-phone1-input" placeholder="Telefon 1 (05xxxxxxxxx)" class="border border-[#d3c3c0] rounded px-3 py-2 w-full mb-2 text-sm"/>
@@ -1899,6 +1907,8 @@ async function loadGeneralOrderSettings() {
   if (!res.ok) return;
   const s = await res.json();
   document.getElementById('extra-shot-price-input').value = s.extraShotPrice ?? 10;
+  document.getElementById('delivery-fee-threshold-input').value = s.deliveryFeeThreshold ?? 750;
+  document.getElementById('delivery-fee-amount-input').value = s.deliveryFee ?? 150;
   document.getElementById('order-notify-phone1-input').value = s.orderNotifyPhone1 || '';
   document.getElementById('order-notify-phone2-input').value = s.orderNotifyPhone2 || '';
 
@@ -1937,6 +1947,8 @@ document.getElementById('save-general-order-settings-btn').addEventListener('cli
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       extraShotPrice: document.getElementById('extra-shot-price-input').value,
+      deliveryFeeThreshold: document.getElementById('delivery-fee-threshold-input').value,
+      deliveryFee: document.getElementById('delivery-fee-amount-input').value,
       orderNotifyPhone1: document.getElementById('order-notify-phone1-input').value,
       orderNotifyPhone2: document.getElementById('order-notify-phone2-input').value,
       orderNotifySmsPhones,

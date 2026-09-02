@@ -44,10 +44,12 @@ router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
   );
   const currentSettings = await settings.loadSettings();
   const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
-  const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
+  const deliveryFee = settings.calculateDeliveryFee(itemsTotal, deliveryType, currentSettings);
+  const total = Math.round((itemsTotal + extraShotSurcharge + deliveryFee) * 100) / 100;
 
   const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote });
   order.customerId = customerId;
+  if (deliveryFee > 0) order.deliveryFee = deliveryFee;
   if (discountAmount > 0) {
     order.staffDiscountBreakdown = discountBreakdown;
     order.subtotalBeforeDiscount = subtotal;
@@ -136,10 +138,12 @@ router.post('/multinet/init', customerAuth.attachCustomerIfPresent, async (req, 
   );
   const currentSettings = await settings.loadSettings();
   const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
-  const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
+  const deliveryFee = settings.calculateDeliveryFee(itemsTotal, deliveryType, currentSettings);
+  const total = Math.round((itemsTotal + extraShotSurcharge + deliveryFee) * 100) / 100;
 
   const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote, paymentMethod: 'multinet' });
   order.customerId = customerId;
+  if (deliveryFee > 0) order.deliveryFee = deliveryFee;
   if (discountAmount > 0) {
     order.staffDiscountBreakdown = discountBreakdown;
     order.subtotalBeforeDiscount = subtotal;
@@ -231,10 +235,12 @@ router.post('/pluxee/init', customerAuth.attachCustomerIfPresent, async (req, re
   );
   const currentSettings = await settings.loadSettings();
   const extraShotSurcharge = orderExtraShot ? (currentSettings.extraShotPrice || 0) : 0;
-  const total = Math.round((itemsTotal + extraShotSurcharge) * 100) / 100;
+  const deliveryFee = settings.calculateDeliveryFee(itemsTotal, deliveryType, currentSettings);
+  const total = Math.round((itemsTotal + extraShotSurcharge + deliveryFee) * 100) / 100;
 
   const order = await orderStore.createOrder({ items, customerName, phone, deliveryType, address, total, orderIntensity, orderExtraShot, orderNote, paymentMethod: 'pluxee' });
   order.customerId = customerId;
+  if (deliveryFee > 0) order.deliveryFee = deliveryFee;
   if (discountAmount > 0) {
     order.staffDiscountBreakdown = discountBreakdown;
     order.subtotalBeforeDiscount = subtotal;

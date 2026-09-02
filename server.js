@@ -62,6 +62,8 @@ app.get('/api/settings/public', customerAuth.attachCustomerIfPresent, async (req
     showDeliveryInfo: view.showDeliveryInfo,
     hideCustomizationForCategories: view.hideCustomizationForCategories,
     extraShotPrice: s.extraShotPrice,
+    deliveryFeeThreshold: s.deliveryFeeThreshold,
+    deliveryFee: s.deliveryFee,
   });
 });
 
@@ -73,7 +75,11 @@ app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) 
   const currentSettings = await settings.loadSettings();
   const view = currentSettings.audienceSettings[isStaff ? 'staff' : 'customer'];
   const hiddenCats = (view.hiddenCategories || []).map((c) => c.toLowerCase());
-  const visible = products.filter((p) => !hiddenCats.includes((p.subcategory || p.category || '').toLowerCase()));
+  const visible = products.filter((p) => {
+    if (hiddenCats.includes((p.subcategory || p.category || '').toLowerCase())) return false;
+    if (p.hiddenFor && p.hiddenFor[isStaff ? 'staff' : 'customer']) return false;
+    return true;
+  });
   const withPrices = visible.map((p) => withEffectivePrices(p, isStaff, isStaff ? currentSettings.staffDiscountByGroup : null));
 
   const { category } = req.query;
