@@ -89,6 +89,7 @@ async function requireAuth(req, res, next) {
   if (!customerId) return res.status(401).json({ error: 'Oturum gerekli' });
   const customer = await findById(customerId);
   if (!customer) return res.status(401).json({ error: 'Oturum gerekli' });
+  if (customer.active === false) return res.status(403).json({ error: 'Hesabınız pasif durumda, mağazayla iletişime geçin.' });
   req.customer = customer;
   next();
 }
@@ -121,6 +122,26 @@ async function deductPoints(customerId, points) {
   return customer;
 }
 
+// Üyeyi pasife al/aktif et — pasif üyelere kampanya/toplu mesaj gönderilmez,
+// ayrıca giriş yapamaz hale gelir.
+async function setCustomerActive(customerId, active) {
+  const customers = await loadCustomers();
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return null;
+  customer.active = !!active;
+  await saveCustomers(customers);
+  return customer;
+}
+
+// Üyeyi tamamen siler — geri alınamaz.
+async function deleteCustomer(customerId) {
+  const customers = await loadCustomers();
+  const filtered = customers.filter((c) => c.id !== customerId);
+  if (filtered.length === customers.length) return false;
+  await saveCustomers(filtered);
+  return true;
+}
+
 module.exports = {
   registerOrLogin,
   logout,
@@ -133,5 +154,7 @@ module.exports = {
   saveCustomers,
   addPoints,
   deductPoints,
+  setCustomerActive,
+  deleteCustomer,
   normalizePhone,
 };

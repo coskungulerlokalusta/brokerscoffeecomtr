@@ -40,6 +40,9 @@ router.post('/verify-otp', async (req, res) => {
   if (!isValid) return res.status(400).json({ error: 'Kod hatalı veya süresi dolmuş' });
 
   const existing = await customerAuth.findByPhone(normalized);
+  if (existing && existing.active === false) {
+    return res.status(403).json({ error: 'Hesabınız pasif durumda, mağazayla iletişime geçin.' });
+  }
   let staffFlag = false;
   if (!existing && isStaff) {
     if (!storeName || !storeName.trim()) {

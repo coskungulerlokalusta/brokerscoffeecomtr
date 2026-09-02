@@ -2238,16 +2238,40 @@ function renderMembers() {
   }
 
   list.innerHTML = filtered.map(m => `
-    <label class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 cursor-pointer text-sm">
-      <input type="checkbox" class="member-checkbox" value="${m.id}" ${selectedMemberIds.has(m.id) ? 'checked' : ''}/>
-      <div class="flex-1">
-        <span class="font-semibold text-[#0d1b3d]">${m.name}</span>
-        <span class="text-[#827472]"> — ${m.phone}</span>
-      </div>
-      <span class="text-xs font-bold uppercase tracking-widest ${m.isStaff ? 'text-[#0d1b3d]' : 'text-[#735c00]'}">${m.isStaff ? (m.storeName || 'Personel') : 'Müşteri'}</span>
-    </label>
+    <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 text-sm ${m.active === false ? 'opacity-50' : ''}">
+      <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+        <input type="checkbox" class="member-checkbox" value="${m.id}" ${selectedMemberIds.has(m.id) ? 'checked' : ''}/>
+        <div class="flex-1 min-w-0">
+          <span class="font-semibold text-[#0d1b3d]">${m.name}</span>
+          <span class="text-[#827472]"> — ${m.phone}</span>
+          ${m.active === false ? '<span class="text-xs text-red-500 font-semibold"> (Pasif)</span>' : ''}
+        </div>
+      </label>
+      <span class="text-xs font-bold uppercase tracking-widest whitespace-nowrap ${m.isStaff ? 'text-[#0d1b3d]' : 'text-[#735c00]'}">${m.isStaff ? (m.storeName || 'Personel') : 'Müşteri'}</span>
+      <button data-id="${m.id}" data-active="${m.active !== false}" class="toggle-active-btn text-xs font-semibold text-[#735c00] px-2 whitespace-nowrap">${m.active === false ? 'Aktif Et' : 'Pasife Al'}</button>
+      <button data-id="${m.id}" data-name="${m.name}" class="delete-member-btn text-xs font-semibold text-red-600 px-2 whitespace-nowrap">Sil</button>
+    </div>
   `).join('');
 
+  list.querySelectorAll('.toggle-active-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const wasActive = btn.dataset.active === 'true';
+      await fetch(`/api/admin/customers/${btn.dataset.id}/active`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !wasActive }),
+      });
+      loadMembers();
+    });
+  });
+  list.querySelectorAll('.delete-member-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(`${btn.dataset.name} adlı üyeyi kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz.`)) return;
+      await fetch(`/api/admin/customers/${btn.dataset.id}`, { method: 'DELETE' });
+      selectedMemberIds.delete(btn.dataset.id);
+      loadMembers();
+    });
+  });
   list.querySelectorAll('.member-checkbox').forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) selectedMemberIds.add(cb.value);

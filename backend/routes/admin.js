@@ -160,9 +160,25 @@ router.get('/customers', adminAuth.requireAuth, async (req, res) => {
     isStaff: c.isStaff,
     storeName: c.storeName || null,
     loyaltyPoints: c.loyaltyPoints || 0,
+    active: c.active !== false,
     createdAt: c.createdAt,
   }));
   res.json(customers);
+});
+
+// Üyeyi pasife al / aktif et — pasif üyeler giriş yapamaz, kampanya/toplu mesaj almaz.
+router.put('/customers/:id/active', adminAuth.requireAuth, async (req, res) => {
+  const { active } = req.body;
+  const customer = await customerAuth.setCustomerActive(req.params.id, active);
+  if (!customer) return res.status(404).json({ error: 'Üye bulunamadı' });
+  res.json({ id: customer.id, active: customer.active !== false });
+});
+
+// Üyeyi tamamen sil — geri alınamaz.
+router.delete('/customers/:id', adminAuth.requireAuth, async (req, res) => {
+  const ok = await customerAuth.deleteCustomer(req.params.id);
+  if (!ok) return res.status(404).json({ error: 'Üye bulunamadı' });
+  res.json({ ok: true });
 });
 
 // Genel mesaj taslağı oluştur (kampanya dışı)
@@ -184,8 +200,8 @@ router.post('/messages/send', adminAuth.requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Alıcı ve mesaj gerekli' });
   }
   const allCustomers = await customerAuth.loadCustomers();
-  const recipients = allCustomers.filter((c) => recipientIds.includes(c.id));
-  if (!recipients.length) return res.status(400).json({ error: 'Alıcı bulunamadı' });
+  const recipients = allCustomers.filter((c) => recipientIds.includes(c.id) && c.active !== false);
+  if (!recipients.length) return res.status(400).json({ error: 'Alıcı bulunamadı (seçilenler pasif olabilir)' });
 
   const items = await messageQueue.enqueueBatch({
     recipients,
@@ -307,7 +323,7 @@ router.post('/campaigns/:id/notify-staff', adminAuth.requireAuth, async (req, re
   if (!campaign) return res.status(404).json({ error: 'Kampanya bulunamadı' });
 
   const allCustomers = await customerAuth.loadCustomers();
-  const staffMembers = allCustomers.filter((c) => c.isStaff);
+  const staffMembers = allCustomers.filter((c) => c.isStaff && c.active !== false);
   if (!staffMembers.length) return res.status(400).json({ error: 'Kayıtlı personel yok' });
 
   const netgsm = require('../utils/netgsm');
