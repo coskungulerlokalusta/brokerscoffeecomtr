@@ -45,6 +45,10 @@
 <span>Toplam</span>
 <span id="order-total">₺0</span>
 </div>
+<div id="delivery-incentive-banner" class="hidden mt-3 bg-gradient-to-r from-[#fff8e1] to-[#fff3cd] border border-[#e6c200] rounded-lg px-4 py-3 text-sm font-semibold text-[#735c00] flex items-center gap-2">
+<span>🚴</span>
+<span id="delivery-incentive-text"></span>
+</div>
 </section>
 
 <section id="delivery-info-section" class="bg-white rounded-lg shadow-sm p-5">
@@ -166,6 +170,21 @@ async function refreshDiscountPreview() {
   } catch (e) {}
 }
 
+function calcDeliveryFeeForTotal(itemsTotal) {
+  const tiers = [...deliveryFeeTiers].sort((a, b) => a.threshold - b.threshold);
+  let fee = tiers.length ? tiers[0].fee : 0;
+  for (const t of tiers) {
+    if (itemsTotal >= t.threshold) fee = t.fee;
+  }
+  return fee;
+}
+
+// Bir sonraki (henüz ulaşılmamış) kademeyi bulur — "X TL daha ekle, kargo Y TL olsun" mesajı için
+function nextDeliveryFeeTier(itemsTotal) {
+  const tiers = [...deliveryFeeTiers].sort((a, b) => a.threshold - b.threshold);
+  return tiers.find(t => t.threshold > itemsTotal) || null;
+}
+
 function renderSummary() {
   const items = getCart();
   const subtotal = cartTotal();
@@ -174,7 +193,7 @@ function renderSummary() {
   const extraShotTotal = extraShotOn ? orderExtraShotPrice : 0;
   const itemsTotalAfterDiscount = subtotal - discountAmount;
   const isKurye = document.querySelector('input[name="deliveryType"]:checked').value === 'kurye';
-  const deliveryFee = isKurye && itemsTotalAfterDiscount < deliveryFeeThreshold ? deliveryFeeAmount : 0;
+  const deliveryFee = isKurye ? calcDeliveryFeeForTotal(itemsTotalAfterDiscount) : 0;
   const total = itemsTotalAfterDiscount + extraShotTotal + deliveryFee;
 
   let html = items.map(i =>
@@ -201,10 +220,21 @@ function renderSummary() {
 
   document.getElementById('order-summary').innerHTML = html;
   document.getElementById('order-total').textContent = '₺' + total.toFixed(0);
+
+  // Yemeksepeti tarzı: "X TL daha ekle, kargo Y TL olsun" teşvik mesajı
+  const banner = document.getElementById('delivery-incentive-banner');
+  const nextTier = isKurye ? nextDeliveryFeeTier(itemsTotalAfterDiscount) : null;
+  if (nextTier) {
+    const remaining = (nextTier.threshold - itemsTotalAfterDiscount).toFixed(0);
+    const nextLabel = nextTier.fee > 0 ? `kurye ücretin ₺${nextTier.fee} olsun` : 'kurye ücretin bedava olsun';
+    document.getElementById('delivery-incentive-text').textContent = `₺${remaining} daha ekle, ${nextLabel}!`;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
 }
 
-let deliveryFeeThreshold = 750;
-let deliveryFeeAmount = 150;
+let deliveryFeeTiers = [{ threshold: 0, fee: 150 }, { threshold: 750, fee: 0 }];
 
 refreshDiscountPreview();
 document.getElementById('order-extra-shot-check').addEventListener('change', renderSummary);
@@ -240,8 +270,7 @@ fetch('/api/settings/public').then(r => r.json()).then(s => {
   }
   applyAddressRequirement();
   orderExtraShotPrice = s.extraShotPrice ?? 10;
-  deliveryFeeThreshold = s.deliveryFeeThreshold ?? 750;
-  deliveryFeeAmount = s.deliveryFee ?? 150;
+  deliveryFeeTiers = (s.deliveryFeeTiers && s.deliveryFeeTiers.length) ? s.deliveryFeeTiers : deliveryFeeTiers;
   document.getElementById('order-extra-shot-price-label').textContent = `(+₺${orderExtraShotPrice.toFixed(0)})`;
   renderSummary();
 }).catch(() => {});
@@ -458,9 +487,10 @@ document.getElementById('checkout-form').addEventListener('submit', async (e) =>
 function openPaynetCheckoutModal({ amount, publishableKey, checkoutToken, callbackUrl }) {
   const holder = document.createElement('div');
   document.body.appendChild(holder);
-  holder.innerHTML = `<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
-      <p class="text-sm text-[#504442] mb-4">Ödemeni tamamlamak için aşağıya bas:</p>
+  holder.innerHTML = `<div id="paynet-modal-backdrop" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center relative">
+      <button type="button" id="paynet-modal-close" class="absolute top-3 right-3 text-[#827472] hover:text-[#0d1b3d] text-xl leading-none w-8 h-8 flex items-center justify-center" aria-label="Kapat">✕</button>
+      <p class="text-sm text-[#504442] mb-4 mt-2">Ödemeni tamamlamak için aşağıya bas:</p>
       <form action="${callbackUrl}" method="POST">
         <input type="hidden" name="checkout_token" value="${checkoutToken}">
         <script class="paynet-button" type="text/javascript"
@@ -469,6 +499,7 @@ function openPaynetCheckoutModal({ amount, publishableKey, checkoutToken, callba
           data-amount="${Math.round(amount * 100)}"
           data-button_label="${amount.toFixed(2)}₺ Öde"><\/script>
       </form>
+      <button type="button" id="paynet-modal-cancel" class="text-xs text-[#827472] underline mt-4">Vazgeç, sepete dön</button>
     </div>
   </div>`;
 
@@ -479,6 +510,18 @@ function openPaynetCheckoutModal({ amount, publishableKey, checkoutToken, callba
   const newScript = document.createElement('script');
   for (const attr of oldScript.attributes) newScript.setAttribute(attr.name, attr.value);
   oldScript.replaceWith(newScript);
+
+  function closeModal() {
+    holder.remove();
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Ödemeyi Tamamla';
+  }
+  holder.querySelector('#paynet-modal-close').addEventListener('click', closeModal);
+  holder.querySelector('#paynet-modal-cancel').addEventListener('click', closeModal);
+  holder.querySelector('#paynet-modal-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'paynet-modal-backdrop') closeModal();
+  });
 }
 </script>
 

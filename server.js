@@ -62,8 +62,7 @@ app.get('/api/settings/public', customerAuth.attachCustomerIfPresent, async (req
     showDeliveryInfo: view.showDeliveryInfo,
     hideCustomizationForCategories: view.hideCustomizationForCategories,
     extraShotPrice: s.extraShotPrice,
-    deliveryFeeThreshold: s.deliveryFeeThreshold,
-    deliveryFee: s.deliveryFee,
+    deliveryFeeTiers: s.deliveryFeeTiers,
   });
 });
 

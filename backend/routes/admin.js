@@ -83,7 +83,7 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    extraShotPrice, deliveryFeeThreshold, deliveryFee, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, categoryOrder,
+    extraShotPrice, deliveryFeeTiers, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, categoryOrder,
     audience, audienceView,
   } = req.body;
   const updates = {};
@@ -93,8 +93,11 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
     updates.categoryOrder = categoryOrder.filter(Boolean);
   }
   if (extraShotPrice !== undefined) updates.extraShotPrice = Number(extraShotPrice) || 0;
-  if (deliveryFeeThreshold !== undefined) updates.deliveryFeeThreshold = Number(deliveryFeeThreshold) || 0;
-  if (deliveryFee !== undefined) updates.deliveryFee = Number(deliveryFee) || 0;
+  if (deliveryFeeTiers !== undefined) {
+    updates.deliveryFeeTiers = deliveryFeeTiers
+      .map((t) => ({ threshold: Number(t.threshold) || 0, fee: Math.max(0, Number(t.fee) || 0) }))
+      .sort((a, b) => a.threshold - b.threshold);
+  }
   if (orderNotifyPhone1 !== undefined) updates.orderNotifyPhone1 = orderNotifyPhone1;
   if (orderNotifyPhone2 !== undefined) updates.orderNotifyPhone2 = orderNotifyPhone2;
   if (orderNotifySmsPhones !== undefined) {
