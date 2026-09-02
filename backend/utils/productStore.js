@@ -19,7 +19,7 @@ async function saveProducts(products) {
   return kv.setJSON(KEY, products);
 }
 
-async function createProduct({ name, category, subcategory, sizes, description, image }) {
+async function createProduct({ name, category, subcategory, sizes, description, image, hiddenFor }) {
   const products = await loadProducts();
   let id = slugify(name);
   let suffix = 1;
@@ -35,6 +35,7 @@ async function createProduct({ name, category, subcategory, sizes, description, 
     basePrice: sizes && sizes.length ? sizes[0].price : 0,
     description: description || '',
     image: image || null,
+    hiddenFor: hiddenFor || { customer: false, staff: false }, // bu ürün müşteriden/personelden gizlensin mi
   };
   products.push(product);
   await saveProducts(products);

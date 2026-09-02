@@ -33,7 +33,7 @@ router.get('/', adminAuth.requireAuth, async (req, res) => {
 // Yeni ürün oluştur (resim opsiyonel)
 router.post('/', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   try {
-    const { name, category, subcategory, description, sizes } = req.body;
+    const { name, category, subcategory, description, sizes, hiddenFor } = req.body;
     if (!name || !category) return res.status(400).json({ error: 'Ürün adı ve kategori gerekli' });
 
     let parsedSizes;
@@ -45,7 +45,11 @@ router.post('/', adminAuth.requireAuth, upload.single('image'), async (req, res)
     if (!parsedSizes.length) return res.status(400).json({ error: 'En az bir fiyat girilmeli' });
 
     const image = await storeUploadedImage(req.file);
-    const product = await productStore.createProduct({ name, category, subcategory, sizes: parsedSizes, description, image });
+    let parsedHiddenFor = { customer: false, staff: false };
+    try {
+      if (hiddenFor) parsedHiddenFor = { ...parsedHiddenFor, ...JSON.parse(hiddenFor) };
+    } catch {}
+    const product = await productStore.createProduct({ name, category, subcategory, sizes: parsedSizes, description, image, hiddenFor: parsedHiddenFor });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -55,7 +59,7 @@ router.post('/', adminAuth.requireAuth, upload.single('image'), async (req, res)
 // Ürün güncelle (resim opsiyonel — gönderilirse eskisinin yerine geçer)
 router.put('/:id', adminAuth.requireAuth, upload.single('image'), async (req, res) => {
   try {
-    const { name, category, subcategory, description, sizes } = req.body;
+    const { name, category, subcategory, description, sizes, hiddenFor } = req.body;
     const updates = {};
     if (name) updates.name = name;
     if (category) updates.category = category;
@@ -66,6 +70,13 @@ router.put('/:id', adminAuth.requireAuth, upload.single('image'), async (req, re
         updates.sizes = JSON.parse(sizes);
       } catch {
         return res.status(400).json({ error: 'Fiyat/boyut bilgisi hatalı' });
+      }
+    }
+    if (hiddenFor !== undefined) {
+      try {
+        updates.hiddenFor = JSON.parse(hiddenFor);
+      } catch {
+        return res.status(400).json({ error: 'Görünürlük bilgisi hatalı' });
       }
     }
     if (req.file) updates.image = await storeUploadedImage(req.file);

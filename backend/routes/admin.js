@@ -83,17 +83,12 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, monthlySpendTiers, categoryOrder,
+    extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, categoryOrder,
     audience, audienceView,
   } = req.body;
   const updates = {};
   if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
   if (aiInstructions !== undefined) updates.aiInstructions = aiInstructions;
-  if (monthlySpendTiers !== undefined) {
-    updates.monthlySpendTiers = monthlySpendTiers
-      .map((t) => ({ threshold: Number(t.threshold) || 0, discount: Number(t.discount) || 0 }))
-      .filter((t) => t.threshold > 0 && t.discount > 0);
-  }
   if (categoryOrder !== undefined) {
     updates.categoryOrder = categoryOrder.filter(Boolean);
   }
@@ -118,29 +113,33 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
     updates.staffBannerText = staffBannerText;
   }
 
-  // Personel/Müşteri için ayrı ayrı görünüm ayarları — sadece belirtilen taraf güncellenir,
-  // diğer tarafın kayıtlı ayarlarına dokunulmaz.
+  // Personel/Müşteri için ayrı ayrı görünüm ayarları — sadece belirtilen taraf, ve sadece
+  // gönderilen alanlar güncellenir (farklı bölümlerdeki kaydet butonları birbirini ezmesin diye).
   if (audience === 'customer' || audience === 'staff') {
     const current = await settings.loadSettings();
-    const cleanedPayment = {};
-    if (audienceView.paymentMethodsEnabled) {
+    const existing = current.audienceSettings[audience];
+    const next = { ...existing };
+
+    if (audienceView.showPaymentMethodSelector !== undefined) next.showPaymentMethodSelector = !!audienceView.showPaymentMethodSelector;
+    if (audienceView.paymentMethodsEnabled !== undefined) {
+      const cleanedPayment = {};
       for (const key of Object.keys(audienceView.paymentMethodsEnabled)) {
         cleanedPayment[key] = !!audienceView.paymentMethodsEnabled[key];
       }
+      next.paymentMethodsEnabled = { ...existing.paymentMethodsEnabled, ...cleanedPayment };
     }
-    updates.audienceSettings = {
-      ...current.audienceSettings,
-      [audience]: {
-        ...current.audienceSettings[audience],
-        showPaymentMethodSelector: !!audienceView.showPaymentMethodSelector,
-        paymentMethodsEnabled: { ...current.audienceSettings[audience].paymentMethodsEnabled, ...cleanedPayment },
-        showOrderPreferences: !!audienceView.showOrderPreferences,
-        showDeliveryInfo: !!audienceView.showDeliveryInfo,
-        requireAddress: !!audienceView.requireAddress,
-        hiddenCategories: (audienceView.hiddenCategories || []).filter(Boolean),
-        hideCustomizationForCategories: (audienceView.hideCustomizationForCategories || []).filter(Boolean),
-      },
-    };
+    if (audienceView.showOrderPreferences !== undefined) next.showOrderPreferences = !!audienceView.showOrderPreferences;
+    if (audienceView.showDeliveryInfo !== undefined) next.showDeliveryInfo = !!audienceView.showDeliveryInfo;
+    if (audienceView.requireAddress !== undefined) next.requireAddress = !!audienceView.requireAddress;
+    if (audienceView.hiddenCategories !== undefined) next.hiddenCategories = audienceView.hiddenCategories.filter(Boolean);
+    if (audienceView.hideCustomizationForCategories !== undefined) next.hideCustomizationForCategories = audienceView.hideCustomizationForCategories.filter(Boolean);
+    if (audienceView.monthlySpendTiers !== undefined) {
+      next.monthlySpendTiers = audienceView.monthlySpendTiers
+        .map((t) => ({ threshold: Number(t.threshold) || 0, discount: Number(t.discount) || 0 }))
+        .filter((t) => t.threshold > 0 && t.discount > 0);
+    }
+
+    updates.audienceSettings = { ...current.audienceSettings, [audience]: next };
   }
 
   res.json(await settings.updateSettings(updates));
@@ -242,9 +241,9 @@ router.get('/rewards', adminAuth.requireAuth, async (req, res) => {
   res.json(await rewardStore.loadRewards());
 });
 router.post('/rewards', adminAuth.requireAuth, async (req, res) => {
-  const { title, pointsCost, description } = req.body;
+  const { title, pointsCost, description, targetAudience } = req.body;
   if (!title || !pointsCost) return res.status(400).json({ error: 'Başlık ve puan gerekli' });
-  res.status(201).json(await rewardStore.createReward({ title, pointsCost, description }));
+  res.status(201).json(await rewardStore.createReward({ title, pointsCost, description, targetAudience }));
 });
 router.put('/rewards/:id', adminAuth.requireAuth, async (req, res) => {
   const reward = await rewardStore.updateReward(req.params.id, req.body);

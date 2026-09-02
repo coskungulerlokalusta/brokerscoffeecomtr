@@ -4,8 +4,12 @@ const rewardStore = require('../utils/rewardStore');
 const redemptionStore = require('../utils/redemptionStore');
 const customerAuth = require('../utils/customerAuth');
 
-router.get('/', async (req, res) => {
-  const rewards = (await rewardStore.loadRewards()).filter((r) => r.active);
+router.get('/', customerAuth.attachCustomerIfPresent, async (req, res) => {
+  const isStaff = !!(req.customer && req.customer.isStaff);
+  const audience = isStaff ? 'staff' : 'customer';
+  const rewards = (await rewardStore.loadRewards()).filter(
+    (r) => r.active && (!r.targetAudience || r.targetAudience === 'both' || r.targetAudience === audience)
+  );
   res.json(rewards);
 });
 

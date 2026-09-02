@@ -45,7 +45,7 @@ async function calculateDiscount(items, isStaff, options = {}) {
 
   let appliedTier = null;
   if (customerId && useMonthlyTier) {
-    const tier = await monthlyTiers.getUnclaimedTier(customerId);
+    const tier = await monthlyTiers.getUnclaimedTier(customerId, isStaff);
     if (tier) {
       discountAmount += tier.discount;
       discountBreakdown.push({ group: 'aylik', percent: null, amount: tier.discount });

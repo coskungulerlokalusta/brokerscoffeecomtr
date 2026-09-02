@@ -167,6 +167,13 @@
 <input type="file" id="product-image" accept="image/jpeg,image/png,image/webp" class="text-sm"/>
 </div>
 
+<div>
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest mb-1 block">Görünürlük</label>
+<p class="text-xs text-[#827472] mb-1">Bu ürünü belirli bir kişi tipinden gizlemek istersen işaretle.</p>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="product-hide-customer"/> Müşteriden gizle</label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="product-hide-staff"/> Personelden gizle</label>
+</div>
+
 <p id="product-error" class="text-red-600 text-sm hidden"></p>
 
 <div class="flex gap-2 mt-2">
@@ -184,9 +191,14 @@
 </div>
 
 <div id="section-loyalty" class="admin-panel hidden">
+<div class="flex gap-2 mb-4">
+<button type="button" id="loyalty-audience-tab-customer" class="loyalty-audience-tab px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-widest bg-[#0d1b3d] text-white">🧑‍💼 Müşteri</button>
+<button type="button" id="loyalty-audience-tab-staff" class="loyalty-audience-tab px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-widest border border-[#d3c3c0] text-[#504442]">👔 Personel</button>
+</div>
+
 <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
 <h3 class="font-semibold text-[#0d1b3d] mb-1">🎉 Aylık Harcama Kademeleri</h3>
-<p class="text-xs text-[#827472] mb-3">Müşteri bu ay ne kadar harcarsa ne kadar indirim kazansın? Her ayın başında sıfırlanır, kazanılan indirim bir sonraki siparişte kullanılabilir.</p>
+<p class="text-xs text-[#827472] mb-3">Seçtiğin kişi tipi bu ay ne kadar harcarsa ne kadar indirim kazansın? Her ayın başında sıfırlanır, kazanılan indirim bir sonraki siparişte kullanılabilir.</p>
 <div id="tier-rows" class="flex flex-col gap-2 mb-2"></div>
 <button type="button" id="add-tier-btn" class="text-xs text-[#735c00] font-semibold mb-3">+ Kademe Ekle</button>
 <div>
@@ -199,6 +211,7 @@
 <h2 class="text-2xl text-[#0d1b3d]">Sadakat Programı — Ödüller</h2>
 <button id="add-reward-btn" class="bg-[#0d1b3d] text-white text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded">+ Ödül Ekle</button>
 </div>
+<p class="text-xs text-[#827472] mb-3">Her ödülün kimlere gösterileceğini (Müşteri/Personel/İkisi) ekleme formunda seçebilirsin.</p>
 <div id="rewards-list-admin" class="grid md:grid-cols-2 gap-3 mb-6"></div>
 
 <h3 class="text-lg text-[#0d1b3d] mb-3">Kullanılan Kodlar</h3>
@@ -213,6 +226,12 @@
 <input required id="reward-title" placeholder="Ödül Adı (örn. Ücretsiz Filtre Kahve)" class="border border-[#d3c3c0] rounded px-3 py-2"/>
 <input required id="reward-points" type="number" min="1" placeholder="Gereken Puan" class="border border-[#d3c3c0] rounded px-3 py-2"/>
 <input id="reward-description" placeholder="Açıklama (opsiyonel)" class="border border-[#d3c3c0] rounded px-3 py-2"/>
+<label class="text-xs font-semibold text-[#504442] uppercase tracking-widest">Kimlere Gösterilsin</label>
+<select id="reward-audience" class="border border-[#d3c3c0] rounded px-3 py-2">
+<option value="both">İkisine de</option>
+<option value="customer">Sadece Müşteri</option>
+<option value="staff">Sadece Personel</option>
+</select>
 <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="reward-active" checked/> Aktif</label>
 <div class="flex gap-2 mt-2">
 <button type="submit" class="flex-1 bg-[#0d1b3d] text-white rounded py-2.5 text-sm font-semibold">Kaydet</button>
@@ -718,6 +737,8 @@ function openProductModal(product) {
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-subcategory').value = product.subcategory || '';
     document.getElementById('product-description').value = product.description || '';
+    document.getElementById('product-hide-customer').checked = !!(product.hiddenFor && product.hiddenFor.customer);
+    document.getElementById('product-hide-staff').checked = !!(product.hiddenFor && product.hiddenFor.staff);
     product.sizes.forEach(s => addSizeRow(s.label || '', s.price, s.staffPrice ?? ''));
   } else {
     document.getElementById('product-modal-title').textContent = 'Ürün Ekle';
@@ -934,7 +955,7 @@ async function loadProducts() {
             <img data-product-thumb="${p.id}" src="${p.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop'}" class="w-14 h-14 rounded object-cover flex-shrink-0"/>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-[#0d1b3d] truncate">${p.name}</p>
-              <p class="text-xs text-[#827472]">₺${p.basePrice}</p>
+              <p class="text-xs text-[#827472]">₺${p.basePrice}${p.hiddenFor && p.hiddenFor.customer ? ' · 🙈 Müşteriden gizli' : ''}${p.hiddenFor && p.hiddenFor.staff ? ' · 🙈 Personelden gizli' : ''}</p>
             </div>
             <button data-id="${p.id}" class="edit-product-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
             <label class="photo-add-label text-xs font-semibold text-[#735c00] px-2 cursor-pointer" data-status-for="${p.id}">📷 Foto Ekle
@@ -1026,6 +1047,10 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
   formData.append('subcategory', document.getElementById('product-subcategory').value);
   formData.append('description', document.getElementById('product-description').value);
   formData.append('sizes', JSON.stringify(sizes));
+  formData.append('hiddenFor', JSON.stringify({
+    customer: document.getElementById('product-hide-customer').checked,
+    staff: document.getElementById('product-hide-staff').checked,
+  }));
   const imageFile = document.getElementById('product-image').files[0];
   if (imageFile) formData.append('image', imageFile);
 
@@ -1362,6 +1387,7 @@ function openRewardModal(reward) {
     document.getElementById('reward-title').value = reward.title;
     document.getElementById('reward-points').value = reward.pointsCost;
     document.getElementById('reward-description').value = reward.description || '';
+    document.getElementById('reward-audience').value = reward.targetAudience || 'both';
     document.getElementById('reward-active').checked = reward.active;
   } else {
     document.getElementById('reward-id').value = '';
@@ -1371,6 +1397,8 @@ function openRewardModal(reward) {
 
 document.getElementById('add-reward-btn').addEventListener('click', () => openRewardModal(null));
 document.getElementById('reward-cancel').addEventListener('click', () => rewardModal.classList.add('hidden'));
+
+const AUDIENCE_BADGE = { customer: '🧑‍💼 Müşteri', staff: '👔 Personel', both: '👥 İkisi de' };
 
 async function loadRewardsAdmin() {
   const res = await fetch('/api/admin/rewards');
@@ -1382,7 +1410,7 @@ async function loadRewardsAdmin() {
     <div class="bg-white rounded-lg shadow-sm p-3 flex items-center justify-between">
       <div>
         <p class="font-semibold text-[#0d1b3d]">${r.title} ${r.active ? '' : '<span class="text-xs text-red-500">(pasif)</span>'}</p>
-        <p class="text-xs text-[#827472]">${r.pointsCost} puan</p>
+        <p class="text-xs text-[#827472]">${r.pointsCost} puan · ${AUDIENCE_BADGE[r.targetAudience || 'both']}</p>
       </div>
       <div>
         <button data-id="${r.id}" class="edit-reward-btn text-xs font-semibold text-[#735c00] px-2">Düzenle</button>
@@ -1409,6 +1437,7 @@ document.getElementById('reward-form').addEventListener('submit', async (e) => {
     title: document.getElementById('reward-title').value,
     pointsCost: Number(document.getElementById('reward-points').value),
     description: document.getElementById('reward-description').value,
+    targetAudience: document.getElementById('reward-audience').value,
     active: document.getElementById('reward-active').checked,
   };
   const url = id ? `/api/admin/rewards/${id}` : '/api/admin/rewards';
@@ -1756,12 +1785,26 @@ function addTierRow(threshold, discount) {
 
 document.getElementById('add-tier-btn').addEventListener('click', () => addTierRow());
 
+let loyaltyAudience = 'customer';
+
+function setLoyaltyAudienceTab(audience) {
+  loyaltyAudience = audience;
+  document.getElementById('loyalty-audience-tab-customer').className = 'loyalty-audience-tab px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-widest ' +
+    (audience === 'customer' ? 'bg-[#0d1b3d] text-white' : 'border border-[#d3c3c0] text-[#504442]');
+  document.getElementById('loyalty-audience-tab-staff').className = 'loyalty-audience-tab px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-widest ' +
+    (audience === 'staff' ? 'bg-[#0d1b3d] text-white' : 'border border-[#d3c3c0] text-[#504442]');
+  loadTiers();
+}
+document.getElementById('loyalty-audience-tab-customer').addEventListener('click', () => setLoyaltyAudienceTab('customer'));
+document.getElementById('loyalty-audience-tab-staff').addEventListener('click', () => setLoyaltyAudienceTab('staff'));
+
 async function loadTiers() {
   const res = await fetch('/api/admin/settings');
   if (!res.ok) return;
   const s = await res.json();
+  const view = (s.audienceSettings && s.audienceSettings[loyaltyAudience]) || {};
   document.getElementById('tier-rows').innerHTML = '';
-  (s.monthlySpendTiers || []).forEach(t => addTierRow(t.threshold, t.discount));
+  (view.monthlySpendTiers || []).forEach(t => addTierRow(t.threshold, t.discount));
 }
 
 document.getElementById('save-tiers-btn').addEventListener('click', async () => {
@@ -1772,7 +1815,7 @@ document.getElementById('save-tiers-btn').addEventListener('click', async () => 
   const res = await fetch('/api/admin/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ monthlySpendTiers }),
+    body: JSON.stringify({ audience: loyaltyAudience, audienceView: { monthlySpendTiers } }),
   });
   if (res.ok) {
     const msg = document.getElementById('tiers-saved-msg');

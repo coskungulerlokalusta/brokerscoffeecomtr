@@ -94,7 +94,7 @@ router.get('/orders', customerAuth.requireAuth, async (req, res) => {
 
 // Bu ayki "yedikçe indirim kazan" ilerlemesi
 router.get('/monthly-progress', customerAuth.requireAuth, async (req, res) => {
-  res.json(await monthlyTiers.getProgress(req.customer.id));
+  res.json(await monthlyTiers.getProgress(req.customer.id, !!req.customer.isStaff));
 });
 
 module.exports = router;

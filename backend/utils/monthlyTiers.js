@@ -30,11 +30,16 @@ async function getMonthlySpend(customerId) {
     .reduce((sum, o) => sum + Number(o.total), 0);
 }
 
+function tiersForAudience(currentSettings, isStaff) {
+  const view = currentSettings.audienceSettings[isStaff ? 'staff' : 'customer'];
+  return view.monthlySpendTiers || [];
+}
+
 // Müşterinin bu ay ulaştığı ama henüz kullanmadığı en yüksek kademeyi döner (varsa)
-async function getUnclaimedTier(customerId) {
+async function getUnclaimedTier(customerId, isStaff) {
   if (!customerId) return null;
   const currentSettings = await settings.loadSettings();
-  const tiers = [...(currentSettings.monthlySpendTiers || [])].sort((a, b) => b.threshold - a.threshold);
+  const tiers = [...tiersForAudience(currentSettings, isStaff)].sort((a, b) => b.threshold - a.threshold);
   const spend = await getMonthlySpend(customerId);
   const monthKey = currentMonthKey();
   const claims = await loadClaims();
@@ -61,16 +66,16 @@ async function claimTier(customerId, threshold) {
 }
 
 // Hesabım/Sadakat sayfasında ilerleme çubuğu için tüm bilgiyi tek seferde döner
-async function getProgress(customerId) {
+async function getProgress(customerId, isStaff) {
   const currentSettings = await settings.loadSettings();
-  const tiers = [...(currentSettings.monthlySpendTiers || [])].sort((a, b) => a.threshold - b.threshold);
+  const tiers = [...tiersForAudience(currentSettings, isStaff)].sort((a, b) => a.threshold - b.threshold);
   const spend = await getMonthlySpend(customerId);
   const monthKey = currentMonthKey();
   const claims = await loadClaims();
   const claimedThresholds = (claims[customerId] && claims[customerId][monthKey]) || [];
 
   const nextTier = tiers.find((t) => spend < t.threshold) || null;
-  const unclaimedTier = await getUnclaimedTier(customerId);
+  const unclaimedTier = await getUnclaimedTier(customerId, isStaff);
 
   return {
     spend,
