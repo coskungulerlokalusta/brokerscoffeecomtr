@@ -83,21 +83,12 @@ router.get('/settings', adminAuth.requireAuth, async (req, res) => {
 router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   const {
     staffDiscountByGroup, staffBannerText, aiAutoReplyEnabled, aiInstructions,
-    showPaymentMethodSelector, paymentMethodsEnabled, showOrderPreferences, hideDeliveryInfoForStaff, extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, monthlySpendTiers, categoryOrder, hideCustomizationForCategories,
+    extraShotPrice, orderNotifyPhone1, orderNotifyPhone2, orderNotifySmsPhones, monthlySpendTiers, categoryOrder,
+    audience, audienceView,
   } = req.body;
   const updates = {};
   if (aiAutoReplyEnabled !== undefined) updates.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
   if (aiInstructions !== undefined) updates.aiInstructions = aiInstructions;
-  if (showPaymentMethodSelector !== undefined) updates.showPaymentMethodSelector = !!showPaymentMethodSelector;
-  if (paymentMethodsEnabled !== undefined) {
-    const cleaned = {};
-    for (const key of Object.keys(paymentMethodsEnabled)) {
-      cleaned[key] = !!paymentMethodsEnabled[key];
-    }
-    updates.paymentMethodsEnabled = cleaned;
-  }
-  if (showOrderPreferences !== undefined) updates.showOrderPreferences = !!showOrderPreferences;
-  if (hideDeliveryInfoForStaff !== undefined) updates.hideDeliveryInfoForStaff = !!hideDeliveryInfoForStaff;
   if (monthlySpendTiers !== undefined) {
     updates.monthlySpendTiers = monthlySpendTiers
       .map((t) => ({ threshold: Number(t.threshold) || 0, discount: Number(t.discount) || 0 }))
@@ -105,9 +96,6 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   }
   if (categoryOrder !== undefined) {
     updates.categoryOrder = categoryOrder.filter(Boolean);
-  }
-  if (hideCustomizationForCategories !== undefined) {
-    updates.hideCustomizationForCategories = hideCustomizationForCategories.filter(Boolean);
   }
   if (extraShotPrice !== undefined) updates.extraShotPrice = Number(extraShotPrice) || 0;
   if (orderNotifyPhone1 !== undefined) updates.orderNotifyPhone1 = orderNotifyPhone1;
@@ -129,6 +117,32 @@ router.post('/settings', adminAuth.requireAuth, async (req, res) => {
   if (staffBannerText !== undefined) {
     updates.staffBannerText = staffBannerText;
   }
+
+  // Personel/Müşteri için ayrı ayrı görünüm ayarları — sadece belirtilen taraf güncellenir,
+  // diğer tarafın kayıtlı ayarlarına dokunulmaz.
+  if (audience === 'customer' || audience === 'staff') {
+    const current = await settings.loadSettings();
+    const cleanedPayment = {};
+    if (audienceView.paymentMethodsEnabled) {
+      for (const key of Object.keys(audienceView.paymentMethodsEnabled)) {
+        cleanedPayment[key] = !!audienceView.paymentMethodsEnabled[key];
+      }
+    }
+    updates.audienceSettings = {
+      ...current.audienceSettings,
+      [audience]: {
+        ...current.audienceSettings[audience],
+        showPaymentMethodSelector: !!audienceView.showPaymentMethodSelector,
+        paymentMethodsEnabled: { ...current.audienceSettings[audience].paymentMethodsEnabled, ...cleanedPayment },
+        showOrderPreferences: !!audienceView.showOrderPreferences,
+        showDeliveryInfo: !!audienceView.showDeliveryInfo,
+        requireAddress: !!audienceView.requireAddress,
+        hiddenCategories: (audienceView.hiddenCategories || []).filter(Boolean),
+        hideCustomizationForCategories: (audienceView.hideCustomizationForCategories || []).filter(Boolean),
+      },
+    };
+  }
+
   res.json(await settings.updateSettings(updates));
 });
 

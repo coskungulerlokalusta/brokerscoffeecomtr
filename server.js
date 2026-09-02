@@ -48,25 +48,33 @@ app.use('/api/webhooks', instagramWebhookRoutes);
 app.use('/api/webhooks', messengerWebhookRoutes);
 app.use('/api/images', imagesRoutes);
 
-// Herkese açık — checkout sayfasının ihtiyaç duyduğu, hassas olmayan ayarlar
-app.get('/api/settings/public', async (req, res) => {
+// Herkese açık — checkout sayfasının ihtiyaç duyduğu, hassas olmayan ayarlar.
+// Personel ve müşteri için ayrı yapılandırılmış (ödeme yöntemleri, adres zorunluluğu vb.) görünüm döner.
+app.get('/api/settings/public', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const s = await settings.loadSettings();
+  const isStaff = !!(req.customer && req.customer.isStaff);
+  const view = s.audienceSettings[isStaff ? 'staff' : 'customer'];
   res.json({
-    showPaymentMethodSelector: s.showPaymentMethodSelector,
-    paymentMethodsEnabled: s.paymentMethodsEnabled,
-    showOrderPreferences: s.showOrderPreferences,
-    hideDeliveryInfoForStaff: s.hideDeliveryInfoForStaff,
+    showPaymentMethodSelector: view.showPaymentMethodSelector,
+    paymentMethodsEnabled: view.paymentMethodsEnabled,
+    showOrderPreferences: view.showOrderPreferences,
+    requireAddress: view.requireAddress,
+    showDeliveryInfo: view.showDeliveryInfo,
+    hideCustomizationForCategories: view.hideCustomizationForCategories,
     extraShotPrice: s.extraShotPrice,
-    hideCustomizationForCategories: s.hideCustomizationForCategories || [],
   });
 });
 
-// Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir
+// Tüm ürünleri getir (opsiyonel ?category= filtresi ile) — personel girişliyse indirimli fiyatlar da eklenir,
+// ayrıca personel/müşteri için ayrı ayrı gizlenmiş kategoriler varsa onlar menüden çıkarılır
 app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const products = await productStore.loadProducts();
   const isStaff = !!(req.customer && req.customer.isStaff);
-  const currentSettings = isStaff ? await settings.loadSettings() : null;
-  const withPrices = products.map((p) => withEffectivePrices(p, isStaff, currentSettings && currentSettings.staffDiscountByGroup));
+  const currentSettings = await settings.loadSettings();
+  const view = currentSettings.audienceSettings[isStaff ? 'staff' : 'customer'];
+  const hiddenCats = (view.hiddenCategories || []).map((c) => c.toLowerCase());
+  const visible = products.filter((p) => !hiddenCats.includes((p.subcategory || p.category || '').toLowerCase()));
+  const withPrices = visible.map((p) => withEffectivePrices(p, isStaff, isStaff ? currentSettings.staffDiscountByGroup : null));
 
   const { category } = req.query;
   if (category) {
@@ -78,11 +86,17 @@ app.get('/api/products', customerAuth.attachCustomerIfPresent, async (req, res) 
   res.json(withPrices);
 });
 
-// Kategori listesini getir — admin panelde belirlenen sıraya göre dizilir
-app.get('/api/categories', async (req, res) => {
+// Kategori listesini getir — admin panelde belirlenen sıraya göre dizilir,
+// personel/müşteriye özel gizlenmiş kategoriler çıkarılır
+app.get('/api/categories', customerAuth.attachCustomerIfPresent, async (req, res) => {
   const products = await productStore.loadProducts();
-  const cats = [...new Set(products.map((p) => p.subcategory || p.category))];
+  const isStaff = !!(req.customer && req.customer.isStaff);
   const currentSettings = await settings.loadSettings();
+  const view = currentSettings.audienceSettings[isStaff ? 'staff' : 'customer'];
+  const hiddenCats = (view.hiddenCategories || []).map((c) => c.toLowerCase());
+  const cats = [...new Set(products.map((p) => p.subcategory || p.category))].filter(
+    (c) => !hiddenCats.includes(c.toLowerCase())
+  );
   const order = currentSettings.categoryOrder || [];
   cats.sort((a, b) => {
     const ia = order.indexOf(a);
