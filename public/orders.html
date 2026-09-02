@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0d1b3d"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+<title>Siparişlerim | Brokers Coffee</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
+  @media (max-width: 768px) { body { padding-bottom: 72px; } }
+  h1, h2 { font-family: 'Playfair Display', serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="bg-white border-b border-[#e3e2e0]">
+<div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+<a href="/" class="font-bold text-lg text-[#0d1b3d]" style="font-family:'Playfair Display',serif;">Brokers Coffee</a>
+<a href="/account.html" class="text-sm text-[#735c00]">← Hesabım</a>
+</div>
+</header>
+
+<main class="max-w-3xl mx-auto px-5 py-8">
+<h1 class="text-2xl text-[#0d1b3d] mb-6">Siparişlerim</h1>
+
+<div id="loading" class="text-[#827472]">Yükleniyor...</div>
+<div id="unauth" class="hidden text-center">
+<p class="text-[#827472] mb-4">Siparişlerini görmek için giriş yapmalısın.</p>
+<a href="/login.html" class="inline-block bg-[#0d1b3d] text-white font-semibold uppercase tracking-widest text-sm py-3 px-6 rounded">Giriş Yap</a>
+</div>
+<div id="empty" class="hidden text-center text-[#827472]">Henüz siparişin yok.</div>
+<div id="orders-list" class="flex flex-col gap-4"></div>
+</main>
+
+<script src="/js/push.js"></script>
+<script>
+const STATUS_LABELS = {
+  yeni: { label: 'Yeni', color: 'bg-blue-100 text-blue-800' },
+  hazirlaniyor: { label: 'Hazırlanıyor', color: 'bg-amber-100 text-amber-800' },
+  hazir: { label: 'Hazır', color: 'bg-emerald-100 text-emerald-800' },
+  'teslim-edildi': { label: 'Teslim Edildi', color: 'bg-gray-200 text-gray-700' },
+  iptal: { label: 'İptal Edildi', color: 'bg-red-100 text-red-800' },
+};
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleString('tr-TR');
+}
+
+async function init() {
+  try {
+    const res = await fetch('/api/account/orders');
+    if (!res.ok) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('unauth').classList.remove('hidden');
+      return;
+    }
+    const orders = await res.json();
+    document.getElementById('loading').classList.add('hidden');
+
+    if (!orders.length) {
+      document.getElementById('empty').classList.remove('hidden');
+      return;
+    }
+
+    document.getElementById('orders-list').innerHTML = orders.map(o => {
+      const status = STATUS_LABELS[o.orderStatus] || { label: o.orderStatus, color: 'bg-gray-100 text-gray-700' };
+      const itemsText = o.items.map(i => `${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}`).join(', ');
+      const paymentText = o.paymentMethod === 'store' ? '🏪 Mağazada Ödeme' : (o.paymentStatus === 'odendi' ? '✅ Ödendi' : 'Ödeme bekliyor');
+      return `
+        <div class="bg-white rounded-lg shadow-sm p-5">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-xs text-[#827472]">${formatDate(o.createdAt)}</p>
+            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${status.color}">${status.label}</span>
+          </div>
+          <p class="text-sm text-[#504442] mb-2">${itemsText}</p>
+          <div class="flex items-center justify-between pt-2 border-t border-[#e3e2e0]">
+            <span class="text-xs text-[#827472]">${paymentText} · ${o.deliveryType === 'kurye' ? 'Kurye' : 'Gel Al'}</span>
+            <span class="font-semibold text-[#0d1b3d]">₺${o.total}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('unauth').classList.remove('hidden');
+  }
+}
+
+init();
+</script>
+
+<!-- Mobil uygulama tarzı alt gezinme -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e3e2e0] flex items-stretch justify-around" style="padding-bottom: env(safe-area-inset-bottom);">
+<a href="/" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472]">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Ana Sayfa</span>
+</a>
+<a href="/#menu" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472]">
+<span class="material-symbols-outlined text-[22px]">restaurant_menu</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Menü</span>
+</a>
+<a href="/cart.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#827472] relative">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+<span data-cart-badge-mobile class="hidden absolute top-1 right-[calc(50%-18px)] bg-[#c9a227] text-[#241a00] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Sepet</span>
+</a>
+<a href="/account.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[#0d1b3d]">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-[10px] font-semibold uppercase tracking-wide">Hesabım</span>
+</a>
+</nav>
+<script src="/js/cart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const badge = document.querySelector('[data-cart-badge-mobile]');
+  if (badge) {
+    const count = cartCount();
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+});
+</script>
+</body>
+</html>

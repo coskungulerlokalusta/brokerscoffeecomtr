@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Müşteri Ekranı — DurakPOS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{ --navy:#0B1F38; --accent:#C97A2E; --bg:#F7F4EE; --text:#241A0F; --muted:#8A7C67; --border:#E1D8C8; }
+*{box-sizing:border-box; margin:0; padding:0;}
+html{height:100%; width:100%; overflow:hidden;}
+body{font-family:Arial,sans-serif; background:#000; color:#fff; width:100vw; height:100vh; overflow:hidden;}
+img{max-width:100%; max-height:100%;}
+
+/* Slayt gösterisi */
+.slideshow{position:fixed; inset:0; background:#000;}
+.slide{position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity 1s ease;}
+.slide.active{opacity:1;}
+.slide-caption{position:absolute; left:0; right:0; bottom:0; background:linear-gradient(0deg, rgba(0,0,0,0.75), transparent); padding:60px 50px 40px; }
+.slide-name{font-size:34px; font-weight:800;}
+.slide-price{font-size:26px; font-weight:700; color:#C97A2E; margin-top:6px;}
+.no-slides{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--navy),#173254);}
+.no-slides .logo{font-size:44px; font-weight:800; margin-bottom:12px;}
+.no-slides .logo span{color:var(--accent);}
+.no-slides p{opacity:0.6; font-size:15px;}
+
+/* Sipariş ekranı */
+.order-screen{position:fixed; inset:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column;}
+.order-top{background:var(--navy); color:#fff; padding:26px 40px; display:flex; justify-content:space-between; align-items:center;}
+.order-top .biz{font-size:22px; font-weight:800;}
+.order-top .greet{font-size:15px; opacity:0.7;}
+.order-list{flex:1; overflow-y:auto; padding:20px 40px;}
+.order-line{display:flex; justify-content:space-between; align-items:center; padding:18px 0; border-bottom:1px solid var(--border);}
+.order-line .l-info{flex:1;}
+.order-line .l-name{font-size:20px; font-weight:700;}
+.order-line .l-meta{font-size:14px; color:var(--muted); margin-top:2px;}
+.order-line .l-old-price{font-size:14px; color:var(--muted); text-decoration:line-through; margin-right:8px;}
+.order-line .l-price{font-size:22px; font-weight:800; color:var(--navy);}
+.order-line .l-price.discounted{color:var(--accent);}
+.order-total{background:var(--navy); color:#fff; padding:30px 40px; display:flex; justify-content:space-between; align-items:center;}
+.order-total .lbl{font-size:20px; opacity:0.75;}
+.order-total .amt{font-size:42px; font-weight:800;}
+.order-empty{flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:20px;}
+</style>
+</head>
+<body>
+<div id="app"><div class="no-slides"><div class="logo">Durak<span>POS</span></div></div></div>
+
+<script>
+const path = window.location.pathname.split('/').filter(Boolean);
+const TENANT_SLUG = path[1] || '';
+let slides = [];
+let currentSlideIdx = 0;
+let slideTimer = null;
+let currentView = 'loading'; // 'slideshow' | 'order'
+
+async function poll(){
+  try{
+    const res = await fetch(`/api/public/display/${TENANT_SLUG}`);
+    const data = await res.json();
+    if(!res.ok) return;
+    window._displayCurrency = data.tenant.currency || '₺';
+
+    const hasLiveCart = data.liveCart && data.liveCart.items && data.liveCart.items.length > 0;
+
+    if(hasLiveCart){
+      if(currentView !== 'order') { currentView = 'order'; clearInterval(slideTimer); }
+      renderOrder(data);
+    } else {
+      if(currentView !== 'slideshow'){
+        currentView = 'slideshow';
+        // Sadece elle yüklenen slaytlar dönüyor — ürün fotoğrafları otomatik
+        // eklenmiyor (önceden ikisi karışık gösteriliyordu, kafa karıştırıyordu).
+        slides = data.slides || [];
+        renderSlideshow();
+      }
+    }
+  }catch(e){ console.error('Ekran verisi işlenemedi:', e); /* bir sonraki pollde tekrar dener */ }
+}
+
+function renderSlideshow(){
+  const app = document.getElementById('app');
+  if(slides.length === 0){
+    app.innerHTML = `<div class="no-slides"><div class="logo">Durak<span>POS</span></div><p>Arka ekran slaytı henüz eklenmedi</p></div>`;
+    return;
+  }
+  app.innerHTML = `<div class="slideshow">${slides.map((s,i)=>`
+    <div class="slide" data-i="${i}" style="background-image:url('${s.image_url}')">
+      ${s.name ? `<div class="slide-caption"><div class="slide-name">${s.name}</div><div class="slide-price">${s.price ? (window._displayCurrency||'₺')+Number(s.price).toFixed(2) : ''}</div></div>` : ''}
+    </div>`).join('')}</div>`;
+  currentSlideIdx = 0;
+  showSlide(0);
+}
+
+function showSlide(i){
+  document.querySelectorAll('.slide').forEach(el=>el.classList.remove('active'));
+  const el = document.querySelector(`.slide[data-i="${i}"]`);
+  if(el) el.classList.add('active');
+  clearTimeout(slideTimer);
+  const seconds = slides[i] ? (slides[i].seconds || 5) : 5;
+  slideTimer = setTimeout(()=>{
+    currentSlideIdx = (i+1) % slides.length;
+    showSlide(currentSlideIdx);
+  }, seconds*1000);
+}
+
+function renderOrder(data){
+  const cur = data.tenant.currency || '₺';
+  const items = data.liveCart.items;
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="order-screen">
+      <div class="order-top">
+        <div class="biz">${data.tenant.name}</div>
+        <div class="greet">Hoş geldiniz 👋</div>
+      </div>
+      <div class="order-list">
+        ${items.map(it=>{
+          const hasDiscount = it.discount && it.discount.value;
+          return `
+          <div class="order-line">
+            <div class="l-info">
+              <div class="l-name">${it.qty}x ${it.name}</div>
+              <div class="l-meta">${it.size || ''}</div>
+            </div>
+            <div>
+              ${hasDiscount ? `<span class="l-old-price">${cur}${(it.unitPrice*it.qty).toFixed(2)}</span>` : ''}
+              <span class="l-price ${hasDiscount?'discounted':''}">${cur}${Number(it.lineTotal ?? it.unitPrice*it.qty).toFixed(2)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="order-total">
+        <div class="lbl">Toplam</div>
+        <div class="amt">${cur}${Number(data.liveCart.total).toFixed(2)}</div>
+      </div>
+    </div>`;
+}
+
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>

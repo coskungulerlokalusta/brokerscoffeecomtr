@@ -57,6 +57,7 @@ app.get('/api/settings/public', async (req, res) => {
     showOrderPreferences: s.showOrderPreferences,
     hideDeliveryInfoForStaff: s.hideDeliveryInfoForStaff,
     extraShotPrice: s.extraShotPrice,
+    hideCustomizationForCategories: s.hideCustomizationForCategories || [],
   });
 });
 

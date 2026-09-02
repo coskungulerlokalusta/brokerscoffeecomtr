@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Görevlerim — DurakPOS</title>
+<style>
+:root{--navy:#0B1F38; --navy2:#173254; --cream:#F7F5F0; --border:#E7E2D8; --accent:#C97A2E; --muted:#8A7C67; --text:#241A0F; --green:#2E7D46; --danger:#C0392B;}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; overflow-x:hidden;}
+body{font-family:-apple-system,Arial,sans-serif; background:var(--cream); color:var(--text);}
+button,input{font-family:inherit;}
+#app{min-height:100vh; display:flex; flex-direction:column;}
+
+.login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(160deg,var(--navy),var(--navy2));}
+.login-card{background:#fff; border-radius:18px; padding:28px 22px; width:100%; max-width:360px;}
+.logo{font-size:22px; font-weight:800; text-align:center; margin-bottom:4px; color:var(--navy);}
+.logo span{color:var(--accent);}
+.sub{font-size:13px; color:var(--muted); text-align:center; margin-bottom:20px;}
+.login-card input{width:100%; background:var(--cream); border:1px solid var(--border); border-radius:10px; padding:13px; font-size:14px; margin-bottom:12px;}
+.staff-list{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+.staff-btn{padding:13px; border-radius:10px; background:var(--cream); border:1px solid var(--border); font-size:14px; font-weight:700; text-align:center;}
+.login-err{color:var(--danger); font-size:12.5px; text-align:center; margin-bottom:10px; min-height:16px;}
+.pin-dots{display:flex; justify-content:center; gap:10px; margin-bottom:20px;}
+.pin-dot{width:14px; height:14px; border-radius:50%; border:2px solid var(--border);}
+.pin-dot.filled{background:var(--navy); border-color:var(--navy);}
+.numpad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px;}
+.numpad button{padding:16px; border-radius:10px; background:var(--cream); font-size:18px; font-weight:700;}
+.back-to-staff{display:block; text-align:center; font-size:12.5px; color:var(--muted); margin-top:6px;}
+
+.topbar{background:var(--navy); color:#fff; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;}
+.break-bar{padding:14px 18px; background:#fff; border-bottom:1px solid var(--border);}
+.break-btn{width:100%; padding:15px; border-radius:12px; font-weight:800; font-size:15px; border:none;}
+.break-btn.start{background:#FDF1E4; color:var(--accent); border:1.5px solid var(--accent);}
+.break-btn.end{background:var(--green); color:#fff;}
+.break-timer{text-align:center; font-size:12.5px; color:var(--muted); margin-top:6px; font-weight:600;}
+.topbar .who{font-size:14px; font-weight:700;}
+.topbar .sub{color:#9fb0c6; font-size:11px; margin:0;}
+.topbar button{background:rgba(255,255,255,0.12); color:#fff; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:700;}
+
+.task-list{padding:14px; flex:1;}
+.task-card{background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:12px;}
+.task-card.completed{border-color:var(--green); background:#F3F9F4;}
+.task-card.missed{border-color:var(--danger); background:#FCF3F2;}
+.task-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:4px;}
+.task-title{font-size:15px; font-weight:800;}
+.task-time{font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap;}
+.task-desc{font-size:12.5px; color:var(--muted); margin-bottom:10px; line-height:1.5;}
+.task-status{font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; display:inline-block; margin-bottom:8px;}
+.task-status.completed{background:#E7F5EA; color:var(--green);}
+.task-status.missed{background:#FCEAEA; color:var(--danger);}
+.task-status.pending{background:#FDF1E4; color:var(--accent);}
+.task-photo{width:100%; max-height:180px; object-fit:cover; border-radius:8px; margin-top:8px;}
+.complete-btn{width:100%; padding:12px; border-radius:10px; background:var(--navy); color:#fff; font-weight:800; font-size:14px; margin-top:6px;}
+.complete-btn:disabled{opacity:0.6;}
+.empty-note{text-align:center; color:var(--muted); font-size:13px; padding:40px 20px;}
+.refresh-note{text-align:center; color:var(--muted); font-size:10.5px; padding:10px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/shared.js"></script>
+<script>
+const API_BASE = 'https://durakpos.com/api';
+const path = window.location.pathname.split('/').filter(Boolean);
+let TENANT_SLUG = path[1] || localStorage.getItem('gorev_tenant_slug') || '';
+
+let staffList = [];
+let selectedStaff = null;
+let pin = '';
+let loginErr = '';
+let token = localStorage.getItem('gorev_token');
+let tenant = JSON.parse(localStorage.getItem('gorev_tenant') || 'null');
+let currentUser = JSON.parse(localStorage.getItem('gorev_user') || 'null');
+let tasks = [];
+let onBreak = false;
+let breakStart = null;
+let breakTimerInterval = null;
+
+// apiCall(): bkz. /public/shared.js — tüm arayüzler ortak kullanıyor
+
+async function bootLogin(){
+  if(!TENANT_SLUG){ renderTenantSetup(); return; }
+  try{
+    const res = await fetch(`${API_BASE}/auth/staff?tenantSlug=${TENANT_SLUG}`);
+    if(!res.ok){ TENANT_SLUG=''; localStorage.removeItem('gorev_tenant_slug'); renderTenantSetup(); return; }
+    staffList = await res.json();
+  }catch(e){ staffList = []; }
+  renderLogin();
+}
+
+function renderTenantSetup(){
+  document.getElementById('app').innerHTML = `
+    <div class="login-wrap"><div class="login-card">
+      <div class="logo">Durak<span>POS</span></div>
+      <div class="sub">Görevlerim — işletme kodunuzu girin</div>
+      <input type="text" id="slugInput" placeholder="Örn: brokerscoffee">
+      <div class="login-err"></div>
+      <button class="staff-btn" id="slugBtn" style="background:var(--navy); color:#fff;">Devam Et</button>
+    </div></div>`;
+  document.getElementById('slugBtn').onclick = ()=>{
+    const v = document.getElementById('slugInput').value.trim().toLowerCase();
+    if(!v) return;
+    TENANT_SLUG = v; localStorage.setItem('gorev_tenant_slug', v);
+    bootLogin();
+  };
+}
+
+function renderLogin(){
+  const app = document.getElementById('app');
+  if(!selectedStaff){
+    app.innerHTML = `
+      <div class="login-wrap"><div class="login-card">
+        <div class="logo">Durak<span>POS</span></div>
+        <div class="sub">Görevlerim — personelinizi seçin</div>
+        <div class="staff-list">
+          ${staffList.map(s=>`<button class="staff-btn" data-id="${s.id}" data-name="${s.name}">${s.name}</button>`).join('') || '<p class="login-err">Personel listesi alınamadı.</p>'}
+        </div>
+      </div></div>`;
+    document.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{
+      selectedStaff = {id:b.dataset.id, name:b.dataset.name}; pin=''; loginErr=''; renderLogin();
+    });
+    return;
+  }
+  app.innerHTML = `
+    <div class="login-wrap"><div class="login-card">
+      <div class="logo">Durak<span>POS</span></div>
+      <div class="sub">${selectedStaff.name} — PIN girin</div>
+      <div class="pin-dots">${[0,1,2,3].map(i=>`<div class="pin-dot ${i<pin.length?'filled':''}"></div>`).join('')}</div>
+      <div class="numpad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-num="${n}">${n}</button>`).join('')}
+        <button data-clear>Sil</button><button data-num="0">0</button><button data-ok>✓</button>
+      </div>
+      <div class="login-err">${loginErr}</div>
+      <a class="back-to-staff" id="back">← Personel Seçimine Dön</a>
+    </div></div>`;
+  document.getElementById('back').onclick = ()=>{ selectedStaff=null; renderLogin(); };
+  document.querySelectorAll('[data-num]').forEach(b=>b.onclick=()=>{
+    if(pin.length>=4) return; pin+=b.dataset.num; renderLogin(); if(pin.length===4) doPinLogin();
+  });
+  document.querySelector('[data-clear]').onclick = ()=>{ pin=pin.slice(0,-1); renderLogin(); };
+  document.querySelector('[data-ok]').onclick = ()=>{ if(pin.length===4) doPinLogin(); };
+}
+
+async function doPinLogin(){
+  try{
+    const data = await apiCall('/auth/pin-login', {method:'POST', body:JSON.stringify({tenantSlug:TENANT_SLUG, userId:selectedStaff.id, pin})});
+    token=data.token; tenant=data.tenant; currentUser=data.user;
+    localStorage.setItem('gorev_token', token);
+    localStorage.setItem('gorev_tenant', JSON.stringify(tenant));
+    localStorage.setItem('gorev_user', JSON.stringify(currentUser));
+    selectedStaff=null; pin='';
+    boot();
+  }catch(e){ loginErr=e.message; pin=''; renderLogin(); }
+}
+
+function logout(){
+  localStorage.removeItem('gorev_token'); localStorage.removeItem('gorev_tenant'); localStorage.removeItem('gorev_user');
+  token=null; tenant=null; currentUser=null; bootLogin();
+}
+
+async function boot(){
+  // Uygulama kapatılıp açılmış olsa bile (mola sırasında), sunucudaki gerçek
+  // mola durumunu kontrol edip butonun doğru görünmesini sağlıyoruz.
+  try{
+    const status = await apiCall('/tasks/break/status');
+    onBreak = status.onBreak;
+    breakStart = status.breakStart ? new Date(status.breakStart) : null;
+  }catch(e){ /* sessiz geç, buton "Molaya Çık" olarak kalır */ }
+  await loadTasks();
+  setInterval(loadTasks, 60000);
+  registerForPushNotifications();
+}
+
+function startBreakTimer(){
+  clearInterval(breakTimerInterval);
+  const update = ()=>{
+    const el = document.getElementById('breakTimer');
+    if(!el || !breakStart){ clearInterval(breakTimerInterval); return; }
+    const mins = Math.floor((Date.now() - breakStart.getTime())/60000);
+    const secs = Math.floor(((Date.now() - breakStart.getTime())%60000)/1000);
+    el.textContent = `Moladasınız — ${mins} dk ${secs} sn`;
+  };
+  update();
+  breakTimerInterval = setInterval(update, 1000);
+}
+
+// Native uygulama (Capacitor) içinde çalışıyorsak, bildirim izni isteyip
+// cihaz jetonunu sunucuya kaydediyoruz — görev saati geldiğinde gerçek
+// bir bildirim düşebilsin diye. Normal tarayıcıda (web) bu sessizce atlanır.
+function registerForPushNotifications(){
+  if(!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.PushNotifications) return;
+  const { PushNotifications } = window.Capacitor.Plugins;
+  PushNotifications.requestPermissions().then(res=>{
+    if(res.receive === 'granted') PushNotifications.register();
+  });
+  PushNotifications.addListener('registration', (tok)=>{
+    apiCall('/menu/push-token', {method:'POST', body:JSON.stringify({token: tok.value, app:'gorevler'})}).catch(()=>{});
+  });
+}
+
+async function loadTasks(){
+  try{ tasks = await apiCall('/tasks/my-tasks'); render(); }
+  catch(e){ if(e.message.includes('token') || e.message.includes('yetk')) logout(); }
+}
+
+function fmtTime(d){ return new Date(d).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); }
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="topbar">
+      <div><div class="who">${currentUser?currentUser.name:''}</div><p class="sub">${tenant?tenant.name:''}</p></div>
+      <button id="logoutBtn">Çıkış</button>
+    </div>
+    <div class="break-bar">
+      <button class="break-btn ${onBreak?'end':'start'}" id="breakBtn">${onBreak?'✅ Geldim':'☕ Molaya Çık'}</button>
+      ${onBreak && breakStart ? `<div class="break-timer" id="breakTimer"></div>` : ''}
+    </div>
+    <div class="task-list">
+      ${tasks.length===0 ? '<p class="empty-note">Şu an bekleyen bir göreviniz yok. 🎉</p>' : tasks.map(t=>`
+        <div class="task-card ${t.completed?'completed':(t.missed?'missed':'')}">
+          <div class="task-head"><span class="task-title">${t.title}</span><span class="task-time">${fmtTime(t.dueAt)}</span></div>
+          ${t.description ? `<div class="task-desc">${t.description}</div>` : ''}
+          <span class="task-status ${t.completed?'completed':(t.missed?'missed':'pending')}">${t.completed?'✓ Tamamlandı':(t.missed?'⚠ Kaçırıldı':'Bekliyor')}</span>
+          ${t.photoUrl ? `<img class="task-photo" src="${t.photoUrl}">` : ''}
+          ${!t.completed ? `<button class="complete-btn" data-complete="${t.templateId}" data-due="${new Date(t.dueAt).toISOString()}" data-photo="${t.requiresPhoto?'1':'0'}">${t.requiresPhoto?'📷 Fotoğraf Çek ve Tamamla':'✓ Tamamla'}</button>
+          <input type="file" accept="image/*" capture="environment" style="display:none;" data-fileinput="${t.templateId}">` : ''}
+        </div>`).join('')}
+    </div>
+    <p class="refresh-note">60 saniyede bir otomatik güncellenir</p>`;
+  document.getElementById('logoutBtn').onclick = logout;
+  document.getElementById('breakBtn').onclick = async ()=>{
+    const btn = document.getElementById('breakBtn');
+    btn.disabled = true;
+    try{
+      if(onBreak){
+        await apiCall('/tasks/break/end', {method:'POST'});
+        onBreak = false; breakStart = null;
+        clearInterval(breakTimerInterval);
+      } else {
+        await apiCall('/tasks/break/start', {method:'POST'});
+        onBreak = true; breakStart = new Date();
+      }
+      render();
+    }catch(e){ alert(e.message); btn.disabled=false; }
+  };
+  if(onBreak && breakStart) startBreakTimer();
+  document.querySelectorAll('[data-complete]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const templateId = btn.dataset.complete, due = btn.dataset.due, needsPhoto = btn.dataset.photo==='1';
+      if(needsPhoto){
+        document.querySelector(`[data-fileinput="${templateId}"]`).click();
+      } else {
+        completeTask(templateId, due, null, btn);
+      }
+    };
+  });
+  document.querySelectorAll('[data-fileinput]').forEach(input=>{
+    input.onchange = (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const templateId = input.dataset.fileinput;
+      const btn = document.querySelector(`[data-complete="${templateId}"]`);
+      const due = btn.dataset.due;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 800;
+          const scale = Math.min(1, maxW/img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width*scale; canvas.height = img.height*scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          completeTask(templateId, due, dataUrl, btn);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+  });
+}
+
+async function completeTask(templateId, due, photo, btn){
+  btn.disabled = true; btn.textContent = 'Gönderiliyor…';
+  try{
+    await apiCall('/tasks/complete', {method:'POST', body:JSON.stringify({task_template_id:Number(templateId), due_at:due, photo})});
+    await loadTasks();
+  }catch(e){ alert('Tamamlanamadı: '+e.message); btn.disabled=false; }
+}
+
+if(token && tenant && currentUser) boot();
+else bootLogin();
+</script>
+</body>
+</html>
