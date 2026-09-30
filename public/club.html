@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Brokers Club | Brokers Coffee</title>
+<meta name="description" content="Brokers Club: sipariş ver, puan topla, ödülleri ve sana özel fırsatları kaçırma."/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f7f5f0"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="bc">
+<div id="bc-root"><div class="bc-wrap" style="padding-top:18px"><div class="bc-skel" style="height:220px;margin-bottom:16px"></div><div class="bc-skel" style="height:200px"></div></div></div>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const { esc, icons: I } = BC;
+  let rewards = [];
+  let progress = null;
+  let group = 'Tümü';
+
+  const ILLUS = `<div class="bc-illus" aria-hidden="true">
+    <svg class="cup" viewBox="0 0 200 170"><ellipse cx="100" cy="160" rx="80" ry="8" fill="#e9e5dc"/>
+      <path d="M40 60h110l-12 88a14 14 0 0 1-14 12H66a14 14 0 0 1-14-12L40 60Z" fill="#0d1b3d"/>
+      <path d="M150 75h10a22 22 0 0 1 0 44h-14" fill="none" stroke="#0d1b3d" stroke-width="10"/>
+      <rect x="34" y="50" width="122" height="16" rx="8" fill="#f5c542"/>
+      <text x="95" y="120" text-anchor="middle" font-family="Playfair Display, serif" font-weight="700" font-size="44" fill="#f5c542">B</text>
+      <path d="M72 38c-8-10 8-14 0-26M98 36c-8-10 8-14 0-26M124 38c-8-10 8-14 0-26" fill="none" stroke="#d9a927" stroke-width="5" stroke-linecap="round"/></svg>
+    <span class="coinf" style="left:14%;top:30px">B</span><span class="coinf" style="left:30%;top:0;animation-delay:.6s">B</span>
+    <span class="coinf" style="right:26%;top:14px;animation-delay:1.2s">B</span><span class="coinf" style="right:10%;top:80px;animation-delay:1.8s">B</span></div>`;
+
+  function rewardCard(r) {
+    const me = BC.state.me; const pts = me ? me.loyaltyPoints || 0 : 0;
+    const pct = me ? Math.min(100, (pts / r.pointsCost) * 100) : 0;
+    const can = me && pts >= r.pointsCost;
+    const emoji = /kruvasan|croissant/i.test(r.title) ? '🥐' : /tatl|cheese|brownie|kek/i.test(r.title) ? '🍰' : /indirim|%/i.test(r.title) ? '🏷️' : '☕';
+    return `<div class="bc-reward"><div class="ring" style="--p:${pct.toFixed(0)}"><span>${emoji}</span></div>
+      <div class="nm">${esc(r.title)}</div><span class="cost">${r.pointsCost.toLocaleString('tr-TR')} puan</span>
+      ${can ? `<button class="bc-btn bc-btn-gold bc-btn-sm" data-redeem="${esc(r.id)}">Kullan</button>` : me ? `<span class="bc-muted" style="font-size:12px;font-weight:600">${(r.pointsCost - pts).toLocaleString('tr-TR')} puan kaldı</span>` : ''}</div>`;
+  }
+
+  function tiersHtml() {
+    if (!progress || !progress.tiers || !progress.tiers.length) return '';
+    return `<section class="bc-sec bc-reveal"><h2 class="bc-h2" style="margin-bottom:6px">Yedikçe İndirim Kazan</h2>
+      <p class="bc-muted" style="margin-bottom:14px">Bu ay ${BC.money(progress.spend)} harcadın.</p>
+      <div class="bc-list">${progress.tiers.map((t) => `<div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--bc-line)">
+        <span style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;${t.reached ? 'background:var(--bc-gold-2)' : 'box-shadow:inset 0 0 0 2px var(--bc-line)'}">${t.reached ? '✓' : ''}</span>
+        <span class="tx" style="flex:1;font-weight:800">${BC.money(t.threshold)} harcamada<small style="display:block;font-weight:500;color:var(--bc-muted)">${BC.money(t.discount)} indirim</small></span></div>`).join('')}</div></section>`;
+  }
+
+  function render() {
+    const c = BC.state.config || {}; const club = c.club || {}; const me = BC.state.me;
+    const offers = c.offers || [];
+    const groups = ['Tümü', ...new Set(offers.map((o) => o.group || 'Fırsatlar'))];
+    if (!groups.includes(group)) group = 'Tümü';
+    const shown = group === 'Tümü' ? offers : offers.filter((o) => (o.group || 'Fırsatlar') === group);
+
+    document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar()}
+      <main class="bc-wrap">
+        <section class="bc-sec bc-reveal">
+          <span class="bc-mym-logo">Brokers<b>Club</b></span>
+          <p style="font-weight:800;font-size:18px;margin-top:22px">${esc(club.title || 'Brokers Club')}</p>
+          <h1 class="bc-h1" style="margin:6px 0 12px">${esc(club.headline || 'Sipariş ver, puanları topla')}</h1>
+          <p style="font-size:16px;line-height:1.55;color:#3b3f4a">${esc(club.text || '')}</p>
+        </section>
+        ${me ? `<section class="bc-sec bc-reveal">${BC.clubCard(progress)}</section>` : `
+        <section class="bc-reveal">${ILLUS}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 10px">
+            <a class="bc-btn bc-btn-gold" href="/register.html">Kaydol</a>
+            <a class="bc-btn bc-btn-line" href="/login.html">Giriş yap</a></div>
+          <button class="bc-link" data-how style="margin:6px auto 0;display:flex">Nasıl çalışır? ${I.arrow}</button>
+        </section>`}
+        <hr style="border:0;border-top:1px solid var(--bc-line);margin:22px 0 4px"/>
+        ${rewards.length ? `<section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><h2 class="bc-h2">Ödüller</h2><span class="bc-muted" style="font-weight:700;font-size:14px">${rewards.length} ödül</span></div>
+          <div class="bc-rail">${rewards.map(rewardCard).join('')}</div></section>` : ''}
+        ${tiersHtml()}
+        <section class="bc-sec" id="firsatlar">
+          <h2 class="bc-h1" style="margin-bottom:16px">Fırsatlar</h2>
+          ${offers.length ? `<div class="bc-chips">${groups.map((g) => `<button class="bc-chip ${g === group ? 'on' : ''}" data-group="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+          <div class="bc-offers">${shown.map((o) => BC.offerCard(o)).join('')}</div>` : '<p class="bc-empty">Şu an aktif fırsat yok. Yakında burada olacak!</p>'}
+        </section>
+        ${BC.footer()}
+      </main>`;
+    BC.reveal(); BC.animateClub();
+  }
+
+  document.addEventListener('click', async (e) => {
+    const g = e.target.closest('[data-group]');
+    if (g) { group = g.dataset.group; render(); document.getElementById('firsatlar').scrollIntoView({ block: 'start' }); return; }
+    if (e.target.closest('[data-how]')) {
+      BC.sheet(`<h2 class="bc-h2" style="margin-bottom:14px">Brokers Club nasıl çalışır?</h2>
+        <div class="bc-faq"><details open><summary>1. Ücretsiz üye ol</summary><p>Telefon numaranla saniyeler içinde kaydol.</p></details>
+        <details open><summary>2. Sipariş ver, puan kazan</summary><p>Her siparişinde harcadığın tutara göre hesabına puan eklenir.</p></details>
+        <details open><summary>3. Ödülünü seç</summary><p>Yeterli puana ulaştığında ödülü seç, kasada göstereceğin kodu al.</p></details>
+        <details open><summary>4. Yedikçe indirim kazan</summary><p>Ay içindeki harcamana göre ekstra indirim kademelerinin kilidini aç.</p></details></div>
+        <a class="bc-btn bc-btn-gold" style="width:100%;margin-top:18px" href="/register.html">Hemen Kaydol</a>`);
+      return;
+    }
+    const r = e.target.closest('[data-redeem]');
+    if (r) {
+      const reward = rewards.find((x) => x.id === r.dataset.redeem);
+      const sh = BC.sheet(`<h2 class="bc-h2">${esc(reward.title)}</h2><p class="bc-muted" style="margin:8px 0 18px">${reward.pointsCost.toLocaleString('tr-TR')} puanın düşülecek ve kasada göstereceğin bir kod alacaksın.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="bc-btn bc-btn-line" data-close>Vazgeç</button><button class="bc-btn bc-btn-gold" data-confirm>Kullan</button></div>`);
+      sh.el.querySelector('[data-confirm]').addEventListener('click', async (ev) => {
+        ev.target.disabled = true;
+        const res = await fetch(`/api/rewards/${encodeURIComponent(reward.id)}/redeem`, { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { BC.toast(data.error || 'Bir hata oluştu'); sh.close(); return; }
+        BC.state.me.loyaltyPoints = data.remainingPoints;
+        sh.el.innerHTML = `<div class="grab"></div><div style="text-align:center;padding:10px 0 4px"><div style="font-size:54px">🎉</div>
+          <h2 class="bc-h2" style="margin:8px 0">Afiyet olsun!</h2><p class="bc-muted">Bu kodu kasada göster:</p>
+          <p style="font-size:40px;font-weight:900;letter-spacing:.14em;margin:14px 0;color:var(--bc-navy)">${esc(data.code)}</p>
+          <button class="bc-btn bc-btn-navy" style="width:100%" data-close2>Tamam</button></div>`;
+        sh.el.querySelector('[data-close2]').addEventListener('click', sh.close);
+        render();
+      });
+    }
+  });
+
+  BC.onChange(render);
+  BC.load(['me', 'content']).then(async () => {
+    rewards = await BC.getJSON('/api/rewards').catch(() => []);
+    if (BC.state.me) progress = await BC.getJSON('/api/account/monthly-progress').catch(() => null);
+    render();
+    if (location.hash) setTimeout(() => { const el = document.querySelector(location.hash); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 250);
+  });
+})();
+</script>
+</body>
+</html>

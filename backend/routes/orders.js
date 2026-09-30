@@ -6,9 +6,10 @@ const settings = require('../utils/settings');
 const orderNotify = require('../utils/orderNotify');
 const monthlyTiers = require('../utils/monthlyTiers');
 const { calculateDiscount } = require('../utils/discountCalc');
+const { requireOrderingOpen } = require('../utils/appConfig');
 
 // Yeni sipariş oluştur — "Mağazada Öde" akışı için (kart bilgisi gerekmez, ödeme alınmış gibi hazırlanır)
-router.post('/', customerAuth.attachCustomerIfPresent, async (req, res) => {
+router.post('/', requireOrderingOpen, customerAuth.attachCustomerIfPresent, async (req, res) => {
   const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
     return res.status(400).json({ error: 'Eksik sipariş bilgisi' });

@@ -24,6 +24,7 @@ const whatsappWebhookRoutes = require('./backend/routes/whatsappWebhook');
 const instagramWebhookRoutes = require('./backend/routes/instagramWebhook');
 const messengerWebhookRoutes = require('./backend/routes/messengerWebhook');
 const imagesRoutes = require('./backend/routes/images');
+const appConfigRoutes = require('./backend/routes/appConfig');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ app.use('/api/webhooks', whatsappWebhookRoutes);
 app.use('/api/webhooks', instagramWebhookRoutes);
 app.use('/api/webhooks', messengerWebhookRoutes);
 app.use('/api/images', imagesRoutes);
+app.use('/api/app-config', appConfigRoutes);
 
 // Herkese açık — checkout sayfasının ihtiyaç duyduğu, hassas olmayan ayarlar.
 // Personel ve müşteri için ayrı yapılandırılmış (ödeme yöntemleri, adres zorunluluğu vb.) görünüm döner.

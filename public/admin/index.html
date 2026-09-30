@@ -15,6 +15,7 @@
   .sidebar-link:hover:not(.active-section) { background: #f4f3f1; }
   .member-filter-btn.active-filter { background: #0d1b3d; color: #fff; }
 </style>
+<link rel="stylesheet" href="/admin/studio.css"/>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
 
@@ -43,12 +44,13 @@
 </div>
 </div>
 
-<div class="flex flex-col md:flex-row max-w-6xl mx-auto">
+<div class="flex flex-col md:flex-row max-w-7xl mx-auto">
 
 <!-- Sol menü -->
 <nav id="admin-sidebar" class="md:w-56 flex-shrink-0 md:sticky md:top-0 md:h-screen bg-white md:border-r border-[#e3e2e0] overflow-x-auto md:overflow-visible">
 <div class="flex md:flex-col gap-1 p-3 md:p-4">
 <button data-section="orders" class="sidebar-link active-section text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📦 Siparişler</button>
+<button data-section="studio" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📱 Uygulama Stüdyosu<span class="st-new">YENİ</span></button>
 <button data-section="products" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">☕ Ürün Yönetimi</button>
 <button data-section="staff" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👥 Personel Ayarları</button>
 <button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
@@ -530,6 +532,8 @@
 </div>
 </div>
 </div>
+
+<div id="section-studio" class="admin-panel hidden"></div>
 
 <div id="section-site-content" class="admin-panel hidden">
 <h2 class="text-2xl text-[#0d1b3d] mb-4">Site Görselleri</h2>
@@ -2477,8 +2481,10 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadMessengerConversations();
     loadAiInstructions();
     loadOrderSettings();
+    if (window.loadStudio) loadStudio();
   }
 })();
 </script>
+<script src="/admin/studio.js"></script>
 </body>
 </html>
