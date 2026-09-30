@@ -383,3 +383,15 @@ body.bc-pd { padding-bottom: calc(var(--bc-nav-h) + 110px + env(safe-area-inset-
   body.bc *, .bc-nav *, .bc-cartpill { animation: none !important; transition: none !important; }
   .bc-reveal { opacity: 1; transform: none; }
 }
+
+/* Panelden oluşturulan bilgi sayfaları */
+.bc-page { background: var(--bc-card); border-radius: var(--bc-radius); overflow: hidden; box-shadow: var(--bc-shadow); margin: 14px 0 10px; }
+.bc-page-hero { aspect-ratio: 16/9; background: #efece6; overflow: hidden; }
+.bc-page-hero img { width: 100%; height: 100%; object-fit: cover; }
+.bc-page-in { padding: 24px 22px 30px; max-width: 760px; }
+.bc-page-ic { display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 18px; background: var(--bc-gold-soft); font-size: 28px; }
+.bc-page-body { margin-top: 18px; font-size: 16px; line-height: 1.75; color: #33363f; }
+.bc-page-body p { margin: 0 0 14px; }
+.bc-page-ul { margin: 0 0 14px; padding-left: 22px; }
+.bc-page-ul li { margin-bottom: 6px; }
+@media (min-width: 760px) { .bc-page-hero { aspect-ratio: 21/8; } .bc-page-in { padding: 36px 44px 44px; } }

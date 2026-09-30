@@ -33,6 +33,9 @@
 
   function render() {
     const me = BC.state.me; const c = BC.state.config || {};
+    // Panelden aynı adla sayfa oluşturulduysa eski sabit sayfayı menüden kaldır
+    const custom = (c.pages || []).filter((x) => x.inMore !== false).map((x) => x.slug + '|' + (x.title || '').toLocaleLowerCase('tr'));
+    const has = (slug, title) => custom.some((k) => k.startsWith(slug + '|') || k.endsWith('|' + title));
     document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar()}
       <main class="bc-wrap">
         <div class="bc-pagehead"><h1 class="bc-h1" style="font-size:44px">Diğer</h1>${ART}</div>
@@ -42,8 +45,10 @@
           <a href="/club.html">${ic('star')}<span class="tx">Brokers Club</span>${chev}</a>
           <button data-about>${ic('info')}<span class="tx">Hakkımızda</span>${chev}</button>
           <a href="/contact.html">${ic('mail')}<span class="tx">Bize Ulaşın</span>${chev}</a>
-          <a href="/subeler.html">${ic('store')}<span class="tx">Şubelerimiz</span>${chev}</a>
-          <a href="/blog.html">${ic('blog')}<span class="tx">Blog</span>${chev}</a>
+          ${has('subelerimiz', 'şubelerimiz') ? '' : `<a href="/subeler.html">${ic('store')}<span class="tx">Şubelerimiz</span>${chev}</a>`}
+          ${has('blog', 'blog') ? '' : `<a href="/blog.html">${ic('blog')}<span class="tx">Blog</span>${chev}</a>`}
+          ${(c.pages || []).filter((x) => x.inMore !== false).map((x) => `<a href="/sayfa.html?s=${encodeURIComponent(x.slug)}"><span class="ic" style="font-size:22px;display:grid;place-items:center">${esc(x.icon || '📄')}</span><span class="tx">${esc(x.title)}${x.subtitle ? `<small>${esc(x.subtitle)}</small>` : ''}</span>${chev}</a>`).join('')}
+          ${(c.moreLinks || []).map((x) => `<a href="${esc(x.link || '/')}"${/^https?:/.test(x.link || '') ? ' target="_blank" rel="noopener"' : ''}><span class="ic" style="font-size:22px;display:grid;place-items:center">${esc(x.icon || '🔗')}</span><span class="tx">${esc(x.title)}</span>${chev}</a>`).join('')}
           <a href="/terms.html">${ic('doc')}<span class="tx">Şartlar ve Koşullar</span>${chev}</a>
           <a href="/privacy-policy.html">${ic('shield')}<span class="tx">Gizlilik Politikası</span>${chev}</a>
           <button data-help>${ic('help')}<span class="tx">Yardım ve Destek</span>${chev}</button>

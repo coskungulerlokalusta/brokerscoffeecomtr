@@ -1,7 +1,7 @@
 // Yönetim paneli — Uygulama Stüdyosu: müşteri uygulamasının içeriğini düzenler,
 // değişiklikleri kaydetmeden önce telefon önizlemesinde canlı gösterir.
 (function () {
-  const S = { saved: null, draft: null, ordering: null, products: [], cats: [], tab: 'store', page: '/', audience: 'customer', open: null, pickerQ: {} };
+  const S = { saved: null, draft: null, ordering: null, products: [], cats: [], tab: 'guide', page: '/', audience: 'customer', open: null, pickerQ: {} };
   let root;
 
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -19,11 +19,11 @@
   }
 
   const TABS = [
-    ['store', '🏪', 'Mağaza'], ['slides', '🎞️', 'Slider'], ['offers', '🎁', 'Fırsatlar'], ['cats', '🗂️', 'Kategoriler'],
-    ['rails', '⭐', 'Raflar'], ['brand', '💛', 'Club & Hikaye'], ['contact', '📞', 'İletişim'], ['faq', '❓', 'SSS'], ['announce', '📢', 'Duyuru'],
+    ['guide', '🧭', 'Rehber'], ['layout', '🧩', 'Sayfa Düzeni'], ['store', '🏪', 'Mağaza'], ['slides', '🎞️', 'Slider'], ['offers', '🎁', 'Fırsatlar'], ['cats', '🗂️', 'Kategoriler'],
+    ['rails', '⭐', 'Raflar'], ['brand', '💛', 'Club & Hikaye'], ['contact', '📞', 'İletişim'], ['faq', '❓', 'SSS'], ['announce', '📢', 'Duyuru'], ['pages', '📄', 'Sayfalar'],
   ];
   const PAGES = [['/', 'Anasayfa'], ['/siparis.html', 'Sipariş Ver'], ['/menu.html', 'Menü'], ['/club.html', 'Club'], ['/diger.html', 'Diğer']];
-  const TAB_PAGE = { store: '/siparis.html', slides: '/', offers: '/club.html#firsatlar', cats: '/siparis.html', rails: '/', brand: '/club.html', contact: '/diger.html', faq: '/diger.html', announce: '/' };
+  const TAB_PAGE = { guide: '/', layout: '/', pages: '/diger.html', store: '/siparis.html', slides: '/', offers: '/club.html#firsatlar', cats: '/siparis.html', rails: '/', brand: '/club.html', contact: '/diger.html', faq: '/diger.html', announce: '/' };
   const THEMES = [['navy', '#0d1b3d'], ['gold', '#f5c542'], ['cream', '#f1ece0'], ['dark', '#111']];
   const TONES = [['gold', '#f5c542'], ['navy', '#0d1b3d'], ['red', '#e3262f'], ['green', '#16a34a']];
   const AUD = [['both', 'Herkes'], ['customer', 'Sadece müşteri'], ['staff', 'Sadece personel']];
@@ -87,8 +87,110 @@
     offers: () => ({ id: uid(), active: true, audience: 'both', group: 'Fırsatlar', badge: 'HEDİYE', title: 'Yeni fırsat', description: '', image: '', link: '/siparis.html', expiresAt: null }),
     rails: () => ({ id: uid(), active: true, audience: 'both', title: 'Yeni raf', subtitle: '', productIds: [] }),
     faq: () => ({ q: 'Yeni soru?', a: '' }),
+    quick: () => ({ id: uid(), active: true, icon: '✨', label: 'Yeni kutu', link: '/menu.html' }),
+    moreLinks: () => ({ id: uid(), active: true, icon: '🔗', title: 'Yeni bağlantı', link: '/' }),
+    pages: () => ({ id: uid(), active: true, inMore: true, icon: '📄', slug: 'sayfa-' + uid().slice(0, 4), title: 'Yeni sayfa', subtitle: '', image: '', body: '' }),
   };
+  // Sunucudaki ile aynı kural: Türkçe harfler sadeleşir, küçük harf ve tire
+  const slugify = (v) => String(v || '').toLocaleLowerCase('tr').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sayfa';
   const imgThumb = (u) => (u ? `<img src="${esc(u)}" alt="" onerror="this.remove()"/>` : '🖼️');
+
+  // ---------- Bölüm tanımları ----------
+  const SECTION_META = {
+    hello: { ic: '👋', t: 'Karşılama ve ana başlık', d: 'Günaydın + marka sloganı + sipariş durumu', tab: 'brand' },
+    slider: { ic: '🎞️', t: 'Slider', d: 'Kayan büyük kampanya görselleri', tab: 'slides' },
+    quick: { ic: '⚡', t: 'Hızlı erişim kutuları', d: 'Kısayol kutuları — aşağıdan düzenle' },
+    club: { ic: '💛', t: 'Club kartı', d: 'Puan / üyelik daveti', tab: 'brand' },
+    offers: { ic: '🎁', t: 'Fırsatlar şeridi', d: 'Fırsat kartları (yana kayar)', tab: 'offers' },
+    rails: { ic: '⭐', t: 'Ürün rafları', d: 'Cazip Teklifler, En Sevilenler…', tab: 'rails' },
+    categories: { ic: '🗂️', t: 'Kategori kartları', d: 'Menüyü keşfet ızgarası', tab: 'cats' },
+    about: { ic: '📖', t: 'Hikayemiz', d: 'Görsel + hikaye metni', tab: 'brand' },
+    store: { ic: '📍', t: 'Mağaza kartı', d: 'Adres, açık/kapalı, yol tarifi, ara', tab: 'store' },
+    orders: { ic: '🧾', t: 'Geçmiş siparişlerim', d: 'Tek dokunuşla tekrar sipariş' },
+  };
+
+  function guideHtml() {
+    const d = S.draft;
+    const n = (arr) => (arr || []).length;
+    const stat = (big, lbl, tab) => `<button class="st-stat" data-act="tab" data-v="${tab}"><b>${big}</b><span>${lbl}</span></button>`;
+    const cap = { edit: '✏️ Düzenlenir', add: '➕ Eklenir / silinir', sort: '↕️ Sıralanır', hide: '👁️ Gizlenir', aud: '🎯 Müşteri / personel', img: '🖼️ Görsel yüklenir', no: '🔒 Sabit' };
+    const chips = (list) => list.map((k) => `<span class="st-cap ${k === 'no' ? 'no' : ''}">${cap[k]}</span>`).join('');
+    const go = (tab, label) => `<button class="st-btn st-btn-line st-btn-sm" data-act="tab" data-v="${tab}">${label || 'Düzenle'} →</button>`;
+    const goAdmin = (sec, label) => `<button class="st-btn st-btn-line st-btn-sm" data-act="goto" data-v="${sec}">${label} ↗</button>`;
+    const item = (ic, title, desc, caps, btn) => `<div class="st-g-item"><div class="st-g-ic">${ic}</div><div style="flex:1;min-width:0"><b>${title}</b><p>${desc}</p><div class="st-caps">${chips(caps)}</div></div><div>${btn || ''}</div></div>`;
+    const page = (emoji, title, url, items) => `<div class="st-g-page"><div class="st-g-head"><span>${emoji}</span><div><h4>${title}</h4><small>${url}</small></div>
+      <button class="st-btn st-btn-gold st-btn-sm" data-act="page" data-v="${url}" style="margin-left:auto">📱 Göster</button></div>${items.join('')}</div>`;
+
+    return `<div class="st-guide">
+      <div class="st-g-hero"><div><span class="st-g-kicker">KONTROL SENDE</span><h3>Sitenin neredeyse her köşesi buradan yönetiliyor</h3>
+        <p>Kod bilmeden: görsel yükle, kampanya ekle, bölümleri sırala, sayfa oluştur. Sağdaki telefonda anında gör, <b>Yayınla</b> ile canlıya al.</p></div>
+        <div class="st-stats">${stat(n(d.slides), 'slayt', 'slides')}${stat(n(d.offers), 'fırsat', 'offers')}${stat(n(d.rails), 'ürün rafı', 'rails')}${stat(S.cats.length, 'kategori', 'cats')}${stat(n(d.pages), 'özel sayfa', 'pages')}${stat(S.products.length, 'ürün', 'guide')}</div></div>
+
+      <div class="st-legend">${Object.values(cap).map((c, i) => `<span class="st-cap ${i === 6 ? 'no' : ''}">${c}</span>`).join('')}</div>
+
+      <h3 class="st-g-title">📱 Müşterinin gördüğü sayfalar</h3>
+      <div class="st-g-grid">
+      ${page('🏠', 'Anasayfa', '/', [
+        item('🧩', 'Bölüm sırası', '9 bölümün yerini değiştir, istemediğini gizle.', ['sort', 'hide'], go('layout')),
+        item('🎞️', 'Slider', 'En fazla 12 slayt: görsel, başlık, buton, renk.', ['add', 'sort', 'img', 'aud'], go('slides')),
+        item('⚡', 'Hızlı erişim kutuları', 'En fazla 8 kısayol, emoji ikonlu.', ['add', 'sort', 'edit'], go('layout')),
+        item('⭐', 'Ürün rafları', 'En fazla 10 raf, her rafta 30 ürün seç.', ['add', 'sort', 'aud'], go('rails')),
+        item('📖', 'Hikayemiz + marka sloganı', 'Görsel, başlık, metin.', ['edit', 'img'], go('brand')),
+        item('📢', 'Duyuru bandı', 'Tüm sayfaların üstünde renkli bant.', ['edit', 'hide', 'aud'], go('announce')),
+      ])}
+      ${page('🛵', 'Sipariş Ver', '/siparis.html', [
+        item('🏪', 'Mağaza kartı & sipariş durumu', 'Adres, saatler, Açık / Saatlere göre / Kapalı.', ['edit'], go('store')),
+        item('🗂️', 'Kategori kartları', 'Her kategoriye görsel, "YENİ" rozeti, gizle.', ['edit', 'img', 'hide'], go('cats')),
+        item('🧩', 'Bölüm sırası', 'Mağaza, slider, geçmiş siparişler, kategoriler.', ['sort', 'hide'], go('layout')),
+      ])}
+      ${page('💛', 'Club & Fırsatlar', '/club.html', [
+        item('🎁', 'Fırsat kartları', 'En fazla 40 kart; rozet, filtre grubu, bitiş tarihi.', ['add', 'sort', 'img', 'aud'], go('offers')),
+        item('🏆', 'Ödüller ve puanlar', 'Ödül ekle/sil, puan değerleri, aylık kademeler.', ['add', 'edit'], goAdmin('loyalty', 'Sadakat Programı')),
+        item('💬', 'Club metinleri', 'Başlık ve açıklama.', ['edit'], go('brand')),
+      ])}
+      ${page('☕', 'Menü & Ürünler', '/menu.html', [
+        item('☕', 'Ürünler', 'Ürün ekle/sil, fiyat, boy, fotoğraf, açıklama, toplu fiyat.', ['add', 'edit', 'img', 'sort'], goAdmin('products', 'Ürün Yönetimi')),
+        item('🗂️', 'Kategori sırası', 'Kategorilerin menüdeki sırası.', ['sort'], goAdmin('products', 'Ürün Yönetimi')),
+        item('👔', 'Personel / müşteri görünürlüğü', 'Kategori ve ürünleri kişi tipine göre gizle, personel indirimleri.', ['hide', 'aud'], goAdmin('order-settings', 'Sipariş Ayarları')),
+      ])}
+      ${page('•••', 'Diğer', '/diger.html', [
+        item('📄', 'Kendi sayfaların', 'Şubeler, Kariyer, Etkinlik… en fazla 20 sayfa.', ['add', 'edit', 'img', 'sort'], go('pages')),
+        item('🔗', 'Menü bağlantıları', 'Google yorum, Instagram, rezervasyon… en fazla 12.', ['add', 'sort'], go('layout')),
+        item('❓', 'SSS (Yardım)', 'Soru-cevaplar, en fazla 30.', ['add', 'sort', 'edit'], go('faq')),
+        item('📞', 'İletişim & sosyal medya', 'Telefon, WhatsApp, 5 sosyal ağ.', ['edit'], go('contact')),
+      ])}
+      ${page('🛒', 'Sepet & Ödeme', '/cart.html', [
+        item('💳', 'Ödeme yöntemleri, kurye ücreti', 'Kart, mağazada öde, yemek kartları, teslimat eşiği.', ['edit'], goAdmin('order-settings', 'Sipariş Ayarları')),
+        item('🏷️', 'İndirim kampanyaları', 'Yüzde/tutar indirimleri ve personel duyurusu.', ['add', 'edit'], goAdmin('campaigns', 'Kampanyalar')),
+        item('🔒', 'Sayfa tasarımı', 'Sepet ve ödeme ekranının düzeni.', ['no']),
+      ])}
+      </div>
+
+      <h3 class="st-g-title">🖼️ Görsel ölçüleri (en iyi sonuç için)</h3>
+      <div class="st-sizes">
+        ${[['🎞️', 'Slider', '1600 × 900', '16:9 yatay'], ['🎁', 'Fırsat kartı', '1200 × 750', '16:10 yatay'], ['🗂️', 'Kategori kartı', '800 × 600', '4:3'], ['☕', 'Ürün fotoğrafı', '1000 × 1000', 'kare'], ['📖', 'Hikayemiz', '1600 × 900', '16:9'], ['📄', 'Sayfa kapağı', '1600 × 600', 'geniş yatay']].map(([ic, t, px, r]) => `<div class="st-size"><span>${ic}</span><b>${t}</b><strong>${px}</strong><small>${r}</small></div>`).join('')}
+      </div>
+      <p class="st-help" style="margin-top:8px">JPG, PNG veya WEBP · en fazla 5 MB · ürünün ortada olduğu, sade arka planlı fotoğraflar en şık sonucu verir.</p>
+
+      <h3 class="st-g-title">🧪 Hazır tarifler</h3>
+      <div class="st-recipes">
+        <div class="st-recipe"><b>☀️ Yaz kampanyası duyur</b><ol><li>Fırsatlar → kart ekle, rozet "%20", bitiş tarihi seç</li><li>Slider → aynı kampanyaya slayt ekle</li><li>Duyuru bandını aç</li><li>Yayınla 🚀</li></ol></div>
+        <div class="st-recipe"><b>🆕 Yeni ürün lansmanı</b><ol><li>Ürün Yönetimi → ürünü ekle</li><li>Kategoriler → rozet "YENİ"</li><li>Raflar → ürünü en başa koy</li><li>Yayınla 🚀</li></ol></div>
+        <div class="st-recipe"><b>⛔ Yoğunluk / tatil</b><ol><li>Mağaza → "Kapalı"</li><li>Kapalı mesajını yaz</li><li>Yayınla — site sipariş almayı durdurur</li></ol></div>
+        <div class="st-recipe"><b>👔 Sadece personele duyuru</b><ol><li>Slider veya fırsatta "Sadece personel" seç</li><li>Sağ üstte "Personel gözüyle" ile kontrol et</li><li>Yayınla 🚀</li></ol></div>
+      </div>
+
+      <h3 class="st-g-title">🔒 Şimdilik panelden yapılamayanlar</h3>
+      <div class="st-cant">
+        <div>🧭 <b>Alt menüdeki 5 sekme</b> sabittir (Anasayfa, Club, Sipariş Ver, Menü, Diğer).</div>
+        <div>🎨 <b>Renkler ve yazı tipi</b> marka kimliğine göre sabittir.</div>
+        <div>⚖️ <b>Kullanım Koşulları / Gizlilik / KVKK</b> metinleri hukuki olduğu için kodda durur — değişiklik gerekirse yazılımcı günceller.</div>
+        <div>🛒 <b>Sepet ve ödeme ekranının düzeni</b> güvenlik için sabittir (içerikleri Sipariş Ayarları'ndan).</div>
+        <div>🏷️ <b>Kampanyalar (indirim kuralları)</b> fırsat kartlarına otomatik düşmez — duyurmak için Fırsatlar'a kart ekle.</div>
+        <div>🏪 <b>Eski "Şubelerimiz" ve "Blog" sayfaları</b> sabit; yerlerine <b>Sayfalar</b> sekmesinden yenisini oluşturabilirsin.</div>
+      </div>
+    </div>`;
+  }
 
   // ---------- Sekmeler ----------
   function storeStatus() {
@@ -172,6 +274,46 @@
     faq() {
       return `<div class="st-card"><h3>Sık sorulan sorular</h3><p class="st-help">Diğer → Yardım ve Destek ekranında gösterilir.</p>
         ${listEditor('faq', { titleOf: (x) => x.q, noActive: true, addLabel: 'Soru ekle', body: (i) => `${fText(['faq', i, 'q'], 'Soru', { full: true, max: 160 })}${fArea(['faq', i, 'a'], 'Cevap', { rows: 3 })}` })}</div>`;
+    },
+    guide() { return guideHtml(); },
+    layout() {
+      const row = (page, i, it, n) => {
+        const m = SECTION_META[it.key] || { ic: '▫️', t: it.key, d: '' };
+        return `<div class="st-item ${it.on ? '' : 'off'}"><div class="st-item-head" style="cursor:default">
+          <div class="st-thumb" style="font-size:22px">${m.ic}</div>
+          <div class="st-item-title"><b>${esc(m.t)}</b><small>${esc(m.d)}</small></div>
+          <div class="st-item-acts">
+            ${m.tab ? `<button class="st-btn st-btn-line st-btn-sm" data-act="tab" data-v="${m.tab}">İçerik ✏️</button>` : ''}
+            <span class="st-toggle" title="Göster/Gizle"><input type="checkbox" data-p="${P(['layout', page, i, 'on'])}" ${it.on ? 'checked' : ''} data-rerender/></span>
+            <button class="st-icon" data-act="lmove" data-page="${page}" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''}>▲</button>
+            <button class="st-icon" data-act="lmove" data-page="${page}" data-i="${i}" data-d="1" ${i === n - 1 ? 'disabled' : ''}>▼</button>
+          </div></div></div>`;
+      };
+      const block = (page, title, help) => {
+        const list = S.draft.layout[page];
+        return `<div class="st-card"><div class="st-row" style="margin-bottom:10px"><div><h3>${title}</h3><p class="st-help">${help}</p></div>
+          <button class="st-btn st-btn-line st-btn-sm" data-act="page" data-v="${page === 'home' ? '/' : '/siparis.html'}">Önizle 👉</button></div>
+          ${list.map((it, i) => row(page, i, it, list.length)).join('')}</div>`;
+      };
+      return `${block('home', 'Anasayfa bölümleri', 'Bölümleri oklarla sırala, anahtarla gizle/göster. Gizlenen bölümün içeriği silinmez, sadece görünmez.')}
+        ${block('siparis', 'Sipariş Ver bölümleri', 'Sipariş Ver ekranındaki bölümlerin sırası ve görünürlüğü.')}
+        <div class="st-card"><h3>Hızlı erişim kutuları</h3><p class="st-help">Anasayfadaki küçük kısayol kutuları (en fazla 8). Emoji ikon, yazı ve bağlantı seç.</p>
+          ${listEditor('quick', { titleOf: (x) => x.label, subOf: (x) => ' ' + (x.link || ''), thumbOf: (x) => `<span style="font-size:24px">${esc(x.icon || '☕')}</span>`, addLabel: 'Kutu ekle',
+            body: (i) => `${fText(['quick', i, 'icon'], 'İkon (emoji)', { ph: '☕', max: 8, help: 'Telefon klavyesindeki emoji: ☕ 🥐 🎁 ⭐ 🛵 🔥 🍰 🧋' })}${fText(['quick', i, 'label'], 'Yazı', { max: 24 })}${fLink(['quick', i, 'link'], 'Bağlantı')}` })}</div>
+        <div class="st-card"><h3>"Diğer" menüsüne bağlantı ekle</h3><p class="st-help">Örn: Google yorum sayfanız, Instagram, rezervasyon formu, menü PDF'i. Sayfalar sekmesinde oluşturduğun sayfalar da otomatik bu menüye eklenir.</p>
+          ${listEditor('moreLinks', { titleOf: (x) => x.title, subOf: (x) => ' ' + (x.link || ''), thumbOf: (x) => `<span style="font-size:24px">${esc(x.icon || '🔗')}</span>`, addLabel: 'Bağlantı ekle',
+            body: (i) => `${fText(['moreLinks', i, 'icon'], 'İkon (emoji)', { ph: '🔗', max: 8 })}${fText(['moreLinks', i, 'title'], 'Başlık', { max: 50 })}${fLink(['moreLinks', i, 'link'], 'Bağlantı (site içi veya https://…)')}` })}</div>`;
+    },
+    pages() {
+      return `<div class="st-card"><h3>Bilgi sayfaları</h3><p class="st-help">Kendi sayfanı oluştur: Şubelerimiz, Kariyer, Etkinlikler, Kampanya detayı, Alerjen bilgisi… "Diğer" menüsünde görünür, adresini slider/fırsat butonlarına da bağlayabilirsin.
+        <br/>Yazım: boş satır = yeni paragraf · <b>## Başlık</b> = ara başlık · <b>- madde</b> = liste · https://… = bağlantı</p>
+        ${listEditor('pages', { titleOf: (x) => x.title, subOf: (x) => ` /sayfa.html?s=${x.slug}${x.inMore === false ? ' · menüde gizli' : ''}`, thumbOf: (x) => (x.image ? imgThumb(x.image) : `<span style="font-size:24px">${esc(x.icon || '📄')}</span>`), addLabel: 'Sayfa oluştur',
+          body: (i, pg) => `${fText(['pages', i, 'title'], 'Sayfa başlığı', { max: 80 })}${fText(['pages', i, 'icon'], 'İkon (emoji)', { ph: '📄', max: 8 })}
+            ${fText(['pages', i, 'subtitle'], 'Kısa açıklama', { full: true, max: 160 })}${fImage(['pages', i, 'image'], 'Kapak görseli (opsiyonel, yatay)')}
+            ${fArea(['pages', i, 'body'], 'İçerik', { rows: 10, ph: 'İlk paragraf…\n\n## Ara başlık\n- madde 1\n- madde 2' })}
+            ${fText(['pages', i, 'slug'], 'Sayfa adresi', { help: 'brokerscoffee.com.tr/sayfa.html?s=<b>' + esc(pg.slug) + '</b> — küçük harf, tire' })}
+            ${fToggle(['pages', i, 'inMore'], '"Diğer" menüsünde göster')}
+            <div class="full"><button class="st-btn st-btn-gold st-btn-sm" data-act="pagepreview" data-i="${i}">📱 Telefonda önizle</button></div>` })}</div>`;
     },
     announce() {
       return `<div class="st-card"><h3>Duyuru bandı</h3><p class="st-help">Tüm uygulama sayfalarının en üstünde ince bir bant. Örn: "Bugün tüm soğuk kahvelerde %20 indirim!"</p><div class="st-grid">
@@ -267,6 +409,9 @@
       case 'up': if (i > 0) { [list[i - 1], list[i]] = [list[i], list[i - 1]]; S.open = null; } break;
       case 'down': if (i < list.length - 1) { [list[i + 1], list[i]] = [list[i], list[i + 1]]; S.open = null; } break;
       case 'mode': S.draft.store.mode = b.dataset.v; break;
+      case 'pagepreview': { const pg = S.draft.pages[i]; pg.slug = slugify(pg.slug || pg.title); const inp = [...root.querySelectorAll('[data-p]')].find((x) => x.dataset.p === JSON.stringify(['pages', i, 'slug'])); if (inp) inp.value = pg.slug; changed(); goPage('/sayfa.html?s=' + encodeURIComponent(pg.slug)); return; }
+      case 'lmove': { const l = S.draft.layout[b.dataset.page]; const d = Number(b.dataset.d); const j = i + d; if (l[j]) [l[i], l[j]] = [l[j], l[i]]; break; }
+      case 'goto': { const btn = document.querySelector(`.sidebar-link[data-section="${b.dataset.v}"]`); if (btn) { btn.click(); window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
       case 'swatch': set(JSON.parse(b.dataset.path), b.dataset.v); break;
       case 'badge': { const p = JSON.parse(b.dataset.path); set(p, get(p) === b.dataset.v ? '' : b.dataset.v); break; }
       case 'clearimg': set(JSON.parse(b.dataset.path), ''); break;

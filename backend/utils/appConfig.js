@@ -7,6 +7,12 @@ const kv = require('./kvStore');
 const KEY = 'app_config';
 const AUDIENCES = ['both', 'customer', 'staff'];
 
+// Anasayfa ve Sipariş Ver ekranındaki bölümler — panelden sırası değiştirilir, açılıp kapatılır
+const LAYOUT_KEYS = {
+  home: ['hello', 'slider', 'quick', 'club', 'offers', 'rails', 'categories', 'about', 'store'],
+  siparis: ['store', 'slider', 'orders', 'categories'],
+};
+
 const DEFAULTS = {
   brand: {
     name: 'Brokers Coffee',
@@ -72,6 +78,18 @@ const DEFAULTS = {
     email: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', x: '',
   },
+  layout: {
+    home: LAYOUT_KEYS.home.map((key) => ({ key, on: true })),
+    siparis: LAYOUT_KEYS.siparis.map((key) => ({ key, on: true })),
+  },
+  quick: [
+    { id: 'q1', active: true, icon: '🛵', label: 'Sipariş Ver', link: '/siparis.html' },
+    { id: 'q2', active: true, icon: '🎁', label: 'Fırsatlar', link: '/club.html#firsatlar' },
+    { id: 'q3', active: true, icon: '☕', label: 'Menü', link: '/menu.html' },
+    { id: 'q4', active: true, icon: '⭐', label: 'Club', link: '/club.html' },
+  ],
+  moreLinks: [], // Diğer menüsüne eklenen özel bağlantılar
+  pages: [], // Panelden oluşturulan bilgi sayfaları (/sayfa.html?s=slug)
   faq: [
     { q: 'Siparişim ne kadar sürede hazırlanır?', a: 'Siparişler ortalama 10-15 dakikada hazırlanır. Kurye siparişlerinde teslim süresi mesafeye göre değişir.' },
     { q: 'Kurye ücreti var mı?', a: '750 TL ve üzeri siparişlerde kurye ücretsizdir.' },
@@ -170,6 +188,38 @@ function sanitize(input) {
     youtube: link(ct.youtube), x: link(ct.x),
   };
 
+  const lay = src.layout || {};
+  d.layout = {};
+  Object.keys(LAYOUT_KEYS).forEach((pageKey) => {
+    const known = LAYOUT_KEYS[pageKey];
+    const seen = new Set();
+    const list = (Array.isArray(lay[pageKey]) ? lay[pageKey] : [])
+      .filter((x) => x && known.includes(x.key) && !seen.has(x.key) && seen.add(x.key))
+      .map((x) => ({ key: x.key, on: x.on !== false }));
+    known.forEach((key) => { if (!seen.has(key)) list.push({ key, on: true }); });
+    d.layout[pageKey] = list;
+  });
+
+  d.quick = (Array.isArray(src.quick) ? src.quick : []).slice(0, 8).map((x) => ({
+    id: id(x.id), active: x.active !== false, icon: str(x.icon, 8), label: str(x.label, 24), link: link(x.link),
+  }));
+  d.moreLinks = (Array.isArray(src.moreLinks) ? src.moreLinks : []).slice(0, 12).map((x) => ({
+    id: id(x.id), active: x.active !== false, icon: str(x.icon, 8), title: str(x.title, 50), link: link(x.link),
+  }));
+  const slugs = new Set();
+  d.pages = (Array.isArray(src.pages) ? src.pages : []).slice(0, 20).map((x) => {
+    let slug = str(x.slug || x.title, 60).toLocaleLowerCase('tr')
+      .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sayfa';
+    let n = 2; const base = slug;
+    while (slugs.has(slug)) slug = `${base}-${n++}`;
+    slugs.add(slug);
+    return {
+      id: id(x.id), active: x.active !== false, inMore: x.inMore !== false, icon: str(x.icon, 8),
+      slug, title: str(x.title, 80), subtitle: str(x.subtitle, 160), image: imageUrl(x.image), body: str(x.body, 8000),
+    };
+  });
+
   d.faq = (Array.isArray(src.faq) ? src.faq : []).slice(0, 30)
     .map((x) => ({ q: str(x.q, 160), a: str(x.a, 800) }))
     .filter((x) => x.q);
@@ -222,6 +272,9 @@ function forAudience(config, isStaff) {
   out.slides = out.slides.filter(visible);
   out.offers = out.offers.filter((o) => visible(o) && (!o.expiresAt || new Date(o.expiresAt) > new Date()));
   out.rails = out.rails.filter(visible);
+  out.quick = out.quick.filter((x) => x.active !== false);
+  out.moreLinks = out.moreLinks.filter((x) => x.active !== false);
+  out.pages = out.pages.filter((x) => x.active !== false);
   if (!visible(out.announcement) || !out.announcement.text) out.announcement = { active: false, text: '' };
   return out;
 }

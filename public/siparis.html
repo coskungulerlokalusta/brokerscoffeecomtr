@@ -42,27 +42,30 @@
     else if (!orders || !orders.length) past = '<p class="bc-empty">Henüz bir siparişiniz bulunmamaktadır.</p>';
     else past = `<div class="bc-orders">${orders.slice(0, 8).map(orderCard).join('')}</div>`;
 
+    // Bölümler: yönetim panelindeki "Sayfa Düzeni"ne göre sıralanır ve açılıp kapatılır
+    const SECTIONS = {
+      store: () => `<section class="bc-sec bc-reveal">${BC.storeCard()}</section>`,
+      slider: () => (slides.length ? `<section class="bc-sec bc-carousel" id="hero"><div class="bc-track">${slides.map(BC.slide).join('')}</div><div class="bc-dots"></div></section>` : ''),
+      orders: () => `<section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><h2 class="bc-h2">Geçmiş Siparişlerim</h2>${me && orders && orders.length ? `<a class="bc-link" href="/orders.html">Tümü ${I.arrow}</a>` : ''}</div>
+          ${past}</section>`,
+      categories: () => `<section class="bc-sec bc-reveal">
+          <div class="bc-search" style="margin-bottom:16px">${I.search}<input id="q" type="search" placeholder="Ne canın çekiyor? Latte, kruvasan…" autocomplete="off"/></div>
+          <div id="catwrap">${BC.categoryGrid(cats)}</div></section>`,
+    };
+
     document.getElementById('bc-root').innerHTML = `
       ${BC.bars()}
       ${BC.topbar({ title: 'Sipariş Ver' })}
       <main class="bc-wrap">
-        <section class="bc-sec bc-reveal">${BC.storeCard()}</section>
-        ${slides.length ? `<section class="bc-sec bc-carousel" id="hero"><div class="bc-track">${slides.map(BC.slide).join('')}</div><div class="bc-dots"></div></section>` : ''}
-        <section class="bc-sec bc-reveal">
-          <div class="bc-sec-head"><h2 class="bc-h2">Geçmiş Siparişlerim</h2>${me && orders && orders.length ? `<a class="bc-link" href="/orders.html">Tümü ${I.arrow}</a>` : ''}</div>
-          ${past}
-        </section>
-        <section class="bc-sec bc-reveal">
-          <div class="bc-search" style="margin-bottom:16px">${I.search}<input id="q" type="search" placeholder="Ne canın çekiyor? Latte, kruvasan…" autocomplete="off"/></div>
-          <div id="catwrap">${BC.categoryGrid(cats)}</div>
-        </section>
+        ${BC.layout('siparis').map((k) => (SECTIONS[k] ? SECTIONS[k]() : '')).join('')}
         ${BC.footer()}
       </main>`;
 
     BC.carousel(document.getElementById('hero'));
     BC.reveal();
     const q = document.getElementById('q');
-    q.addEventListener('input', () => {
+    if (q) q.addEventListener('input', () => {
       const t = q.value.trim().toLocaleLowerCase('tr');
       const wrap = document.getElementById('catwrap');
       if (!t) { wrap.innerHTML = BC.categoryGrid(cats); return; }

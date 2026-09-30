@@ -292,7 +292,7 @@
     return `<footer class="bc-foot">
       ${socials ? `<div class="bc-social">${socials}</div>` : ''}
       ${c.phone ? `<a class="bc-phone" href="tel:${esc(tel)}">${I.phone}<span>${esc(c.phone)}</span></a>` : ''}
-      <div class="bc-foot-links"><a href="/terms.html">Kullanım Koşulları</a><a href="/privacy-policy.html">Gizlilik Politikası</a><a href="/contact.html">İletişim</a><a href="/subeler.html">Şubelerimiz</a></div>
+      <div class="bc-foot-links"><a href="/terms.html">Kullanım Koşulları</a><a href="/privacy-policy.html">Gizlilik Politikası</a><a href="/contact.html">İletişim</a><a href="${(((BC.state.config && BC.state.config.pages) || []).some((x) => x.slug === 'subelerimiz')) ? '/sayfa.html?s=subelerimiz' : '/subeler.html'}">Şubelerimiz</a></div>
       <div class="bc-copy">© ${new Date().getFullYear()} ${esc((BC.state.config && BC.state.config.brand && BC.state.config.brand.name) || 'Brokers Coffee')}</div>
     </footer>`;
   };
@@ -319,6 +319,29 @@
     return `<a class="bc-offer ${mini ? 'bc-offer-mini' : ''}" href="${esc(o.link || '/siparis.html')}">
       <div class="ph">${BC.imgTag(o.image, o.title)}</div>${tag}${o.badge ? `<span class="badge">${esc(o.badge)}</span>` : ''}
       <div class="bd"><h3>${esc(o.title)}</h3>${o.description && !mini ? `<p>${esc(o.description)}</p>` : ''}</div></a>`;
+  };
+
+  // Sayfa düzeni: panelde açık olan bölümlerin anahtarları, panelde belirlenen sırayla
+  const LAYOUT_DEFAULT = {
+    home: ['hello', 'slider', 'quick', 'club', 'offers', 'rails', 'categories', 'about', 'store'],
+    siparis: ['store', 'slider', 'orders', 'categories'],
+  };
+  BC.layout = (page) => {
+    const l = BC.state.config && BC.state.config.layout && BC.state.config.layout[page];
+    if (!Array.isArray(l) || !l.length) return LAYOUT_DEFAULT[page] || [];
+    const keys = l.filter((x) => x.on !== false).map((x) => x.key);
+    // panelde henüz bilinmeyen yeni bölümler varsayılan olarak açık gelsin
+    (LAYOUT_DEFAULT[page] || []).forEach((k) => { if (!l.some((x) => x.key === k)) keys.push(k); });
+    return keys;
+  };
+
+  // Hızlı erişim kutuları (panelden eklenir, sıralanır)
+  BC.quickTiles = () => {
+    const q = ((BC.state.config && BC.state.config.quick) || []).filter((x) => x.active !== false && x.label);
+    if (!q.length) return '';
+    const cols = Math.min(4, q.length);
+    return `<section class="bc-sec bc-reveal"><div class="bc-quick" style="grid-template-columns:repeat(${cols},1fr)">${q.map((x) =>
+      `<a href="${esc(x.link || '/')}"><span class="ic" style="font-size:24px">${esc(x.icon || '☕')}</span>${esc(x.label)}</a>`).join('')}</div></section>`;
   };
 
   // Mağaza kartı (adres, durum, yol tarifi, arama)
