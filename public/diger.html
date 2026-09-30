@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Diğer | Brokers Coffee</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f7f5f0"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="bc">
+<div id="bc-root"></div>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const { esc, icons: I } = BC;
+  const chev = I.chev.replace('<svg', '<svg class="chev"');
+  const ic = (k) => I[k].replace('<svg', '<svg class="ic"');
+  const ART = `<svg class="art" viewBox="0 0 150 120" aria-hidden="true">
+    <ellipse cx="78" cy="110" rx="66" ry="7" fill="#e9e5dc"/>
+    <path d="M20 44h56l-7 56a9 9 0 0 1-9 8H36a9 9 0 0 1-9-8l-7-56Z" fill="#fff" stroke="#e3dfd5" stroke-width="2"/>
+    <rect x="16" y="36" width="64" height="11" rx="5.5" fill="#0d1b3d"/><path d="M48 36V14" stroke="#e3dfd5" stroke-width="5" stroke-linecap="round"/>
+    <text x="48" y="84" text-anchor="middle" font-family="Playfair Display, serif" font-weight="700" font-size="26" fill="#d9a927">B</text>
+    <path d="M78 96c4-22 22-36 44-34 10 1 18 8 20 18 2 12-6 22-20 24l-38 2c-4 0-7-4-6-10Z" fill="#f5c542"/>
+    <path d="M86 90c6-12 16-20 30-20M96 98c6-10 14-15 26-15M108 101c5-6 10-9 20-9" stroke="#d9a927" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+
+  function render() {
+    const me = BC.state.me; const c = BC.state.config || {};
+    document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar()}
+      <main class="bc-wrap">
+        <div class="bc-pagehead"><h1 class="bc-h1" style="font-size:44px">Diğer</h1>${ART}</div>
+        <nav class="bc-list bc-reveal" aria-label="Diğer">
+          <a href="${me ? '/account.html' : '/login.html'}">${ic('user')}<span class="tx">Hesabım${me ? `<small>${esc(me.name)}</small>` : '<small>Giriş yap veya üye ol</small>'}</span>${chev}</a>
+          ${me ? `<a href="/orders.html">${ic('receipt')}<span class="tx">Siparişlerim</span>${chev}</a>` : ''}
+          <a href="/club.html">${ic('star')}<span class="tx">Brokers Club</span>${chev}</a>
+          <button data-about>${ic('info')}<span class="tx">Hakkımızda</span>${chev}</button>
+          <a href="/contact.html">${ic('mail')}<span class="tx">Bize Ulaşın</span>${chev}</a>
+          <a href="/subeler.html">${ic('store')}<span class="tx">Şubelerimiz</span>${chev}</a>
+          <a href="/blog.html">${ic('blog')}<span class="tx">Blog</span>${chev}</a>
+          <a href="/terms.html">${ic('doc')}<span class="tx">Şartlar ve Koşullar</span>${chev}</a>
+          <a href="/privacy-policy.html">${ic('shield')}<span class="tx">Gizlilik Politikası</span>${chev}</a>
+          <button data-help>${ic('help')}<span class="tx">Yardım ve Destek</span>${chev}</button>
+          ${me ? `<button data-logout>${ic('logout')}<span class="tx" style="color:#b42318">Çıkış yap</span></button>` : ''}
+        </nav>
+        ${BC.footer()}
+      </main>`;
+    BC.reveal();
+  }
+
+  document.addEventListener('click', async (e) => {
+    const c = BC.state.config || {};
+    if (e.target.closest('[data-about]')) {
+      const a = c.about || {};
+      BC.sheet(`${a.image ? `<div style="border-radius:22px;overflow:hidden;aspect-ratio:16/9;margin-bottom:16px">${BC.imgTag(a.image, a.title)}</div>` : ''}
+        <span class="bc-eyebrow">Hikayemiz</span><h2 class="bc-h2" style="margin:6px 0 10px">${esc(a.title || 'Brokers Coffee')}</h2>
+        <p style="line-height:1.65;color:#3b3f4a">${esc(a.text || '')}</p><div style="margin-top:18px">${BC.storeCard()}</div>`);
+    }
+    if (e.target.closest('[data-help]')) {
+      const wa = c.contact && c.contact.whatsapp;
+      BC.sheet(`<h2 class="bc-h2" style="margin-bottom:6px">Yardım ve Destek</h2><p class="bc-muted">Sık sorulan sorular</p>
+        <div class="bc-faq">${(c.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</div>
+        ${wa ? `<a class="bc-btn bc-btn-navy" style="width:100%;margin-top:18px" target="_blank" rel="noopener" href="https://wa.me/${esc(wa)}">WhatsApp'tan yaz</a>` : ''}`);
+    }
+    if (e.target.closest('[data-logout]')) {
+      await fetch('/api/account/logout', { method: 'POST' }).catch(() => {});
+      location.href = '/';
+    }
+  });
+
+  BC.onChange(render);
+  BC.load(['me', 'content']).then(render);
+})();
+</script>
+</body>
+</html>

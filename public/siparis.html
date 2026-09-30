@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Sipariş Ver | Brokers Coffee</title>
+<meta name="description" content="Brokers Coffee online sipariş: kahveler, kruvasanlar ve tatlılar. Gel-al veya kurye ile."/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f7f5f0"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="bc">
+<div id="bc-root"><div class="bc-wrap" style="padding-top:18px"><div class="bc-skel" style="height:140px;margin-bottom:16px"></div><div class="bc-skel" style="height:260px"></div></div></div>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const { esc, icons: I } = BC;
+  let orders = null;
+
+  function orderCard(o) {
+    const d = new Date(o.createdAt);
+    const items = (o.items || []).map((i) => `${i.qty}× ${i.name}${i.size ? ' (' + i.size + ')' : ''}`).join(', ');
+    return `<div class="bc-order"><span class="dt">${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })} · ${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+      <span class="it">${esc(items)}</span>
+      <div class="ft"><span class="bc-price">${BC.money(o.total)}</span><button class="bc-btn bc-btn-gold bc-btn-sm" data-reorder="${esc(o.id)}">↻ Tekrarla</button></div></div>`;
+  }
+
+  function render() {
+    const c = BC.state.config || {};
+    const me = BC.state.me;
+    const cats = BC.visibleCategories();
+    const slides = c.slides || [];
+    let past;
+    if (!me) past = `<p class="bc-empty">Geçmiş siparişlerini görmek için <a class="bc-link" href="/login.html">giriş yap</a>.</p>`;
+    else if (!orders || !orders.length) past = '<p class="bc-empty">Henüz bir siparişiniz bulunmamaktadır.</p>';
+    else past = `<div class="bc-orders">${orders.slice(0, 8).map(orderCard).join('')}</div>`;
+
+    document.getElementById('bc-root').innerHTML = `
+      ${BC.bars()}
+      ${BC.topbar({ title: 'Sipariş Ver' })}
+      <main class="bc-wrap">
+        <section class="bc-sec bc-reveal">${BC.storeCard()}</section>
+        ${slides.length ? `<section class="bc-sec bc-carousel" id="hero"><div class="bc-track">${slides.map(BC.slide).join('')}</div><div class="bc-dots"></div></section>` : ''}
+        <section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><h2 class="bc-h2">Geçmiş Siparişlerim</h2>${me && orders && orders.length ? `<a class="bc-link" href="/orders.html">Tümü ${I.arrow}</a>` : ''}</div>
+          ${past}
+        </section>
+        <section class="bc-sec bc-reveal">
+          <div class="bc-search" style="margin-bottom:16px">${I.search}<input id="q" type="search" placeholder="Ne canın çekiyor? Latte, kruvasan…" autocomplete="off"/></div>
+          <div id="catwrap">${BC.categoryGrid(cats)}</div>
+        </section>
+        ${BC.footer()}
+      </main>`;
+
+    BC.carousel(document.getElementById('hero'));
+    BC.reveal();
+    const q = document.getElementById('q');
+    q.addEventListener('input', () => {
+      const t = q.value.trim().toLocaleLowerCase('tr');
+      const wrap = document.getElementById('catwrap');
+      if (!t) { wrap.innerHTML = BC.categoryGrid(cats); return; }
+      const hits = (BC.state.products || []).filter((p) => (p.name + ' ' + (p.description || '') + ' ' + (p.subcategory || p.category)).toLocaleLowerCase('tr').includes(t));
+      wrap.innerHTML = hits.length ? `<div class="bc-plist">${hits.map(BC.productRow).join('')}</div>` : '<p class="bc-empty">Aradığın ürünü bulamadık.</p>';
+    });
+  }
+
+  // Geçmiş siparişi sepete tekrar ekler (güncel fiyatlarla, menüden kalkmış ürünleri atlayarak)
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-reorder]');
+    if (!b) return;
+    const o = (orders || []).find((x) => x.id === b.dataset.reorder);
+    if (!o) return;
+    let added = 0; let skipped = 0;
+    (o.items || []).forEach((i) => {
+      const p = (BC.state.products || []).find((x) => x.id === i.productId);
+      const size = p && (p.sizes.find((s) => (s.label || null) === (i.size || null)) || null);
+      if (!p || !size) { skipped++; return; }
+      const shot = i.extraShot ? ((BC.state.settings && BC.state.settings.extraShotPrice) || 0) : 0;
+      addToCart({ productId: p.id, name: p.name, price: size.price + shot, size: size.label || null, extras: [], intensity: i.intensity || 'normal', extraShot: !!i.extraShot, note: i.note || '', sugar: i.sugar || null, qty: i.qty || 1 });
+      added++;
+    });
+    BC.toast(added ? `${added} ürün sepete eklendi${skipped ? ` (${skipped} ürün artık menüde yok)` : ''}` : 'Bu siparişteki ürünler artık menüde yok');
+  });
+
+  BC.onChange(render);
+  BC.load(['products', 'categories', 'me', 'content', 'settings']).then(async () => {
+    if (BC.state.me) orders = await BC.getJSON('/api/account/orders').catch(() => []);
+    render();
+    if (location.hash) setTimeout(() => { const el = document.querySelector(location.hash); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 200);
+  });
+})();
+</script>
+</body>
+</html>

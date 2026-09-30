@@ -10,6 +10,7 @@ const multinet = require('../utils/multinet');
 const pluxee = require('../utils/pluxee');
 const crypto = require('crypto');
 const { calculateDiscount } = require('../utils/discountCalc');
+const { requireOrderingOpen } = require('../utils/appConfig');
 
 const SITE_DOMAIN = process.env.SITE_DOMAIN || 'brokerscoffee.com.tr';
 const SITE_BASE_URL = process.env.SITE_BASE_URL || `https://${SITE_DOMAIN}`;
@@ -24,7 +25,7 @@ router.post('/preview-discount', customerAuth.attachCustomerIfPresent, async (re
 });
 
 // Sipariş oluştur + Paynet ödemesi başlat (güvenli checkout token akışı)
-router.post('/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
+router.post('/init', requireOrderingOpen, customerAuth.attachCustomerIfPresent, async (req, res) => {
   const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
@@ -123,7 +124,7 @@ router.post('/callback', async (req, res) => {
 });
 
 // Sipariş oluştur + Multinet 3D ödeme başlat
-router.post('/multinet/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
+router.post('/multinet/init', requireOrderingOpen, customerAuth.attachCustomerIfPresent, async (req, res) => {
   const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {
@@ -217,7 +218,7 @@ router.get('/multinet/callback', async (req, res) => {
 
 // Pluxee ödemesi — 3D yönlendirmesi yok, müşteri telefon + Pluxee uygulamasından aldığı
 // OTP kodunu doğrudan sitede girer, ödeme senkron olarak burada tamamlanır.
-router.post('/pluxee/init', customerAuth.attachCustomerIfPresent, async (req, res) => {
+router.post('/pluxee/init', requireOrderingOpen, customerAuth.attachCustomerIfPresent, async (req, res) => {
   const { items, customerName, phone, deliveryType, address, orderIntensity, orderExtraShot, orderNote, useMonthlyTier, pluxeeGsm, pluxeeOtp } = req.body;
 
   if (!items || !items.length || !customerName || !phone || !deliveryType) {

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Menü | Brokers Coffee</title>
+<meta name="description" content="Brokers Coffee menüsü: sıcak ve soğuk kahveler, kruvasanlar, tatlılar."/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f7f5f0"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="bc">
+<div id="bc-root"><div class="bc-wrap" style="padding-top:18px"><div class="bc-skel" style="height:90px;margin-bottom:16px"></div><div class="bc-skel" style="height:420px"></div></div></div>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const { esc, icons: I } = BC;
+
+  function listView(cats) {
+    return `<div class="bc-pagehead"><h1 class="bc-h1">Menü</h1></div>
+      <div class="bc-search" style="margin-bottom:18px">${I.search}<input id="q" type="search" placeholder="Menüde ara…" autocomplete="off"/></div>
+      <div id="results">
+        <div class="bc-list">${cats.map((c) => {
+          const m = BC.categoryMeta(c); const n = BC.productsIn(c).length;
+          return `<a href="/menu.html?cat=${encodeURIComponent(c)}"><span class="thumb">${BC.imgTag(m.image, c)}</span><span class="tx">${esc(c)}${m.badge ? ` <span style="font-size:11px;background:var(--bc-red);color:#fff;padding:3px 8px;border-radius:8px;vertical-align:3px">${esc(m.badge)}</span>` : ''}<small>${n} ürün</small></span>${I.chev.replace('<svg', '<svg class="chev"')}</a>`;
+        }).join('')}</div>
+      </div>`;
+  }
+
+  function catView(cat, cats) {
+    const items = BC.productsIn(cat);
+    return `<div style="padding-top:8px"><a class="bc-back" href="/menu.html">${I.back}Menü</a></div>
+      <div class="bc-pagehead" style="min-height:0;padding-top:6px"><h1 class="bc-h1">${esc(cat)}</h1></div>
+      <div class="bc-chips" style="margin-bottom:8px">${cats.map((c) => `<a class="bc-chip ${c === cat ? 'on' : ''}" href="/menu.html?cat=${encodeURIComponent(c)}" style="display:inline-flex;align-items:center">${esc(c)}</a>`).join('')}</div>
+      ${items.length ? `<div class="bc-plist">${items.map(BC.productRow).join('')}</div>` : '<p class="bc-empty">Bu kategoride şu an ürün yok.</p>'}`;
+  }
+
+  function render() {
+    const cats = BC.visibleCategories();
+    const cat = BC.qs('cat');
+    const known = cat && (BC.state.categories || []).includes(cat);
+    document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar()}
+      <main class="bc-wrap">${known ? catView(cat, cats) : listView(cats)}${BC.footer()}</main>`;
+    const chipOn = document.querySelector('.bc-chip.on');
+    if (chipOn) chipOn.scrollIntoView({ inline: 'center', block: 'nearest' });
+    const q = document.getElementById('q');
+    if (q) q.addEventListener('input', () => {
+      const t = q.value.trim().toLocaleLowerCase('tr');
+      const box = document.getElementById('results');
+      if (!t) { render(); return; }
+      const hits = (BC.state.products || []).filter((p) => (p.name + ' ' + (p.description || '') + ' ' + (p.subcategory || p.category)).toLocaleLowerCase('tr').includes(t));
+      box.innerHTML = hits.length ? `<div class="bc-plist">${hits.map(BC.productRow).join('')}</div>` : '<p class="bc-empty">Aradığın ürünü bulamadık.</p>';
+    });
+  }
+
+  BC.onChange(render);
+  BC.load(['products', 'categories', 'me', 'content']).then(render);
+})();
+</script>
+</body>
+</html>
