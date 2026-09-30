@@ -41,48 +41,37 @@
     const rails = (c.rails || []).map((r, i) => ({ r, items: BC.railProducts(r, i) })).filter((x) => x.items.length);
     const about = c.about || {};
 
+    // Bölümler: yönetim panelindeki "Sayfa Düzeni"ne göre sıralanır ve açılıp kapatılır
+    const S = {
+      hello: () => `<section class="bc-hello bc-reveal">
+          <small>${esc(BC.greeting())}${me ? ', ' + esc((me.name || '').split(' ')[0]) : ''} ☕</small>
+          <h1 class="bc-h1">${esc((c.brand && c.brand.tagline) || 'Günün ritüeli, kapına kadar.')}</h1>
+          <div style="margin-top:12px">${BC.statusChip()}</div></section>`,
+      slider: () => (slides.length ? `<section class="bc-sec bc-carousel" id="hero"><div class="bc-track">${slides.map(BC.slide).join('')}</div><div class="bc-dots"></div></section>` : ''),
+      quick: () => BC.quickTiles(),
+      club: () => `<section class="bc-sec bc-reveal">${BC.clubCard(progress)}</section>`,
+      offers: () => (offers.length ? `<section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><h2 class="bc-h2">Fırsatlar</h2><a class="bc-link" href="/club.html#firsatlar">Hepsini gör ${I.arrow}</a></div>
+          <div class="bc-rail">${offers.map((o) => BC.offerCard(o, true)).join('')}</div></section>` : ''),
+      rails: () => rails.map(({ r, items }) => `<section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><div><h2 class="bc-h2">${esc(r.title)}</h2>${r.subtitle ? `<p class="bc-muted" style="margin-top:4px">${esc(r.subtitle)}</p>` : ''}</div></div>
+          <div class="bc-rail">${items.map(BC.productCard).join('')}</div></section>`).join(''),
+      categories: () => (cats.length ? `<section class="bc-sec bc-reveal">
+          <div class="bc-sec-head"><h2 class="bc-h2">Menüyü Keşfet</h2><a class="bc-link" href="/menu.html">Tümü ${I.arrow}</a></div>
+          ${BC.categoryGrid(cats)}</section>` : ''),
+      about: () => (about.title || about.text ? `<section class="bc-sec bc-reveal" id="hakkimizda">
+          <div class="bc-offer bc-about" style="display:grid">
+            ${about.image ? `<div class="ph" style="aspect-ratio:16/9">${BC.imgTag(about.image, about.title)}</div>` : ''}
+            <div class="bd"><span class="bc-eyebrow">Hikayemiz</span><h3 style="margin-top:6px;font-size:24px">${esc(about.title)}</h3><p style="font-size:15px;line-height:1.6">${esc(about.text)}</p></div>
+          </div></section>` : ''),
+      store: () => `<section class="bc-sec bc-reveal">${BC.storeCard()}</section>`,
+    };
+
     document.getElementById('bc-root').innerHTML = `
       ${BC.bars()}
       ${BC.topbar()}
       <main class="bc-wrap">
-        <section class="bc-hello bc-reveal">
-          <small>${esc(BC.greeting())}${me ? ', ' + esc((me.name || '').split(' ')[0]) : ''} ☕</small>
-          <h1 class="bc-h1">${esc((c.brand && c.brand.tagline) || 'Günün ritüeli, kapına kadar.')}</h1>
-          <div style="margin-top:12px">${BC.statusChip()}</div>
-        </section>
-
-        ${slides.length ? `<section class="bc-sec bc-carousel" id="hero"><div class="bc-track">${slides.map(BC.slide).join('')}</div><div class="bc-dots"></div></section>` : ''}
-
-        <section class="bc-sec bc-reveal">
-          <div class="bc-quick">
-            <a href="/siparis.html"><span class="ic">${I.order}</span>Sipariş Ver</a>
-            <a href="/club.html#firsatlar"><span class="ic">${I.gift}</span>Fırsatlar</a>
-            <a href="/menu.html"><span class="ic">${I.menu}</span>Menü</a>
-            <a href="/club.html"><span class="ic">${I.star}</span>Club</a>
-          </div>
-        </section>
-
-        <section class="bc-sec bc-reveal">${BC.clubCard(progress)}</section>
-
-        ${offers.length ? `<section class="bc-sec bc-reveal">
-          <div class="bc-sec-head"><h2 class="bc-h2">Fırsatlar</h2><a class="bc-link" href="/club.html#firsatlar">Hepsini gör ${I.arrow}</a></div>
-          <div class="bc-rail">${offers.map((o) => BC.offerCard(o, true)).join('')}</div></section>` : ''}
-
-        ${rails.map(({ r, items }) => `<section class="bc-sec bc-reveal">
-          <div class="bc-sec-head"><div><h2 class="bc-h2">${esc(r.title)}</h2>${r.subtitle ? `<p class="bc-muted" style="margin-top:4px">${esc(r.subtitle)}</p>` : ''}</div></div>
-          <div class="bc-rail">${items.map(BC.productCard).join('')}</div></section>`).join('')}
-
-        ${cats.length ? `<section class="bc-sec bc-reveal">
-          <div class="bc-sec-head"><h2 class="bc-h2">Menüyü Keşfet</h2><a class="bc-link" href="/menu.html">Tümü ${I.arrow}</a></div>
-          ${BC.categoryGrid(cats)}</section>` : ''}
-
-        ${about.title || about.text ? `<section class="bc-sec bc-reveal" id="hakkimizda">
-          <div class="bc-offer bc-about" style="display:grid">
-            ${about.image ? `<div class="ph" style="aspect-ratio:16/9">${BC.imgTag(about.image, about.title)}</div>` : ''}
-            <div class="bd"><span class="bc-eyebrow">Hikayemiz</span><h3 style="margin-top:6px;font-size:24px">${esc(about.title)}</h3><p style="font-size:15px;line-height:1.6">${esc(about.text)}</p></div>
-          </div></section>` : ''}
-
-        <section class="bc-sec bc-reveal">${BC.storeCard()}</section>
+        ${BC.layout('home').map((k) => (S[k] ? S[k]() : '')).join('')}
         ${BC.footer()}
       </main>`;
 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Brokers Coffee</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f7f5f0"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="bc">
+<div id="bc-root"><div class="bc-wrap" style="padding-top:18px"><div class="bc-skel" style="height:260px;margin-bottom:16px"></div><div class="bc-skel" style="height:200px"></div></div></div>
+
+<script src="/js/push.js"></script>
+<script src="/js/cart.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const { esc, icons: I } = BC;
+
+  // Panelde yazılan düz metni güvenli HTML'e çevirir:
+  // "## " başlık, "- " madde, boş satır paragraf ayırır, http(s) bağlantıları tıklanır olur
+  function formatBody(text) {
+    const linkify = (t) => t.replace(/(https?:\/\/[^\s<]+)/g, '<a class="bc-link" href="$1" target="_blank" rel="noopener">$1</a>');
+    const out = []; let para = []; let list = [];
+    const flushPara = () => { if (para.length) out.push(`<p>${para.map((l) => linkify(esc(l))).join('<br/>')}</p>`); para = []; };
+    const flushList = () => { if (list.length) out.push(`<ul class="bc-page-ul">${list.map((l) => `<li>${linkify(esc(l))}</li>`).join('')}</ul>`); list = []; };
+    String(text || '').split('\n').forEach((raw) => {
+      const line = raw.trimEnd();
+      if (!line.trim()) { flushPara(); flushList(); return; }
+      if (/^##\s+/.test(line)) { flushPara(); flushList(); out.push(`<h2 class="bc-h2" style="margin:26px 0 10px">${esc(line.replace(/^##\s+/, ''))}</h2>`); return; }
+      if (/^\s*-\s+/.test(line)) { flushPara(); list.push(line.replace(/^\s*-\s+/, '')); return; }
+      flushList(); para.push(line);
+    });
+    flushPara(); flushList();
+    return out.join('');
+  }
+
+  function render() {
+    const c = BC.state.config || {};
+    const page = (c.pages || []).find((x) => x.slug === BC.qs('s'));
+    if (!page) {
+      document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar({ back: '/diger.html', title: 'Sayfa' })}
+        <main class="bc-wrap" style="text-align:center;padding-top:60px"><div style="font-size:54px">📄</div>
+        <h1 class="bc-h2" style="margin:10px 0 18px">Sayfa bulunamadı</h1><a class="bc-btn bc-btn-gold" href="/diger.html">Diğer'e dön</a></main>`;
+      return;
+    }
+    document.title = `${page.title} | Brokers Coffee`;
+    document.getElementById('bc-root').innerHTML = `${BC.bars()}${BC.topbar({ back: '/diger.html', title: page.title })}
+      <main class="bc-wrap">
+        <article class="bc-page bc-reveal">
+          ${page.image ? `<div class="bc-page-hero">${BC.imgTag(page.image, page.title)}</div>` : ''}
+          <div class="bc-page-in">
+            <span class="bc-page-ic">${esc(page.icon || '📄')}</span>
+            <h1 class="bc-h1" style="margin:10px 0 6px">${esc(page.title)}</h1>
+            ${page.subtitle ? `<p class="bc-muted" style="font-size:17px">${esc(page.subtitle)}</p>` : ''}
+            <div class="bc-page-body">${formatBody(page.body)}</div>
+          </div>
+        </article>
+        ${BC.footer()}
+      </main>`;
+    BC.reveal();
+  }
+
+  BC.onChange(render);
+  BC.load(['me', 'content']).then(render);
+})();
+</script>
+</body>
+</html>
