@@ -11,8 +11,33 @@ function slugify(name) {
   return s || crypto.randomUUID().slice(0, 8);
 }
 
+// Boy adı girilmemiş çok boylu ürünlere (ekranda hepsi "Tek Boy" görünüyordu) türüne göre ad verir:
+// Türk kahvesi: Tek / Double, espresso: Single / Double, diğerleri: Küçük / Orta / Büyük.
+// Yönetimden girilmiş adlara dokunulmaz.
+const lower = (s) => String(s || '').toLocaleLowerCase('tr');
+function defaultSizeLabels(product, n) {
+  const name = lower(product.name);
+  if (n === 2 && name.includes('türk kahve')) return ['Tek', 'Double'];
+  if (n === 2 && /espresso|ristretto|doppio/.test(name)) return ['Single', 'Double'];
+  if (n === 3) return ['Küçük', 'Orta', 'Büyük'];
+  if (n === 2) return ['Küçük', 'Büyük'];
+  return null;
+}
+function normalizeSizes(product) {
+  const sizes = Array.isArray(product.sizes) ? product.sizes : [];
+  if (sizes.length < 2) return product;
+  const labels = sizes.map((s) => String((s && s.label) || '').trim());
+  // ad boşsa ya da tüm boylar aynı adı taşıyorsa (ör. hepsi "Tek Boy") ayırt edilemez
+  const unusable = labels.some((l) => !l) || new Set(labels.map(lower)).size < labels.length;
+  if (!unusable) return product;
+  const defaults = defaultSizeLabels(product, sizes.length);
+  if (!defaults) return product;
+  return { ...product, sizes: sizes.map((s, i) => ({ ...s, label: labels[i] && new Set(labels.map(lower)).size === labels.length ? labels[i] : defaults[i] })) };
+}
+
 async function loadProducts() {
-  return kv.getJSON(KEY, []);
+  const list = await kv.getJSON(KEY, []);
+  return Array.isArray(list) ? list.map(normalizeSizes) : list;
 }
 
 async function saveProducts(products) {
@@ -75,4 +100,4 @@ async function reorderCategory(orderedIds) {
   return result;
 }
 
-module.exports = { loadProducts, saveProducts, createProduct, updateProduct, deleteProduct, reorderCategory };
+module.exports = { normalizeSizes, loadProducts, saveProducts, createProduct, updateProduct, deleteProduct, reorderCategory };
