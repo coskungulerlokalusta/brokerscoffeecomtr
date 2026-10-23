@@ -1,0 +1,63 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Sitenin adresi. Değişirse burayı ve public/.well-known/assetlinks.json dosyasını birlikte güncelleyin.
+def twaHost = 'brokerscoffee.com.tr'
+
+android {
+    namespace 'tr.com.brokerscoffee.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'tr.com.brokerscoffee.app'
+        minSdk 21
+        targetSdk 36
+        // Play Store'a her yeni yüklemede versionCode bir artırılmalı.
+        versionCode 1
+        versionName '1.0.0'
+
+        manifestPlaceholders = [
+            hostName       : twaHost,
+            defaultUrl     : "https://${twaHost}/",
+            launcherName   : 'Brokers Coffee'
+        ]
+        resValue 'string', 'assetStatements',
+            '[{ \\"relation\\": [\\"delegate_permission/common.handle_all_urls\\"], ' +
+            '\\"target\\": {\\"namespace\\": \\"web\\", \\"site\\": \\"https://' + twaHost + '\\"}}]'
+        resValue 'string', 'appName', 'Brokers Coffee'
+        resValue 'string', 'providerAuthority', 'tr.com.brokerscoffee.app.fileprovider'
+    }
+
+    // İmza bilgileri GitHub Actions secret'larından (ortam değişkenleri) gelir; anahtar repoya konmaz.
+    def keystoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
+    signingConfigs {
+        if (keystoreFile) {
+            release {
+                storeFile file(keystoreFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            if (keystoreFile) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

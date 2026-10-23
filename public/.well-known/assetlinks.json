@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tr.com.brokerscoffee.app",
+      "sha256_cert_fingerprints": [
+        "C0:BB:F0:0C:56:2A:9B:EE:B1:BB:7D:BD:BD:E4:4F:E3:43:CF:C2:08:40:1D:93:EE:90:8A:00:8D:D1:FB:9C:29"
+      ]
+    }
+  }
+]
