@@ -21,6 +21,15 @@ router.post('/request-otp', async (req, res) => {
     return res.status(400).json({ error: 'Geçerli bir telefon numarası girin' });
   }
   const normalized = customerAuth.normalizePhone(phone);
+
+  // Google Play inceleme ekibi SMS alamadığı için: REVIEW_PHONE numarasına SMS gönderilmez,
+  // kod her zaman REVIEW_OTP olur. İkisi de sunucu ortam değişkeninde tanımlı değilse devre dışıdır.
+  const reviewPhone = process.env.REVIEW_PHONE && customerAuth.normalizePhone(process.env.REVIEW_PHONE);
+  if (reviewPhone && process.env.REVIEW_OTP && normalized === reviewPhone) {
+    otpStore.setCode(normalized, process.env.REVIEW_OTP);
+    return res.json({ ok: true });
+  }
+
   const code = otpStore.setCode(normalized);
 
   try {

@@ -6,8 +6,8 @@ function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-function setCode(phone) {
-  const code = generateCode();
+function setCode(phone, fixedCode) {
+  const code = fixedCode || generateCode();
   codes.set(phone, { code, expires: Date.now() + TTL_MS, attempts: 0 });
   return code;
 }
