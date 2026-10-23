@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- public/manifest.json içindeki theme_color / background_color ile aynı -->
+<!-- Logodaki lacivert; durum çubuğu, açılış ekranı ve uygulama ikonu arka planı -->
 <resources>
-    <color name="colorPrimary">#0d1b3d</color>
-    <color name="backgroundColor">#faf9f6</color>
+    <color name="colorPrimary">#1A3143</color>
+    <color name="backgroundColor">#1A3143</color>
+    <color name="logoBackground">#1A3143</color>
 </resources>
