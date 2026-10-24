@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logodaki lacivert; durum çubuğu, açılış ekranı ve uygulama ikonu arka planı -->
+<resources>
+    <color name="colorPrimary">#1A3143</color>
+    <color name="backgroundColor">#1A3143</color>
+    <color name="logoBackground">#1A3143</color>
+</resources>

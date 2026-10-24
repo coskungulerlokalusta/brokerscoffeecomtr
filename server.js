@@ -34,6 +34,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Paynet'in 3D geri dönüşü form-post olarak gelir
 app.use(cookieParser());
+// Android uygulamasının (TWA) adres çubuksuz tam ekran açılabilmesi için Digital Asset Links dosyası.
+// express.static nokta ile başlayan klasörleri (.well-known) varsayılan olarak sunmadığı için ayrıca tanımlı.
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.type('application/json').sendFile(path.join(__dirname, 'public', '.well-known', 'assetlinks.json'), { dotfiles: 'allow' });
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/admin', adminRoutes);
