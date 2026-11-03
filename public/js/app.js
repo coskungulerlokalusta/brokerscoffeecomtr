@@ -125,6 +125,18 @@
   };
 
   // ---------- Sepet ----------
+  // İçim tercihi (normal/yumuşak) ve ekstra shot yalnızca espresso bazlı kahvelerde anlamlı —
+  // kruvasan, tatlı, limonata, çay, chai/matcha latte, Türk kahvesi gibi ürünlerde gösterilmez.
+  const ESPRESSO_RE = /espresso|americano|latte|cappuc+ino|kapuç+ino|mocha|mocca|moka|macchiato|makiato|flat ?white|cortado|ristretto|doppio|lungo|affogato/;
+  const NOT_ESPRESSO_RE = /türk kahve|chai|matcha|salep|sıcak çikolata|kruvasan|croissant|tatlı|cheesecake|brownie|kurabiye|cookie|sandviç|tost/;
+  BC.isEspressoDrink = (p) => {
+    if (!p) return false;
+    const lower = (s) => String(s || '').toLocaleLowerCase('tr');
+    const name = lower(p.name);
+    const desc = lower(p.description);
+    if (desc.includes('espresso')) return !name.includes('türk kahve');
+    return ESPRESSO_RE.test(name) && !NOT_ESPRESSO_RE.test(name + ' ' + lower(p.subcategory || p.category));
+  };
   BC.needsDetail = (p) => {
     if (!p) return true;
     if (p.sizes && p.sizes.length > 1) return true;
@@ -135,7 +147,7 @@
     if (BC.needsDetail(p)) { location.href = '/product.html?id=' + encodeURIComponent(p.id); return; }
     const size = p.sizes[0];
     if (typeof addToCart !== 'function') return;
-    addToCart({ productId: p.id, name: p.name, price: size.price, size: size.label || null, extras: [], intensity: 'normal', extraShot: false, note: '', qty: 1 });
+    addToCart({ productId: p.id, name: p.name, price: size.price, size: size.label || null, extras: [], intensity: 'normal', extraShot: false, espresso: BC.isEspressoDrink(p), note: '', qty: 1 });
     if (btn) {
       btn.classList.add('done'); btn.innerHTML = I.check;
       setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = I.plus; }, 1300);

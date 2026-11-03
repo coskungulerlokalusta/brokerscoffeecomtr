@@ -129,16 +129,16 @@ async function init() {
     ]);
     if (!productRes.ok) throw new Error('not found');
     product = await productRes.json();
+    let hideCoffeeOptions = !BC.isEspressoDrink(product);
     if (settingsRes.ok) {
       const publicSettings = await settingsRes.json();
       extraShotPrice = publicSettings.extraShotPrice ?? 10;
       const hiddenCats = (publicSettings.hideCustomizationForCategories || []).map((c) => c.toLocaleLowerCase('tr'));
       const productCat = (product.subcategory || product.category || '').toLocaleLowerCase('tr');
-      if (hiddenCats.includes(productCat)) {
-        document.getElementById('intensity-section').hidden = true;
-        document.getElementById('extra-shot-section').hidden = true;
-      }
+      if (hiddenCats.includes(productCat)) hideCoffeeOptions = true;
     }
+    document.getElementById('intensity-section').hidden = hideCoffeeOptions;
+    document.getElementById('extra-shot-section').hidden = hideCoffeeOptions;
     document.getElementById('bc-bars').innerHTML = BC.bars();
     document.getElementById('extra-shot-price-label').textContent = `(+${BC.money(extraShotPrice)})`;
     document.title = `${product.name} | Brokers Coffee`;
@@ -211,6 +211,7 @@ document.getElementById('add-to-cart-btn').addEventListener('click', () => {
     extras: [],
     intensity,
     extraShot,
+    espresso: !document.getElementById('extra-shot-section').hidden,
     note: finalNote,
     sugar,
     qty,
