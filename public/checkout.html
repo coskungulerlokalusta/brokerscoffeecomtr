@@ -262,8 +262,12 @@ fetch('/api/settings/public').then(r => r.json()).then(s => {
       firstEnabledInput.dispatchEvent(new Event('change'));
     }
   }
-  if (!s.showOrderPreferences) {
+  // Sepette espresso bazlı kahve yoksa (ör. yalnızca kruvasan) içim/ekstra shot sorulmaz.
+  // Eski sepetlerde "espresso" bilgisi olmayabilir; o zaman ürün adına bakılır.
+  const hasEspresso = getCart().some((i) => (i.espresso !== undefined ? i.espresso : BC.isEspressoDrink({ name: i.name })));
+  if (!s.showOrderPreferences || !hasEspresso) {
     document.getElementById('order-preferences-section').classList.add('hidden');
+    document.getElementById('order-extra-shot-check').checked = false;
   }
   requireAddressSetting = s.requireAddress !== false;
   if (s.showDeliveryInfo === false) {
