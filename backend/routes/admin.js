@@ -18,6 +18,7 @@ const instagramConversations = require('../utils/instagramConversations');
 const messenger = require('../utils/messenger');
 const messengerConversations = require('../utils/messengerConversations');
 const crypto = require('crypto');
+const mailStudio = require('../utils/mailStudio');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -73,6 +74,11 @@ router.patch('/orders/:id/status', adminAuth.requireAuth, async (req, res) => {
   }
   const order = await orderStore.updateOrderStatus(req.params.id, orderStatus);
   if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+  if (orderStatus === 'teslim-edildi') {
+    // "Sipariş teslim edilince" e-posta görevleri (üyenin e-postası varsa)
+    const customer = order.customerId ? await customerAuth.findById(order.customerId) : order.phone ? await customerAuth.findByPhone(order.phone) : null;
+    if (customer) mailStudio.mailEvent('order_delivered', customer.id, order.id);
+  }
   res.json(order);
 });
 
@@ -163,6 +169,8 @@ router.get('/customers', adminAuth.requireAuth, async (req, res) => {
     isStaff: c.isStaff,
     storeName: c.storeName || null,
     loyaltyPoints: c.loyaltyPoints || 0,
+    email: c.email || '',
+    marketingConsent: !!c.marketingConsentAt,
     active: c.active !== false,
     createdAt: c.createdAt,
   }));
@@ -246,6 +254,7 @@ router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, r
     multinet: () => require('../utils/multinet').testConnection(),
     pluxee: () => require('../utils/pluxee').testConnection(),
     paynet: () => require('../utils/paynet').testConnection(),
+    resend: () => require('../utils/mailer').testConnection(),
   };
   if (!testers[provider]) {
     return res.status(400).json({ error: 'Bu sağlayıcı için otomatik bağlantı testi henüz yok.' });

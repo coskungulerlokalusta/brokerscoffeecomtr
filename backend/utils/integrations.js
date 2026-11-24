@@ -13,6 +13,7 @@ const DEFAULTS = {
   pluxee: { enabled: false, wsUserName: '', wsPassword: '', merchantNo: '', terminalNo: '', publicKeyPem: '', environment: 'uat' },
   ticket: { enabled: false, merchantId: '', apiKey: '' },
   metropol: { enabled: false, merchantId: '', apiKey: '' },
+  resend: { enabled: false, apiKey: '', from: '' },
 };
 
 const SECRET_FIELDS = {
@@ -26,6 +27,7 @@ const SECRET_FIELDS = {
   pluxee: ['wsPassword', 'publicKeyPem'],
   ticket: ['apiKey'],
   metropol: ['apiKey'],
+  resend: ['apiKey'],
 };
 
 // Ortam değişkeni eşlemesi — tanımlıysa panel/DB değerinin önüne geçer, deploy'lardan etkilenmez
@@ -38,6 +40,7 @@ const ENV_MAP = {
   pluxee: { wsUserName: 'PLUXEE_WS_USERNAME', wsPassword: 'PLUXEE_WS_PASSWORD', merchantNo: 'PLUXEE_MERCHANT_NO', terminalNo: 'PLUXEE_TERMINAL_NO', publicKeyPem: 'PLUXEE_PUBLIC_KEY' },
   ticket: { merchantId: 'TICKET_MERCHANT_ID', apiKey: 'TICKET_API_KEY' },
   metropol: { merchantId: 'METROPOL_MERCHANT_ID', apiKey: 'METROPOL_API_KEY' },
+  resend: { apiKey: 'RESEND_API_KEY', from: 'MAIL_FROM' },
 };
 
 function applyEnvOverrides(provider, config) {

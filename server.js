@@ -25,6 +25,7 @@ const instagramWebhookRoutes = require('./backend/routes/instagramWebhook');
 const messengerWebhookRoutes = require('./backend/routes/messengerWebhook');
 const imagesRoutes = require('./backend/routes/images');
 const appConfigRoutes = require('./backend/routes/appConfig');
+const mailStudioRoutes = require('./backend/routes/mailStudio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,8 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/api/admin/mail', mailStudioRoutes.admin); // E-posta Stüdyosu (yönetim)
+app.use('/api/m', mailStudioRoutes.pub); // e-posta açılma/tıklama izleme ve abonelikten çıkma
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
@@ -186,5 +189,11 @@ seedIfEmpty().then(() => {
   const messageQueue = require('./backend/utils/messageQueue');
   setInterval(() => {
     messageQueue.processDue().catch((err) => console.error('Mesaj kuyruğu hatası:', err.message));
+  }, 60 * 1000);
+
+  // E-posta Stüdyosu: tarihi gelen kampanyaları açar, vakti gelen e-postaları gönderir
+  const mailStudio = require('./backend/utils/mailStudio');
+  setInterval(() => {
+    mailStudio.mailTick().catch((err) => console.error('E-posta kuyruğu hatası:', err.message));
   }, 60 * 1000);
 });

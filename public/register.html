@@ -46,6 +46,10 @@
 <div id="staff-code-wrap" class="hidden">
 <input id="staff-code" placeholder="Mağaza Adı" class="border border-[#d3c3c0] rounded px-4 py-2.5 w-full"/>
 </div>
+<input id="email-input" type="email" autocomplete="email" placeholder="E-posta (isteğe bağlı)" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<label class="flex items-start gap-2 text-sm text-[#504442]">
+<input type="checkbox" id="marketing-check" class="mt-1"/> <span>Kampanya ve fırsatlardan e-posta ile haberdar olmak istiyorum. <span class="text-[#827472]">(İstediğin zaman çıkabilirsin.)</span></span>
+</label>
 <label class="flex items-center gap-2 text-sm text-[#504442]">
 <input type="checkbox" id="keep-logged-in-check" checked/> Beni hatırla (sürekli açık kalsın)
 </label>
@@ -120,6 +124,8 @@ document.getElementById('verify-form').addEventListener('submit', async (e) => {
     isStaff: selectedType === 'staff',
     storeName: document.getElementById('staff-code').value,
     keepLoggedIn: document.getElementById('keep-logged-in-check').checked,
+    email: document.getElementById('email-input').value.trim(),
+    marketingConsent: document.getElementById('marketing-check').checked,
   };
 
   const res = await fetch('/api/account/verify-otp', {

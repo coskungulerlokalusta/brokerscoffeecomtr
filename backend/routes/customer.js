@@ -6,6 +6,7 @@ const otpStore = require('../utils/otpStore');
 const netgsm = require('../utils/netgsm');
 const orderStore = require('../utils/orderStore');
 const monthlyTiers = require('../utils/monthlyTiers');
+const mailStudio = require('../utils/mailStudio');
 
 function getCookieOpts(keepLoggedIn) {
   const base = { httpOnly: true, secure: true, sameSite: 'lax' };
@@ -41,7 +42,7 @@ router.post('/request-otp', async (req, res) => {
 });
 
 router.post('/verify-otp', async (req, res) => {
-  const { phone, code, name, isStaff, storeName, keepLoggedIn } = req.body;
+  const { phone, code, name, isStaff, storeName, keepLoggedIn, email, marketingConsent } = req.body;
   if (!phone || !code) return res.status(400).json({ error: 'Telefon ve kod gerekli' });
 
   const normalized = customerAuth.normalizePhone(phone);
@@ -67,7 +68,10 @@ router.post('/verify-otp', async (req, res) => {
       isStaff: staffFlag,
       storeName: staffFlag ? storeName.trim() : undefined,
       keepLoggedIn,
+      email,
+      marketingConsent: !!marketingConsent,
     });
+    if (!existing) mailStudio.mailEvent('signup', customer.id); // hoş geldin e-postası (görev varsa)
     res.cookie('customer_session', token, getCookieOpts(keepLoggedIn));
     res.json({ id: customer.id, name: customer.name, isStaff: customer.isStaff, isNew: !existing });
   } catch (err) {
@@ -90,9 +94,28 @@ router.get('/me', customerAuth.requireAuth, async (req, res) => {
     phone: req.customer.phone,
     isStaff: req.customer.isStaff,
     loyaltyPoints: req.customer.loyaltyPoints || 0,
+    email: req.customer.email || '',
+    marketingConsent: !!req.customer.marketingConsentAt,
     staffDiscountByGroup: req.customer.isStaff ? currentSettings.staffDiscountByGroup : null,
     staffBannerText: req.customer.isStaff ? currentSettings.staffBannerText : null,
   });
+});
+
+// E-posta adresi ve kampanya e-postası izni
+router.put('/profile', customerAuth.requireAuth, async (req, res) => {
+  const { email, marketingConsent } = req.body || {};
+  try {
+    const r = await customerAuth.updateProfile(req.customer.id, {
+      email: email === undefined ? undefined : String(email || ''),
+      marketingConsent: marketingConsent === undefined ? undefined : !!marketingConsent,
+    });
+    if (!r) return res.status(404).json({ error: 'Üye bulunamadı' });
+    // e-posta sonradan eklendiyse hoş geldin e-postası yine gider (kişi başı bir kez)
+    if (r.emailAdded) mailStudio.mailEvent('signup', r.customer.id);
+    res.json({ email: r.customer.email || '', marketingConsent: !!r.customer.marketingConsentAt });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Giriş yapan müşterinin geçmiş siparişleri (kendi hesabına veya telefon numarasına bağlı)
