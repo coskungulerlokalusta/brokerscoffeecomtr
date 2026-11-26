@@ -512,7 +512,7 @@ async function mailTick() {
       lastSend = Date.now();
       const ok = await sendMail({ to: s.email, subject: r.subject || tpl.name, text: r.text, html: r.html, ...(tpl.kind === 'marketing' ? { headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}) });
       if (ok) { sent++; await q("UPDATE mail_sends SET status = 'sent', sent_at = ?, subject = ?, variant = ? WHERE id = ?", [Date.now(), r.subject.slice(0, 190), variant, s.id]); }
-      else { failed++; await q("UPDATE mail_sends SET status = 'failed', note = ?, subject = ?, variant = ? WHERE id = ?", ['E-posta servisi kabul etmedi ya da bağlı değil', r.subject.slice(0, 190), variant, s.id]); }
+      else { failed++; await q("UPDATE mail_sends SET status = 'failed', note = ?, subject = ?, variant = ? WHERE id = ?", [('Gönderilemedi: ' + (require('./mailer').state.lastError || 'e-posta servisi bağlı değil')).slice(0, 190), r.subject.slice(0, 190), variant, s.id]); }
     }
     return { sent, skipped, failed, later };
   } finally {

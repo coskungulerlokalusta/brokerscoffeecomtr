@@ -126,9 +126,9 @@ admin.post('/templates/:id/test', async (req, res) => {
     const ok = await mailer.sendMail({ to, subject: '[Deneme] ' + (r.subject || tpl.name), text: r.text, html: r.html });
     const now = Date.now();
     await M.q("INSERT INTO mail_sends (template_id, email, subject, status, note, token, due_at, sent_at, created_at) VALUES (?,?,?,'test',?,?,?,?,?)",
-      [row.id, to, (r.subject || '').slice(0, 190), ok ? 'Deneme' : 'Deneme gönderilemedi', M.token(), now, now, now]);
-    if (!ok) return res.status(502).json({ error: 'E-posta servisi deneme e-postasını kabul etmedi. Entegrasyonlar sayfasında bağlantıyı test et.' });
-    res.json({ ok: true, to });
+      [row.id, to, (r.subject || '').slice(0, 190), ok ? `Deneme (${cfg.via === 'smtp' ? 'SMTP' : 'Resend'})` : ('Gönderilemedi: ' + mailer.state.lastError).slice(0, 190), M.token(), now, now, now]);
+    if (!ok) return res.status(502).json({ error: 'E-posta gönderilemedi. Sebep: ' + (mailer.state.lastError || 'bilinmiyor') });
+    res.json({ ok: true, to, via: cfg.via, from: cfg.from });
   } catch (err) { fail(res, err); }
 });
 
