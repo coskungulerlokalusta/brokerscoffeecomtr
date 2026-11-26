@@ -1,13 +1,37 @@
-// E-posta gönderimi (Resend). Anahtar Entegrasyonlar sayfasından ya da RESEND_API_KEY ortam değişkeninden gelir.
-// Anahtar yoksa e-posta gönderilmez; son 50 e-posta bellekte tutulur (deneme ve geliştirme için).
+// E-posta gönderimi. İki yol:
+//  1) SMTP (ör. Hostinger e-posta kutusu: smtp.hostinger.com, 465, SSL) — Entegrasyonlar > E-posta (SMTP)
+//  2) Resend API — Entegrasyonlar > Resend
+// SMTP bilgileri girilmişse o kullanılır, yoksa Resend. İkisi de yoksa e-posta gönderilmez;
+// son 50 e-posta bellekte tutulur (deneme ve geliştirme için).
+const nodemailer = require('nodemailer');
 const integrations = require('./integrations');
 
 const DEFAULT_FROM = 'Brokers Coffee <bildirim@brokerscoffee.com.tr>';
 const outbox = [];
 
+let transport = null; let transportKey = '';
+function smtpTransport(c) {
+  const key = [c.host, c.port, c.user, c.password].join('|');
+  if (transport && transportKey === key) return transport;
+  const port = Number(c.port) || 465;
+  transport = nodemailer.createTransport({
+    host: c.host, port, secure: port === 465,
+    auth: { user: c.user, pass: c.password },
+    pool: true, maxConnections: 2, // toplu gönderimde bağlantıyı yeniden kullan
+    connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
+  });
+  transportKey = key;
+  return transport;
+}
+
 async function getConfig() {
+  const s = await integrations.getProviderCredentials('smtp');
+  if (s.host && s.user && s.password) {
+    const from = (s.from || '').trim() || `Brokers Coffee <${s.user}>`;
+    return { via: 'smtp', smtp: s, from, ready: true };
+  }
   const c = await integrations.getProviderCredentials('resend');
-  return { apiKey: c.apiKey || '', from: (c.from || '').trim() || DEFAULT_FROM, ready: !!c.apiKey };
+  return { via: 'resend', apiKey: c.apiKey || '', from: (c.from || '').trim() || DEFAULT_FROM, ready: !!c.apiKey };
 }
 
 // m: { to, subject, text, html, headers } — gönderildiyse true döner
@@ -16,6 +40,15 @@ async function sendMail(m) {
   if (!cfg.ready) {
     outbox.push(m); if (outbox.length > 50) outbox.shift();
     return false;
+  }
+  if (cfg.via === 'smtp') {
+    try {
+      await smtpTransport(cfg.smtp).sendMail({ from: cfg.from, to: m.to, subject: m.subject, text: m.text, html: m.html, headers: m.headers });
+      return true;
+    } catch (err) {
+      console.error('E-posta gönderilemedi (SMTP):', err.message);
+      return false;
+    }
   }
   try {
     const r = await fetch('https://api.resend.com/emails', {
@@ -35,11 +68,24 @@ async function sendMail(m) {
   }
 }
 
+// Entegrasyonlar > E-posta (SMTP) "Bağlantıyı test et": sunucuya giriş yapılabiliyor mu
+async function testSmtp() {
+  const s = await integrations.getProviderCredentials('smtp');
+  if (!s.host || !s.user || !s.password) throw new Error('SMTP sunucusu, e-posta adresi ve şifre girilmeli');
+  try {
+    await smtpTransport(s).verify();
+  } catch (err) {
+    transport = null; transportKey = '';
+    throw new Error('SMTP girişi başarısız: ' + err.message);
+  }
+  return `Bağlantı başarılı. E-postalar ${s.user} adresinden gönderilecek.`;
+}
+
 // Entegrasyonlar sayfasındaki "Bağlantıyı test et" düğmesi: anahtarın geçerliliğini kontrol eder
 async function testConnection() {
-  const cfg = await getConfig();
-  if (!cfg.apiKey) throw new Error('Resend API anahtarı girilmemiş');
-  const r = await fetch('https://api.resend.com/domains', { headers: { authorization: `Bearer ${cfg.apiKey}` } });
+  const c = await integrations.getProviderCredentials('resend');
+  if (!c.apiKey) throw new Error('Resend API anahtarı girilmemiş');
+  const r = await fetch('https://api.resend.com/domains', { headers: { authorization: `Bearer ${c.apiKey}` } });
   const d = await r.json().catch(() => ({}));
   if (r.status === 401 || r.status === 403) {
     // yalnızca gönderim yetkili anahtar alan adlarını listeleyemez; bu durumda anahtar yine de geçerli olabilir
@@ -51,4 +97,4 @@ async function testConnection() {
   return domains.length ? 'Bağlantı başarılı. Alan adları: ' + domains.join(', ') : 'Bağlantı başarılı, ancak Resend\'de henüz alan adı eklenmemiş.';
 }
 
-module.exports = { sendMail, getConfig, testConnection, outbox, DEFAULT_FROM };
+module.exports = { sendMail, getConfig, testConnection, testSmtp, outbox, DEFAULT_FROM };

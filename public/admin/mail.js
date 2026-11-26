@@ -125,9 +125,9 @@
     if (!d) { root.innerHTML = '<div class="ms-empty"><div>✉️</div>Yükleniyor…</div>'; return; }
     const T = d.totals;
     root.innerHTML = `
-      <div class="ms-hero"><div><h2>✉️ E-posta Stüdyosu</h2><p>E-postalarını bloklarla tasarla, sonra görev ver: kime, hangi olayda ya da hangi tarihte gideceğini sen belirle.</p></div>
+      <div class="ms-hero"><div><h2>✉️ E-posta Stüdyosu</h2>${d.ready ? `<p style="opacity:.7;font-size:12px">Gönderen: ${esc(d.from)}</p>` : ''}<p>E-postalarını bloklarla tasarla, sonra görev ver: kime, hangi olayda ya da hangi tarihte gideceğini sen belirle.</p></div>
         <button class="ms-btn gold" data-a="new">＋ Yeni e-posta</button></div>
-      ${!d.ready ? `<div class="ms-warn">⚠️ <div><b>E-posta servisi henüz bağlı değil.</b> Tasarlayabilir ve görev verebilirsin; gerçek gönderim için <b>Entegrasyonlar &gt; Resend</b> bölümüne API anahtarını girmen ve <b>brokerscoffee.com.tr</b> alan adını Resend'de doğrulaman gerekiyor. Kampanya e-postaları için ayrıca İYS (İleti Yönetim Sistemi) kaydı yasal zorunluluktur.</div></div>` : ''}
+      ${!d.ready ? `<div class="ms-warn">⚠️ <div><b>E-posta servisi henüz bağlı değil.</b> Tasarlayabilir ve görev verebilirsin; gerçek gönderim için <b>Entegrasyonlar &gt; E-posta (SMTP)</b> bölümüne Hostinger e-posta adresini ve şifresini gir (ya da <b>Resend</b> anahtarı gir). Kampanya e-postaları için ayrıca İYS (İleti Yönetim Sistemi) kaydı yasal zorunluluktur.</div></div>` : ''}
       <div class="ms-kpis">
         <div><small>Son 30 gün gönderilen</small><b>${T.sent.toLocaleString('tr-TR')}</b></div>
         <div><small>Açılma oranı</small><b>%${pct(T.opened, T.sent)}</b><i style="width:${pct(T.opened, T.sent)}%"></i></div>
