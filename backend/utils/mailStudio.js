@@ -96,6 +96,8 @@ function ensureMailSchema() {
       const have = new Set(cols.map((c) => c.COLUMN_NAME));
       if (!have.has('days')) await db.query('ALTER TABLE mail_rules ADD COLUMN days VARCHAR(20) NULL');
       if (!have.has('at_time')) await db.query('ALTER TABLE mail_rules ADD COLUMN at_time VARCHAR(5) NULL');
+      const [ccols] = await db.query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_contacts'");
+      if (!ccols.some((c) => c.COLUMN_NAME === 'company')) await db.query("ALTER TABLE mail_contacts ADD COLUMN company VARCHAR(120) NOT NULL DEFAULT ''");
     })().catch((err) => { schemaReady = null; throw err; });
   }
   return schemaReady;
@@ -171,7 +173,8 @@ const isAudience = (a) => AUDIENCES.includes(a) || /^list:\d{1,9}$/.test(String(
 /* ---------------- çizim ---------------- */
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // {ad}, {adsoyad}, {eposta}, {puan}, {site} değişkenlerini kişinin bilgisiyle doldurur
-const fill = (s, v) => String(s || '').replace(/\{(ad|adsoyad|eposta|puan|site)\}/g, (_, k) => (v[k] != null ? String(v[k]) : ''));
+// {isyeri|komşularımız} gibi: değer boşsa | işaretinden sonraki yazı kullanılır
+const fill = (s, v) => String(s || '').replace(/\{(ad|adsoyad|eposta|puan|site|isyeri)(?:\|([^{}]{0,80}))?\}/g, (_, k, d) => (v[k] != null && String(v[k]).trim() !== '' ? String(v[k]) : (d || '')));
 const rich = (s, v) => esc(fill(s, v)).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
 const abs = (u, o) => (!u ? '' : u.startsWith('/') ? o + u : /^https?:\/\//i.test(u) ? u : '');
 const tl = (n) => '₺' + Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -329,7 +332,7 @@ async function loadProducts(blocks) {
   }
   return m;
 }
-const varsOf = (u) => ({ ad: String(u.name || '').trim().split(/\s+/)[0] || '', adsoyad: u.name || '', eposta: u.email || '', puan: u.loyaltyPoints || 0, site: origin().replace(/^https?:\/\//, '') });
+const varsOf = (u) => ({ ad: String(u.name || '').trim().split(/\s+/)[0] || '', adsoyad: u.name || '', eposta: u.email || '', puan: u.loyaltyPoints || 0, isyeri: u.company || u.storeName || '', site: origin().replace(/^https?:\/\//, '') });
 
 /* ---------------- zaman ---------------- */
 // Sessiz saatler (İstanbul 21:00–09:00) içine düşen gönderim sabah 09:00'a kayar. İstanbul UTC+3.
@@ -464,7 +467,7 @@ async function mailTick() {
     if (!due.length) return { sent, skipped, failed, later };
     const customers = await customerAuth.loadCustomers();
     const kIds = [...new Set(due.filter((s) => String(s.customer_id || '').startsWith('k:')).map((s) => Number(s.customer_id.slice(2))))];
-    const contacts = new Map((kIds.length ? await q('SELECT id, email, name, unsubscribed_at FROM mail_contacts WHERE id IN (?)', [kIds]) : []).map((c) => [c.id, c]));
+    const contacts = new Map((kIds.length ? await q('SELECT id, email, name, company, unsubscribed_at FROM mail_contacts WHERE id IN (?)', [kIds]) : []).map((c) => [c.id, c]));
     const prodCache = new Map();
     let lastSend = 0;
     for (const s of due) {
@@ -480,7 +483,7 @@ async function mailTick() {
             WHERE x.customer_id = ? AND x.status = 'sent' AND y.kind = 'marketing' AND x.sent_at > ? LIMIT 1`, [s.customer_id, now - 20 * 3600e3]);
           if (recent.length) { later++; await q('UPDATE mail_sends SET due_at = ? WHERE id = ?', [now + 20 * 3600e3, s.id]); continue; }
         }
-        s.person = { name: k.name, email: k.email, loyaltyPoints: '' };
+        s.person = { name: k.name, email: k.email, company: k.company, loyaltyPoints: '' };
       }
       const cust = s.customer_id && !s.person ? customers.find((c) => c.id === s.customer_id) : null;
       if (s.rule_id && (s.rid == null || !s.ractive)) { await skip('Görev durduruldu'); continue; }
@@ -524,6 +527,10 @@ async function mailTick() {
 const B = (type, rest) => cleanBlock({ id: id8(), type, ...rest });
 const T = (o) => cleanTemplate(o);
 const STARTERS = [
+  { key: 'esnafcay', icon: '🫖', desc: 'Komşu iş yerlerine: "bugün çalışanlarınıza çay bizden" (Excel listesi)', trigger: 'once', tpl: () => T({ name: 'Çalışanlara ücretsiz çay', subject: '{isyeri|Torium AVM} çalışanlarına bugün çay bizden ☕', preheader: 'Brokers Coffee Torium AVM\'den komşularımıza küçük bir ikram', kind: 'marketing', blocks: [
+    B('hero', { title: '{isyeri|Komşularımız} çalışanlarına bugün çay ücretsiz! ☕', text: 'Torium AVM\'deki komşularımıza Brokers Coffee\'den küçük bir ikram.' }),
+    B('text', { text: 'Merhaba **{isyeri|komşumuz}** ekibi,\n\nBugün **{isyeri|mağazanızın}** tüm çalışanlarına çayımız bizden. Mola verdiğinizde Brokers Coffee\'ye uğrayın, çalıştığınız yeri söylemeniz yeterli.\n\nAfiyet olsun, iyi çalışmalar dileriz!', align: 'center' }),
+    B('button', { text: 'Menüye göz at', url: '/menu.html' })] }) },
   { key: 'welcome', icon: '🎉', desc: 'Yeni üyeye ilk merhaba', trigger: 'signup', tpl: () => T({ name: 'Hoş geldin', subject: 'Brokers ailesine hoş geldin {ad} ☕', preheader: 'Her siparişte puan kazanmaya hemen başla', kind: 'info', blocks: [
     B('hero', { title: 'Hoş geldin, {ad}!', text: 'Artık Brokers Coffee üyesisin. Her siparişte puan kazan, puanlarını ödüllere çevir.' }),
     B('text', { text: 'Siparişini uygulamadan ver, **sıra beklemeden** al. Brokers Club\'daki fırsatları ve sadakat ödüllerini kaçırma.' }),
