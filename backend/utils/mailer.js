@@ -8,6 +8,8 @@ const integrations = require('./integrations');
 
 const DEFAULT_FROM = 'Brokers Coffee <bildirim@brokerscoffee.com.tr>';
 const outbox = [];
+// son hatanın açıklaması (panelde gösterilir)
+const state = { lastError: '' };
 
 let transport = null; let transportKey = '';
 function smtpTransport(c) {
@@ -47,6 +49,8 @@ async function sendMail(m) {
       return true;
     } catch (err) {
       console.error('E-posta gönderilemedi (SMTP):', err.message);
+      state.lastError = 'SMTP: ' + err.message;
+      transport = null; transportKey = ''; // bir sonraki denemede bağlantı yeniden kurulsun
       return false;
     }
   }
@@ -59,11 +63,13 @@ async function sendMail(m) {
     if (!r.ok) {
       const body = await r.text().catch(() => '');
       console.error('E-posta gönderilemedi:', r.status, body.slice(0, 300));
+      state.lastError = `Resend ${r.status}: ${body.slice(0, 200)}`;
       return false;
     }
     return true;
   } catch (err) {
     console.error('E-posta gönderilemedi:', err.message);
+    state.lastError = 'Resend: ' + err.message;
     return false;
   }
 }
@@ -97,4 +103,4 @@ async function testConnection() {
   return domains.length ? 'Bağlantı başarılı. Alan adları: ' + domains.join(', ') : 'Bağlantı başarılı, ancak Resend\'de henüz alan adı eklenmemiş.';
 }
 
-module.exports = { sendMail, getConfig, testConnection, testSmtp, outbox, DEFAULT_FROM };
+module.exports = { state, sendMail, getConfig, testConnection, testSmtp, outbox, DEFAULT_FROM };

@@ -630,7 +630,10 @@
     const to = prompt('Deneme e-postası hangi adrese gitsin?', last);
     if (!to) return;
     try { localStorage.setItem('ms-test-to', to); } catch { /* yok */ }
-    try { await api(`/api/admin/mail/templates/${S.tpl.id}/test`, { method: 'POST', body: { to } }); toast('Deneme e-postası gönderildi: ' + to); } catch (e) { fail(e); }
+    try {
+      const r = await api(`/api/admin/mail/templates/${S.tpl.id}/test`, { method: 'POST', body: { to } });
+      alert(`✅ Deneme e-postası gönderildi.\n\nKime: ${to}\nGönderen: ${r.from}\n\nBirkaç dakika içinde gelmezse Gereksiz/Spam ve Promosyonlar klasörlerine bak.`);
+    } catch (e) { alert('❌ ' + e.message); }
   }
 
   /* ---------------- olaylar ---------------- */
