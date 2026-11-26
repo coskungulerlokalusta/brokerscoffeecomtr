@@ -14,6 +14,7 @@ const DEFAULTS = {
   ticket: { enabled: false, merchantId: '', apiKey: '' },
   metropol: { enabled: false, merchantId: '', apiKey: '' },
   resend: { enabled: false, apiKey: '', from: '' },
+  smtp: { enabled: false, host: 'smtp.hostinger.com', port: '465', user: '', password: '', from: '' },
 };
 
 const SECRET_FIELDS = {
@@ -28,6 +29,7 @@ const SECRET_FIELDS = {
   ticket: ['apiKey'],
   metropol: ['apiKey'],
   resend: ['apiKey'],
+  smtp: ['password'],
 };
 
 // Ortam değişkeni eşlemesi — tanımlıysa panel/DB değerinin önüne geçer, deploy'lardan etkilenmez
@@ -41,6 +43,7 @@ const ENV_MAP = {
   ticket: { merchantId: 'TICKET_MERCHANT_ID', apiKey: 'TICKET_API_KEY' },
   metropol: { merchantId: 'METROPOL_MERCHANT_ID', apiKey: 'METROPOL_API_KEY' },
   resend: { apiKey: 'RESEND_API_KEY', from: 'MAIL_FROM' },
+  smtp: { host: 'SMTP_HOST', port: 'SMTP_PORT', user: 'SMTP_USER', password: 'SMTP_PASSWORD', from: 'SMTP_FROM' },
 };
 
 function applyEnvOverrides(provider, config) {

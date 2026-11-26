@@ -15,8 +15,8 @@
   .sidebar-link:hover:not(.active-section) { background: #f4f3f1; }
   .member-filter-btn.active-filter { background: #0d1b3d; color: #fff; }
 </style>
-<link rel="stylesheet" href="/admin/studio.css?v=20261126b"/>
-<link rel="stylesheet" href="/admin/mail.css?v=20261126b"/>
+<link rel="stylesheet" href="/admin/studio.css?v=20261126c"/>
+<link rel="stylesheet" href="/admin/mail.css?v=20261126c"/>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
 
@@ -1195,6 +1195,19 @@ const INTEGRATION_CONFIG = {
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
+    ],
+  },
+  smtp: {
+    title: 'E-posta (SMTP)',
+    subtitle: 'Hostinger e-posta kutusuyla gönderim (E-posta Stüdyosu)',
+    icon: '@',
+    color: '#ede9fe', textColor: '#5b21b6',
+    fields: [
+      { key: 'host', label: 'SMTP Sunucusu', help: '(Hostinger için: smtp.hostinger.com)', type: 'text' },
+      { key: 'port', label: 'Port', help: '(465 = SSL, önerilen)', type: 'select', options: [['465', '465 (SSL)'], ['587', '587 (STARTTLS)']] },
+      { key: 'user', label: 'E-posta adresi', help: '(Hostinger Mail\'de oluşturduğun tam adres, örn. info@brokerscoffee.com.tr)', type: 'text' },
+      { key: 'password', label: 'E-posta şifresi', help: '(o e-posta kutusunun şifresi)', type: 'secret' },
+      { key: 'from', label: 'Gönderen adı', help: '(isteğe bağlı, örn. Brokers Coffee <info@brokerscoffee.com.tr>; adres yukarıdakiyle aynı olmalı)', type: 'text' },
     ],
   },
   resend: {
@@ -2501,7 +2514,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
   }
 })();
 </script>
-<script src="/admin/studio.js?v=20261126b"></script>
-<script src="/admin/mail.js?v=20261126b"></script>
+<script src="/admin/studio.js?v=20261126c"></script>
+<script src="/admin/mail.js?v=20261126c"></script>
 </body>
 </html>

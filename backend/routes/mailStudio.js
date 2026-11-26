@@ -122,12 +122,12 @@ admin.post('/templates/:id/test', async (req, res) => {
     const tpl = M.cleanTemplate(row);
     const r = M.renderMail(tpl, { origin: M.origin(), kind: tpl.kind, vars: sampleVars(), products: await M.loadProducts(tpl.blocks) });
     const cfg = await mailer.getConfig();
-    if (!cfg.ready) return res.status(400).json({ error: 'E-posta servisi bağlı değil. Önce Entegrasyonlar > Resend bölümüne API anahtarını gir.' });
+    if (!cfg.ready) return res.status(400).json({ error: 'E-posta servisi bağlı değil. Önce Entegrasyonlar > E-posta (SMTP) bölümüne Hostinger e-posta adresini ve şifresini gir.' });
     const ok = await mailer.sendMail({ to, subject: '[Deneme] ' + (r.subject || tpl.name), text: r.text, html: r.html });
     const now = Date.now();
     await M.q("INSERT INTO mail_sends (template_id, email, subject, status, note, token, due_at, sent_at, created_at) VALUES (?,?,?,'test',?,?,?,?,?)",
       [row.id, to, (r.subject || '').slice(0, 190), ok ? 'Deneme' : 'Deneme gönderilemedi', M.token(), now, now, now]);
-    if (!ok) return res.status(502).json({ error: 'E-posta servisi deneme e-postasını kabul etmedi. Gönderen adresin alan adı Resend\'de doğrulanmış mı?' });
+    if (!ok) return res.status(502).json({ error: 'E-posta servisi deneme e-postasını kabul etmedi. Entegrasyonlar sayfasında bağlantıyı test et.' });
     res.json({ ok: true, to });
   } catch (err) { fail(res, err); }
 });

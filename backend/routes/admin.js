@@ -255,6 +255,7 @@ router.post('/integrations/:provider/test', adminAuth.requireAuth, async (req, r
     pluxee: () => require('../utils/pluxee').testConnection(),
     paynet: () => require('../utils/paynet').testConnection(),
     resend: () => require('../utils/mailer').testConnection(),
+    smtp: () => require('../utils/mailer').testSmtp(),
   };
   if (!testers[provider]) {
     return res.status(400).json({ error: 'Bu sağlayıcı için otomatik bağlantı testi henüz yok.' });
