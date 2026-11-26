@@ -1,7 +1,7 @@
 // Yönetim paneli — E-posta Stüdyosu: e-postaları bloklarla tasarla, sonra görev ver
 // (kime, hangi olayda ya da hangi tarihte gideceğini belirle). Marka Bahçem'deki stüdyonun uyarlaması.
 (function () {
-  const S = { home: null, tab: 'flows', view: 'home', tpl: null, saved: '', sel: null, device: 'desk', logRule: null, logStatus: '', products: null };
+  const S = { up: null, listView: null, home: null, tab: 'flows', view: 'home', tpl: null, saved: '', sel: null, device: 'desk', logRule: null, logStatus: '', products: null };
   let root;
 
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -61,7 +61,22 @@
     { key: 'order_delivered', icon: '📦', name: 'Sipariş teslim edilince', when: 'Sipariş "Teslim Edildi" olduktan', desc: 'Teşekkür, puan hatırlatma, tekrar sipariş' },
     { key: 'inactive', icon: '💛', name: 'Bir süredir sipariş vermeyince', when: 'Son siparişinden', desc: '"Seni özledik" e-postası (her ara için bir kez)' },
     { key: 'once', icon: '📅', name: 'Belirli bir tarihte', when: 'Seçtiğin tarihte', desc: 'Kampanya, duyuru; bir kitleye tek seferde' },
+    { key: 'schedule', icon: '🔁', name: 'Düzenli plan', when: 'Seçili günlerde', desc: 'Seçtiğin günlerde, seçtiğin saatte otomatik (her gün / hafta içi…)' },
   ];
+  const DAYS = [[1, 'Pzt'], [2, 'Sal'], [3, 'Çar'], [4, 'Per'], [5, 'Cum'], [6, 'Cmt'], [0, 'Paz']];
+  function daysText(ds) {
+    const d = [...(ds || [])].sort();
+    if (d.length === 7) return 'Her gün';
+    if (d.join(',') === '1,2,3,4,5') return 'Hafta içi her gün';
+    if (d.join(',') === '0,6') return 'Hafta sonu';
+    return DAYS.filter(([k]) => d.includes(k)).map(([, l]) => l).join(', ');
+  }
+  // kitle adı: üye grubu ya da kişi listesi
+  function audName(a) {
+    const m = /^list:(\d+)$/.exec(a || '');
+    if (m) { const l = ((S.home && S.home.lists) || []).find((x) => x.id === Number(m[1])); return l ? `📋 ${l.name}` : '📋 Silinmiş liste'; }
+    const x = AUDIENCES.find((y) => y[0] === a) || AUDIENCES[0]; return `${x[1]} ${x[2]}`;
+  }
   const trig = (k) => TRIGGERS.find((t) => t.key === k) || TRIGGERS[0];
   const AUDIENCES = [['all', '👥', 'Herkes'], ['customers', '☕', 'Müşteriler'], ['staff', '🏪', 'Personel']];
   const DELAYS = [[0, 'Hemen'], [60, '1 saat'], [180, '3 saat'], [1440, '1 gün'], [4320, '3 gün'], [10080, '1 hafta']];
@@ -76,8 +91,10 @@
   function ruleSentence(r, tplName) {
     const night = r.quietHours ? ' Gece 21:00–09:00 arasına denk gelirse sabah 09:00\'da gider.' : '';
     if (r.trigger === 'once') {
-      const aud = (AUDIENCES.find((a) => a[0] === r.audience) || AUDIENCES[0])[2].toLocaleLowerCase('tr');
-      return `${r.sendAt ? fmt(r.sendAt, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Seçeceğin tarihte'} «${tplName}» ${aud} kitlesine bir kez gönderilir.${night}`;
+      return `${r.sendAt ? fmt(r.sendAt, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Seçeceğin tarihte'} «${tplName}» ${audName(r.audience)} kitlesine bir kez gönderilir.${night}`;
+    }
+    if (r.trigger === 'schedule') {
+      return `${(r.days || []).length ? daysText(r.days) : 'Seçeceğin günlerde'} saat ${r.atTime || '…'}'da «${tplName}» ${audName(r.audience)} kitlesine otomatik gönderilir. Her kişiye günde en fazla bir kez gider; liste güncellenirse yeni eklenenler de alır.`;
     }
     if (r.trigger === 'inactive') return `Son siparişinin üzerinden ${delayText(Math.max(10080, r.delayMin)).replace(' sonra', '')} geçen ve o zamandan beri sipariş vermeyen üyeye «${tplName}» bir kez gönderilir.${night}`;
     return `${trig(r.trigger).when} ${delayText(r.delayMin)} «${tplName}» gönderilir.${night}`;
@@ -121,9 +138,10 @@
       <div class="ms-tabs">
         <button class="${S.tab === 'flows' ? 'on' : ''}" data-tab="flows">⚡ Otomasyonlar</button>
         <button class="${S.tab === 'templates' ? 'on' : ''}" data-tab="templates">🎨 Şablonlar <small>${d.templates.length}</small></button>
+        <button class="${S.tab === 'lists' ? 'on' : ''}" data-tab="lists">📋 Kişi listeleri <small>${(d.lists || []).length}</small></button>
         <button class="${S.tab === 'log' ? 'on' : ''}" data-tab="log">🧾 Gönderim kaydı</button>
       </div>
-      <div id="ms-body">${S.tab === 'flows' ? flowsHtml(d) : S.tab === 'templates' ? templatesHtml(d) : '<div class="ms-empty">Yükleniyor…</div>'}</div>`;
+      <div id="ms-body">${S.tab === 'flows' ? flowsHtml(d) : S.tab === 'templates' ? templatesHtml(d) : S.tab === 'lists' ? listsHtml(d) : '<div class="ms-empty">Yükleniyor…</div>'}</div>`;
     if (S.tab === 'templates') drawThumbs();
     if (S.tab === 'log') renderLog();
   }
@@ -139,11 +157,12 @@
         <header><span class="ms-fi">${t.icon}</span><div class="ms-grow"><b>${t.name}</b><small>${t.desc}</small></div><button class="ms-btn sm" data-a="addrule" data-t="${t.key}">＋ Ekle</button></header>
         ${rs.length ? `<ol class="ms-steps">${rs.map((r) => {
           const s = r.stats;
-          const when = t.key === 'once' ? fmt(r.sendAt) : t.key === 'inactive' ? `${delayText(Math.max(10080, r.delayMin)).replace(' sonra', '')} sipariş yoksa` : delayText(r.delayMin);
+          const when = t.key === 'schedule' ? `${daysText(r.days)} · ${r.atTime}` : t.key === 'once' ? fmt(r.sendAt) : t.key === 'inactive' ? `${delayText(Math.max(10080, r.delayMin)).replace(' sonra', '')} sipariş yoksa` : delayText(r.delayMin);
           const abWin = r.subjectB && s.ab.A.sent && s.ab.B.sent ? (pct(s.ab.B.opened, s.ab.B.sent) > pct(s.ab.A.opened, s.ab.A.sent) ? 'B' : 'A') : null;
-          const aud = t.key === 'once' ? ' · ' + (AUDIENCES.find((a) => a[0] === r.audience) || AUDIENCES[0])[2] : '';
+          const aud = t.key === 'once' || t.key === 'schedule' ? ' · ' + audName(r.audience) : '';
+          const lastRun = t.key === 'schedule' && r.firedAt ? ` · son: ${fmt(r.firedAt)}` : '';
           return `<li class="${r.active ? 'on' : ''}"><span class="ms-when">${esc(when)}</span><div class="ms-step">
-            <div class="ms-step-h"><div class="ms-grow"><b>${esc(tname(r.templateId))}</b><small>${esc(r.name)}${aud}${r.quietHours ? ' · 🌙' : ''}${r.subjectB ? ' · 🧪 A/B' : ''}</small></div>
+            <div class="ms-step-h"><div class="ms-grow"><b>${esc(tname(r.templateId))}</b><small>${esc(r.name)}${esc(aud)}${lastRun}${r.quietHours ? ' · 🌙' : ''}${r.subjectB ? ' · 🧪 A/B' : ''}</small></div>
               ${t.key === 'once' && r.firedAt ? '<span class="ms-badge ok">Gönderildi</span>' : `<label class="ms-switch" title="${r.active ? 'Durdur' : 'Başlat'}"><input type="checkbox" data-a="toggle" data-id="${r.id}" ${r.active ? 'checked' : ''}/><span></span></label>`}</div>
             <div class="ms-stats"><span title="Gönderilen">📨 ${s.sent}</span><span title="Açılan">👁 %${pct(s.opened, s.sent)}</span><span title="Tıklanan">👆 %${pct(s.clicked, s.sent)}</span>
               ${s.queued ? `<span title="Sırada">⏳ ${s.queued}</span>` : ''}${s.skipped ? `<span title="Atlanan (izin yok, abonelikten çıktı…)">⤼ ${s.skipped}</span>` : ''}${s.failed ? `<span class="bad" title="Gönderilemeyen">⚠ ${s.failed}</span>` : ''}${abWin ? `<span class="win">🏆 ${abWin} konusu önde</span>` : ''}</div>
@@ -173,6 +192,120 @@
         const f = root.querySelector(`iframe[data-thumb="${t.id}"]`); if (f) f.srcdoc = r.html;
       }).catch(() => {});
     });
+  }
+
+  /* ---------------- kişi listeleri (Excel) ---------------- */
+  const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
+  let xlsxReady = null;
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve();
+    if (!xlsxReady) xlsxReady = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = res; sc.onerror = () => { xlsxReady = null; rej(new Error('Excel okuyucu yüklenemedi, internet bağlantını kontrol et')); };
+      document.head.appendChild(sc);
+    });
+    return xlsxReady;
+  }
+  // Excel/CSV'deki tüm sayfalarda e-posta adreslerini bulur; başlıkta "ad/isim/firma" sütunu varsa adı da alır
+  async function readExcel(file) {
+    await loadXlsx();
+    const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const out = new Map();
+    for (const sn of wb.SheetNames) {
+      const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' });
+      let nameCol = -1; let surCol = -1;
+      const head = (rows[0] || []).map((h) => String(h).toLocaleLowerCase('tr').trim());
+      if (!head.some((h) => EMAIL_RE.test(h))) {
+        nameCol = head.findIndex((h) => /^(ad|adı|ad soyad|adı soyadı|ad-soyad|isim|isim soyisim|name|full name|müşteri|müşteri adı|firma|firma adı|unvan|kişi)$/.test(h));
+        if (nameCol < 0) nameCol = head.findIndex((h) => /(ad soyad|isim|name|müşteri|firma|unvan)/.test(h) && !/mail/.test(h));
+        surCol = head.findIndex((h) => /^(soyad|soyadı|surname|last name)$/.test(h));
+      }
+      for (const r of rows) {
+        r.forEach((cell) => {
+          const m = String(cell).match(new RegExp(EMAIL_RE.source, 'g'));
+          (m || []).forEach((e) => {
+            const email = e.toLowerCase().replace(/\.$/, '');
+            if (out.has(email)) return;
+            let name = nameCol >= 0 ? String(r[nameCol] || '').trim() : '';
+            if (surCol >= 0 && r[surCol]) name = (name + ' ' + String(r[surCol]).trim()).trim();
+            if (EMAIL_RE.test(name)) name = '';
+            out.set(email, { email, name: name.slice(0, 120), on: true });
+          });
+        });
+      }
+    }
+    return [...out.values()];
+  }
+  const upShown = () => { const q = (S.up.q || '').toLocaleLowerCase('tr'); return S.up.rows.filter((r) => !q || (r.email + ' ' + r.name).toLocaleLowerCase('tr').includes(q)); };
+  function listsHtml(d) {
+    const lists = d.lists || [];
+    let up = '';
+    if (S.up) {
+      const shown = upShown(); const on = S.up.rows.filter((r) => r.on).length;
+      up = `<div class="ms-start" style="margin-bottom:14px">
+        <div class="ms-row" style="justify-content:space-between"><h3>📥 ${esc(S.up.file)}</h3><button class="ms-btn sm ghost" data-a="upcancel">✕ Vazgeç</button></div>
+        <p class="ms-help" style="margin:2px 0 12px">Dosyada <b>${S.up.rows.length}</b> e-posta bulundu, <b id="ms-upn">${on}</b> tanesi seçili. Gönderilmesini istemediklerinin tikini kaldır.</p>
+        <div class="ms-2">
+          <div class="ms-f"><span>Nereye kaydedilsin?</span><select class="ms-in" id="ms-uptarget"><option value="">➕ Yeni liste</option>${lists.map((l) => `<option value="${l.id}" ${String(S.up.target) === String(l.id) ? 'selected' : ''}>📋 ${esc(l.name)} listesine ekle</option>`).join('')}</select></div>
+          ${S.up.target ? '<div></div>' : `<div class="ms-f"><span>Liste adı</span><input class="ms-in" id="ms-upname" maxlength="120" value="${esc(S.up.name)}"/></div>`}
+        </div>
+        <div class="ms-row" style="margin-bottom:8px"><input class="ms-in" id="ms-upq" style="max-width:320px" placeholder="🔍 Ara" value="${esc(S.up.q || '')}"/>
+          <button class="ms-btn sm" data-a="upall">☑ Tümünü seç</button><button class="ms-btn sm" data-a="upnone">☐ Hiçbirini seçme</button></div>
+        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>Ad</th></tr></thead><tbody>
+          ${shown.slice(0, 1500).map((r) => `<tr><td><input type="checkbox" data-ui="${esc(r.email)}" ${r.on ? 'checked' : ''}/></td><td>${esc(r.email)}</td><td>${esc(r.name)}</td></tr>`).join('')}
+        </tbody></table>${shown.length > 1500 ? `<p class="ms-help" style="padding:10px">İlk 1500 kayıt gösteriliyor (${shown.length} kayıt). Aramayla daraltabilirsin; gizli olanların seçimi korunur.</p>` : ''}</div>
+        <div class="ms-row" style="margin-top:12px;justify-content:flex-end">
+          <button class="ms-btn" data-a="upsave" data-then="">💾 Listeyi kaydet</button>
+          <button class="ms-btn" data-a="upsave" data-then="plan">🔁 Kaydet ve plan kur</button>
+          <button class="ms-btn gold" data-a="upsave" data-then="send">⚡ Kaydet ve gönder</button>
+        </div></div>`;
+    }
+    let view = '';
+    if (S.listView) {
+      const L = S.listView; const q = (L.q || '').toLocaleLowerCase('tr');
+      const shown = L.contacts.filter((c) => !q || (c.email + ' ' + c.name).toLocaleLowerCase('tr').includes(q));
+      view = `<div class="ms-start" style="margin-bottom:14px">
+        <div class="ms-row" style="justify-content:space-between"><h3>📋 ${esc(L.list.name)} <small class="ms-help">${L.contacts.length} kişi</small></h3><button class="ms-btn sm ghost" data-a="lvclose">✕ Kapat</button></div>
+        <div class="ms-row" style="margin:8px 0"><input class="ms-in" id="ms-lvq" style="max-width:320px" placeholder="🔍 Ara" value="${esc(L.q || '')}"/>
+          <button class="ms-btn sm danger" data-a="lvremove">🗑 Seçilenleri listeden çıkar (<span id="ms-lvn">${L.sel.size}</span>)</button></div>
+        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>Ad</th><th>Durum</th></tr></thead><tbody>
+          ${shown.slice(0, 1500).map((c) => `<tr><td><input type="checkbox" data-lv="${c.id}" ${L.sel.has(c.id) ? 'checked' : ''}/></td><td>${esc(c.email)}</td><td>${esc(c.name)}</td><td>${c.unsubscribed ? '<span class="ms-badge">⤼ Abonelikten çıktı</span>' : '<span class="ms-badge ok">Aktif</span>'}</td></tr>`).join('')}
+        </tbody></table></div></div>`;
+    }
+    return `${up}${view}
+      <div class="ms-start" style="margin-bottom:14px"><div class="ms-row" style="justify-content:space-between;gap:12px">
+        <div><h3>📥 Excel'den e-posta yükle</h3><p class="ms-help">Excel (.xlsx, .xls) ya da CSV dosyası seç. İçindeki tüm e-posta adresleri seçili olarak listelenir; istemediklerinin tikini kaldırıp kaydedersin. Kayıtlı listelere tek seferlik ya da düzenli plan ile gönderebilirsin.</p></div>
+        <label class="ms-btn gold" style="cursor:pointer">📥 Excel seç<input type="file" id="ms-xls" accept=".xlsx,.xls,.csv" hidden/></label></div></div>
+      ${lists.length ? `<div class="ms-tbl-wrap"><table class="ms-tbl"><thead><tr><th>Liste</th><th class="r">Kişi</th><th>Oluşturma</th><th></th></tr></thead><tbody>
+        ${lists.map((l) => `<tr><td><b>📋 ${esc(l.name)}</b></td><td class="r">${l.active}${l.total > l.active ? `<div class="ms-help">${l.total - l.active} abonelikten çıktı</div>` : ''}</td><td>${fmt(l.createdAt)}</td>
+          <td><div class="ms-row" style="justify-content:flex-end"><button class="ms-btn sm" data-a="lvopen" data-id="${l.id}">👁 Kişiler</button><button class="ms-btn sm" data-a="lsend" data-id="${l.id}">⚡ Gönder</button><button class="ms-btn sm" data-a="lplan" data-id="${l.id}">🔁 Plan kur</button>
+            <label class="ms-btn sm" style="cursor:pointer" title="Bu listeye Excel'den kişi ekle">➕ Excel<input type="file" data-addto="${l.id}" accept=".xlsx,.xls,.csv" hidden/></label>
+            <button class="ms-btn sm ghost" data-a="lren" data-id="${l.id}" title="Adını değiştir">✏️</button><button class="ms-btn sm ghost danger" data-a="ldel" data-id="${l.id}">🗑</button></div></td></tr>`).join('')}
+      </tbody></table></div>` : '<div class="ms-empty"><div>📋</div><b>Henüz liste yok</b><p class="ms-help">Excel yükleyerek ilk listeni oluştur.</p></div>'}`;
+  }
+  function redrawLists() { const b = root.querySelector('#ms-body'); if (b && S.tab === 'lists') b.innerHTML = listsHtml(S.home); }
+  async function onExcel(file, target) {
+    if (!file) return;
+    try {
+      toast('Excel okunuyor…');
+      const rows = await readExcel(file);
+      if (!rows.length) { toast('Bu dosyada e-posta adresi bulunamadı', true); return; }
+      S.up = { file: file.name, name: file.name.replace(/\.(xlsx|xls|csv)$/i, '').slice(0, 100), rows, q: '', target: target || '' };
+      redrawLists(); root.querySelector('#ms-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { fail(e); }
+  }
+  async function upSave(then) {
+    const sel = S.up.rows.filter((r) => r.on);
+    if (!sel.length) return toast('En az bir e-posta seç', true);
+    const nameEl = root.querySelector('#ms-upname'); if (nameEl) S.up.name = nameEl.value;
+    try {
+      const r = await api('/api/admin/mail/lists', { method: 'POST', body: { name: S.up.name, listId: S.up.target || undefined, contacts: sel.map((x) => ({ email: x.email, name: x.name })) } });
+      S.up = null; toast(`${r.added} e-posta listeye kaydedildi${r.unsubscribed ? ` (${r.unsubscribed} kişi daha önce abonelikten çıkmış, onlara gönderilmez)` : ''} ✓`);
+      await loadHome();
+      if (then === 'send') ruleModal({ trigger: 'once', audience: 'list:' + r.id, sendNow: true });
+      if (then === 'plan') ruleModal({ trigger: 'schedule', audience: 'list:' + r.id });
+    } catch (e) { fail(e); }
   }
 
   const ST = { queued: ['⏳ Sırada', 'info'], sent: ['✓ Gönderildi', 'ok'], failed: ['⚠ Gönderilemedi', 'bad'], skipped: ['⤼ Atlandı', ''], test: ['🧪 Deneme', 'teal'] };
@@ -396,11 +529,17 @@
   }
 
   /* ---------------- görev penceresi ---------------- */
-  function ruleModal({ rule, trigger, templateId }) {
+  function ruleModal({ rule, trigger, templateId, audience, sendNow }) {
     const d = S.home; if (!d || !d.templates.length) { toast('Önce bir şablon oluştur', true); return; }
     const tomorrow = new Date(Date.now() + 86400e3); tomorrow.setHours(10, 0, 0, 0);
-    const f = rule ? { ...rule } : { name: '', templateId: templateId || d.templates[0].id, trigger: trigger || 'signup', audience: 'all', delayMin: trigger === 'inactive' ? 20160 : 0, sendAt: trigger === 'once' ? tomorrow.getTime() : null, quietHours: true, subjectB: null, active: true };
-    let custom = f.trigger !== 'once' && !(f.trigger === 'inactive' ? IDLE : DELAYS).some(([m]) => m === f.delayMin);
+    const f = rule ? { ...rule } : { name: '', templateId: templateId || d.templates[0].id, trigger: trigger || 'signup', audience: audience || 'all', delayMin: trigger === 'inactive' ? 20160 : 0, sendAt: trigger === 'once' ? (sendNow ? Date.now() : tomorrow.getTime()) : null, quietHours: !sendNow, subjectB: null, active: true, days: [0, 1, 2, 3, 4, 5, 6], atTime: '10:00' };
+    if (!f.days || !f.days.length) f.days = [0, 1, 2, 3, 4, 5, 6];
+    if (!f.atTime) f.atTime = '10:00';
+    const hasAud = () => f.trigger === 'once' || f.trigger === 'schedule';
+    const audPicker = () => `<div class="ms-f"><span>Kime?</span><div class="ms-seg">${AUDIENCES.map(([k, ic, n]) => `<button data-ra="${k}" class="${f.audience === k ? 'on' : ''}" ${fired ? 'disabled' : ''}>${ic} ${n}</button>`).join('')}</div>
+      ${(d.lists || []).length ? `<div class="ms-seg" style="margin-top:6px">${d.lists.map((l) => `<button data-ra="list:${l.id}" class="${f.audience === 'list:' + l.id ? 'on' : ''}" ${fired ? 'disabled' : ''}>📋 ${esc(l.name)} <small>(${l.active})</small></button>`).join('')}</div>` : '<small class="ms-help">Excel listesine göndermek için önce “📋 Kişi listeleri” sekmesinden liste yükle.</small>'}
+      ${aud ? `<div class="ms-aud"><b>≈ ${aud.count.toLocaleString('tr-TR')} kişi</b>${tplOf() && tplOf().kind === 'marketing' && aud.total > aud.count ? `<small class="ms-help"> · ${aud.total - aud.count} kişi kampanya izni vermediği için alamaz</small>` : ''}</div>` : ''}</div>`;
+    let custom = !hasAud() && !(f.trigger === 'inactive' ? IDLE : DELAYS).some(([m]) => m === f.delayMin);
     let ab = !!f.subjectB; let aud = null; const fired = !!(rule && rule.firedAt);
     const m = document.createElement('div'); m.className = 'ms-modal';
     document.body.appendChild(m);
@@ -408,7 +547,7 @@
     const local = (ms) => { if (!ms) return ''; const x = new Date(ms); const p = (n) => String(n).padStart(2, '0'); return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`; };
     async function loadAud() {
       aud = null;
-      if (f.trigger !== 'once' || !tplOf()) return draw();
+      if (!hasAud() || !tplOf()) return draw();
       try { aud = await api(`/api/admin/mail/audience?audience=${f.audience}&kind=${tplOf().kind}`); } catch { aud = null; }
       draw();
     }
@@ -421,27 +560,32 @@
           <div class="ms-f"><span>Görevin adı <small class="ms-help">(isteğe bağlı)</small></span><input class="ms-in" data-r="name" maxlength="80" value="${esc(f.name)}" placeholder="ör. Hoş geldin serisi · 1. gün"/></div>
         </div>
         <div class="ms-f"><span>Ne zaman gitsin?</span><div class="ms-trig">${TRIGGERS.map((t) => `<button data-rt="${t.key}" class="${f.trigger === t.key ? 'on' : ''}" ${fired ? 'disabled' : ''}><span>${t.icon}</span><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div></div>
-        ${f.trigger === 'once' ? `<div class="ms-2">
-            <div class="ms-f"><span>Kime?</span><div class="ms-seg">${AUDIENCES.map(([k, ic, n]) => `<button data-ra="${k}" class="${f.audience === k ? 'on' : ''}" ${fired ? 'disabled' : ''}>${ic} ${n}</button>`).join('')}</div>
-              ${aud ? `<div class="ms-aud"><b>≈ ${aud.count.toLocaleString('tr-TR')} kişi</b>${tpl && tpl.kind === 'marketing' && aud.total > aud.count ? `<small class="ms-help"> · ${aud.total - aud.count} kişi kampanya izni vermediği için alamaz</small>` : ''}</div>` : ''}</div>
-            <div class="ms-f"><span>Tarih ve saat</span><input class="ms-in" type="datetime-local" data-r="sendAt" value="${local(f.sendAt)}" ${fired ? 'disabled' : ''}/></div></div>`
+        ${f.trigger === 'schedule' ? `${audPicker()}
+            <div class="ms-f"><span>Hangi günler?</span><div class="ms-chips">${DAYS.map(([k, l]) => `<button data-rday="${k}" class="${f.days.includes(k) ? 'on' : ''}">${l}</button>`).join('')}</div>
+              <div class="ms-row" style="margin-top:6px"><button class="ms-btn sm ghost" data-rdays="0,1,2,3,4,5,6">Her gün</button><button class="ms-btn sm ghost" data-rdays="1,2,3,4,5">Hafta içi</button><button class="ms-btn sm ghost" data-rdays="0,6">Hafta sonu</button></div></div>
+            <div class="ms-f"><span>Saat</span><input class="ms-in" style="max-width:160px" type="time" data-r="atTime" value="${esc(f.atTime)}"/></div>`
+        : f.trigger === 'once' ? `${audPicker()}
+            <div class="ms-f"><span>Tarih ve saat</span><div class="ms-row"><input class="ms-in" style="max-width:260px" type="datetime-local" data-r="sendAt" value="${local(f.sendAt)}" ${fired ? 'disabled' : ''}/>${fired ? '' : '<button class="ms-btn sm" data-rnow="1">⚡ Hemen</button>'}</div></div>`
           : `<div class="ms-f"><span>${f.trigger === 'inactive' ? 'Son siparişten bu yana ne kadar geçince?' : 'Ne kadar sonra?'}</span><div class="ms-chips">
               ${delays.map(([mm, l]) => `<button data-rd="${mm}" class="${!custom && f.delayMin === mm ? 'on' : ''}">${l}</button>`).join('')}<button data-rd="custom" class="${custom ? 'on' : ''}">Özel…</button></div>
               ${custom ? `<div class="ms-row" style="margin-top:8px"><input class="ms-in" style="width:100px" type="number" min="${f.trigger === 'inactive' ? 7 : 0}" max="90" step="0.5" data-r="days" value="${Math.round((f.delayMin / 1440) * 10) / 10 || ''}"/><span class="ms-help">gün ${f.trigger === 'inactive' ? '' : 'sonra'}</span></div>` : ''}</div>`}
         <div>
-          <label class="ms-opt"><span class="ms-switch"><input type="checkbox" data-r="quietHours" ${f.quietHours ? 'checked' : ''}/><span></span></span><div><b>🌙 Gece rahatsız etme</b><small>21:00–09:00 arasına denk gelen e-posta sabah 09:00'da gider.</small></div></label>
+          ${f.trigger === 'schedule' ? '' : `<label class="ms-opt"><span class="ms-switch"><input type="checkbox" data-r="quietHours" ${f.quietHours ? 'checked' : ''}/><span></span></span><div><b>🌙 Gece rahatsız etme</b><small>21:00–09:00 arasına denk gelen e-posta sabah 09:00'da gider.</small></div></label>`}
           <label class="ms-opt"><span class="ms-switch"><input type="checkbox" data-r="ab" ${ab ? 'checked' : ''}/><span></span></span><div><b>🧪 A/B konu testi</b><small>Alıcıların yarısına ikinci bir konu gider; hangisinin daha çok açıldığını görürsün.</small></div></label>
           ${ab ? `<input class="ms-in" data-r="subjectB" maxlength="150" value="${esc(f.subjectB || '')}" placeholder="B konusu, ör. {ad}, bunu kaçırma 👀"/>` : ''}
           <label class="ms-opt"><span class="ms-switch"><input type="checkbox" data-r="active" ${f.active ? 'checked' : ''}/><span></span></span><div><b>▶️ Görev etkin</b><small>Kapalıysa taslak olarak bekler, hiçbir şey gönderilmez.</small></div></label>
         </div>
         <div class="ms-sentence">💬 ${esc(ruleSentence(f, tpl ? tpl.name : '…'))}
-          ${tpl && tpl.kind === 'marketing' ? '<div class="ms-help" style="margin-top:6px">📣 Kampanya e-postası: yalnızca izin verenlere gider ve aynı kişiye günde en fazla bir kampanya e-postası gönderilir.</div>' : ''}
+          ${tpl && tpl.kind === 'marketing' ? `<div class="ms-help" style="margin-top:6px">📣 Kampanya e-postası: ${/^list:/.test(f.audience) && hasAud() ? 'listedeki herkese gider (abonelikten çıkanlar hariç); her e-postada abonelikten çıkma bağlantısı bulunur' : 'yalnızca izin verenlere gider'} ve aynı kişiye günde en fazla bir kampanya e-postası gönderilir.</div>` : ''}
           ${!d.ready ? '<div class="ms-help" style="margin-top:6px">⚠️ E-posta servisi bağlı olmadığı için şu an gönderim yapılamaz; görev kaydedilir ve servis bağlanınca çalışır.</div>' : ''}</div>
         <div class="ms-modal-foot"><button class="ms-btn" data-rx="close">Vazgeç</button><button class="ms-btn navy" data-rx="save">${rule ? 'Kaydet' : f.active ? '⚡ Kaydet ve başlat' : 'Taslak olarak kaydet'}</button></div></div>`;
     }
     m.addEventListener('click', async (e) => {
       if (e.target === m) return m.remove();
       const t = e.target.closest('button'); if (!t) return;
+      if (t.dataset.rday) { const k = Number(t.dataset.rday); f.days = f.days.includes(k) ? f.days.filter((x) => x !== k) : [...f.days, k]; return draw(); }
+      if (t.dataset.rdays) { f.days = t.dataset.rdays.split(',').map(Number); return draw(); }
+      if (t.dataset.rnow) { f.sendAt = Date.now(); f.quietHours = false; return draw(); }
       if (t.dataset.rt) { f.trigger = t.dataset.rt; custom = false; if (f.trigger === 'inactive' && f.delayMin < 10080) f.delayMin = 20160; if (f.trigger === 'once' && !f.sendAt) f.sendAt = tomorrow.getTime(); return loadAud(); }
       if (t.dataset.ra) { f.audience = t.dataset.ra; return loadAud(); }
       if (t.dataset.rd) { if (t.dataset.rd === 'custom') custom = true; else { custom = false; f.delayMin = Number(t.dataset.rd); } return draw(); }
@@ -450,7 +594,10 @@
         const tpl = tplOf();
         const name = (f.name || '').trim() || `${trig(f.trigger).name} · ${tpl ? tpl.name : ''}`.slice(0, 80);
         if (f.trigger === 'once' && !f.sendAt) return toast('Gönderim tarihini seç', true);
-        const body = { name, templateId: Number(f.templateId), trigger: f.trigger, audience: f.audience, delayMin: f.trigger === 'once' ? 0 : f.delayMin, sendAt: f.trigger === 'once' ? new Date(f.sendAt).toISOString() : null, quietHours: f.quietHours, subjectB: ab && f.subjectB && f.subjectB.trim() ? f.subjectB.trim() : null, active: f.active };
+        if (f.trigger === 'schedule' && !f.days.length) return toast('En az bir gün seç', true);
+        if (f.trigger === 'schedule' && !/^\d{2}:\d{2}$/.test(f.atTime || '')) return toast('Saati seç', true);
+        const body = { name, templateId: Number(f.templateId), trigger: f.trigger, audience: f.audience, delayMin: f.trigger === 'once' ? 0 : f.delayMin, sendAt: f.trigger === 'once' ? new Date(f.sendAt).toISOString() : null, quietHours: f.quietHours, subjectB: ab && f.subjectB && f.subjectB.trim() ? f.subjectB.trim() : null, active: f.active, days: f.days, atTime: f.atTime };
+        if (f.trigger === 'schedule' && f.active && aud && !confirm(`${daysText(f.days)} saat ${f.atTime}'da ${aud.count} kişiye «${tpl ? tpl.name : ''}» otomatik gönderilecek. Onaylıyor musun?`)) return;
         if (f.trigger === 'once' && f.active && !fired && aud && !confirm(`${aud.count} kişiye ${fmt(f.sendAt, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} tarihinde gönderilecek. Onaylıyor musun?`)) return;
         t.disabled = true;
         try {
@@ -468,6 +615,7 @@
     m.addEventListener('change', (e) => {
       const k = e.target.dataset.r; if (!k) return;
       if (k === 'templateId') { f.templateId = Number(e.target.value); return loadAud(); }
+      if (k === 'atTime') { f.atTime = e.target.value; return draw(); }
       if (k === 'sendAt') { f.sendAt = e.target.value ? new Date(e.target.value).getTime() : null; return draw(); }
       if (k === 'quietHours' || k === 'active') { f[k] = e.target.checked; return draw(); }
       if (k === 'ab') { ab = e.target.checked; return draw(); }
@@ -505,6 +653,22 @@
       case 'log': S.tab = 'log'; S.logRule = id; S.logStatus = ''; return render();
       case 'logclear': S.logRule = null; return renderLog();
       case 'logst': S.logStatus = t.dataset.k; return renderLog();
+      case 'upcancel': S.up = null; return redrawLists();
+      case 'upall': case 'upnone': upShown().forEach((r) => { r.on = a === 'upall'; }); return redrawLists();
+      case 'upsave': return upSave(t.dataset.then);
+      case 'lvclose': S.listView = null; return redrawLists();
+      case 'lvopen': api('/api/admin/mail/lists/' + id).then((r) => { S.listView = { ...r, q: '', sel: new Set() }; redrawLists(); }).catch(fail); return;
+      case 'lvremove': {
+        const L = S.listView; if (!L.sel.size) return toast('Önce çıkarılacak kişileri seç', true);
+        if (!confirm(`${L.sel.size} kişi “${L.list.name}” listesinden çıkarılsın mı?`)) return;
+        api(`/api/admin/mail/lists/${L.list.id}/remove`, { method: 'POST', body: { contactIds: [...L.sel] } }).then(async () => {
+          L.contacts = L.contacts.filter((c) => !L.sel.has(c.id)); L.sel = new Set(); toast('Listeden çıkarıldı'); await loadHome();
+        }).catch(fail); return;
+      }
+      case 'lsend': return ruleModal({ trigger: 'once', audience: 'list:' + id, sendNow: true });
+      case 'lplan': return ruleModal({ trigger: 'schedule', audience: 'list:' + id });
+      case 'lren': { const l = d.lists.find((x) => x.id === id); const n = prompt('Listenin yeni adı:', l ? l.name : ''); if (!n) return; api('/api/admin/mail/lists/' + id, { method: 'PUT', body: { name: n } }).then(loadHome).catch(fail); return; }
+      case 'ldel': { const l = d.lists.find((x) => x.id === id); if (!l || !confirm(`“${l.name}” listesi silinsin mi? (Kişiler diğer listelerde kalır.)`)) return; api('/api/admin/mail/lists/' + id, { method: 'DELETE' }).then(() => { if (S.listView && S.listView.list.id === id) S.listView = null; return loadHome(); }).catch(fail); return; }
       case 'cancel': api('/api/admin/mail/sends/' + id, { method: 'DELETE' }).then(renderLog).catch(fail); return;
       // düzenleyici
       case 'back': if (dirty() && !confirm('Kaydedilmemiş değişiklikler kaybolacak. Çıkılsın mı?')) return; S.view = 'home'; S.tpl = null; render(); return loadHome();
@@ -550,6 +714,13 @@
   }
   function onInput(e) {
     const el = e.target;
+    if (el.id === 'ms-upq' || el.id === 'ms-lvq') {
+      const pos = el.selectionStart;
+      if (el.id === 'ms-upq') S.up.q = el.value; else S.listView.q = el.value;
+      redrawLists(); const n = root.querySelector('#' + el.id); if (n) { n.focus(); n.setSelectionRange(pos, pos); }
+      return;
+    }
+    if (el.id === 'ms-upname' && S.up) { S.up.name = el.value; return; }
     if (S.view !== 'edit') return;
     if (el.id === 'ms-pq') {
       S.pq = el.value; const pos = el.selectionStart; redrawProps();
@@ -567,6 +738,16 @@
   }
   async function onChange(e) {
     const el = e.target;
+    if (el.id === 'ms-xls' || el.dataset.addto) { const f = el.files && el.files[0]; el.value = ''; return onExcel(f, el.dataset.addto || ''); }
+    if (el.id === 'ms-uptarget') { S.up.target = el.value; return redrawLists(); }
+    if (el.dataset.ui !== undefined && S.up) {
+      const r = S.up.rows.find((x) => x.email === el.dataset.ui); if (r) r.on = el.checked;
+      const n = root.querySelector('#ms-upn'); if (n) n.textContent = S.up.rows.filter((x) => x.on).length; return;
+    }
+    if (el.dataset.lv !== undefined && S.listView) {
+      const id = Number(el.dataset.lv); if (el.checked) S.listView.sel.add(id); else S.listView.sel.delete(id);
+      const n = root.querySelector('#ms-lvn'); if (n) n.textContent = S.listView.sel.size; return;
+    }
     if (el.dataset.a === 'toggle') {
       const r = S.home.rules.find((x) => x.id === Number(el.dataset.id));
       try { await api('/api/admin/mail/rules/' + r.id, { method: 'PATCH', body: { active: el.checked } }); toast(el.checked ? 'Görev başladı ▶️' : 'Görev durduruldu'); loadHome(); } catch (err) { el.checked = !el.checked; fail(err); }

@@ -18,7 +18,8 @@ const fail = (res, err) => res.status(err.status || 400).json({ error: err.messa
 const outTpl = (t) => ({ id: t.id, name: t.name, subject: t.subject, preheader: t.preheader, kind: t.kind, blocks: safe(t.blocks, []), theme: safe(t.theme, {}), updatedAt: Number(t.updated_at) });
 const safe = (v, d) => { try { return typeof v === 'string' ? JSON.parse(v) : v || d; } catch { return d; } };
 const outRule = (r) => ({ id: r.id, name: r.name, templateId: r.template_id, trigger: r.trigger_key, audience: r.audience, delayMin: r.delay_min, sendAt: r.send_at ? Number(r.send_at) : null,
-  quietHours: !!r.quiet_hours, subjectB: r.subject_b, active: !!r.active, firedAt: r.fired_at ? Number(r.fired_at) : null });
+  quietHours: !!r.quiet_hours, subjectB: r.subject_b, active: !!r.active, firedAt: r.fired_at ? Number(r.fired_at) : null,
+  days: String(r.days || '').split(',').filter((x) => x !== '').map(Number), atTime: r.at_time || '' });
 // önizleme ve deneme için yöneticiye ait örnek kişi
 const sampleVars = () => M.varsOf({ name: 'Ayşe Yılmaz', email: 'ornek@brokerscoffee.com.tr', loyaltyPoints: 120 });
 
@@ -48,6 +49,7 @@ admin.get('/', async (req, res) => {
     templates: templates.map((t) => ({ ...outTpl(t), uses: rules.filter((r) => r.template_id === t.id).length })),
     rules: rules.map((r) => ({ ...outRule(r), stats: st(r.id) })),
     starters: M.STARTERS.map((s) => ({ key: s.key, icon: s.icon, name: s.tpl().name, desc: s.desc, trigger: s.trigger })),
+    lists: await listSummaries(),
   });
 });
 
@@ -131,7 +133,7 @@ admin.post('/templates/:id/test', async (req, res) => {
 });
 
 admin.get('/audience', async (req, res) => {
-  const audience = M.AUDIENCES.includes(req.query.audience) ? req.query.audience : 'all';
+  const audience = M.isAudience(req.query.audience) ? req.query.audience : 'all';
   const marketing = req.query.kind === 'marketing';
   const [a, all] = await Promise.all([M.audienceList(audience, marketing), M.audienceList(audience, false)]);
   res.json({ count: a.length, total: all.length });
@@ -144,12 +146,14 @@ async function cleanRule(b, cur) {
     name: String(v.name || '').trim().slice(0, 80),
     templateId: Number(v.templateId),
     trigger: M.TRIGGERS.includes(v.trigger) ? v.trigger : null,
-    audience: M.AUDIENCES.includes(v.audience) ? v.audience : 'all',
+    audience: M.isAudience(v.audience) ? v.audience : 'all',
     delayMin: Math.min(129600, Math.max(0, Math.round(Number(v.delayMin) || 0))),
     sendAt: v.sendAt ? Number(new Date(v.sendAt)) : null,
     quietHours: v.quietHours !== false,
     subjectB: v.subjectB ? String(v.subjectB).trim().slice(0, 150) || null : null,
     active: !!v.active,
+    days: [...new Set((Array.isArray(v.days) ? v.days : []).map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort(),
+    atTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v.atTime || '')) ? String(v.atTime) : '',
   };
   const err = (m) => { const e = new Error(m); e.status = 400; throw e; };
   if (!out.trigger) err('Ne zaman gideceğini seç');
@@ -157,6 +161,14 @@ async function cleanRule(b, cur) {
   if (out.trigger === 'once' && !(out.sendAt > 0)) err('Tek seferlik gönderim için tarih ve saat seç');
   if (out.trigger !== 'once') out.sendAt = null;
   if (out.trigger === 'inactive') out.delayMin = Math.max(7 * 1440, out.delayMin);
+  if (out.trigger === 'schedule') {
+    if (!out.days.length) err('Planın hangi günlerde çalışacağını seç');
+    if (!out.atTime) err('Planın saatini seç');
+    out.quietHours = false; // saat zaten seçildi
+    out.delayMin = 0;
+  } else { out.days = []; out.atTime = ''; }
+  const lm = /^list:(\d+)$/.exec(out.audience);
+  if (lm && !(await M.q('SELECT id FROM mail_lists WHERE id = ?', [Number(lm[1])])).length) err('Kişi listesi bulunamadı');
   const [t] = await M.q('SELECT id FROM mail_templates WHERE id = ?', [out.templateId]);
   if (!t) err('Şablon bulunamadı');
   return out;
@@ -165,8 +177,10 @@ async function cleanRule(b, cur) {
 admin.post('/rules', async (req, res) => {
   try {
     const b = await cleanRule(req.body);
-    const r = await M.q('INSERT INTO mail_rules (name, template_id, trigger_key, audience, delay_min, send_at, quiet_hours, subject_b, active, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
-      [b.name, b.templateId, b.trigger, b.audience, b.delayMin, b.sendAt, b.quietHours ? 1 : 0, b.subjectB, b.active ? 1 : 0, Date.now()]);
+    const r = await M.q('INSERT INTO mail_rules (name, template_id, trigger_key, audience, delay_min, send_at, quiet_hours, subject_b, active, created_at, days, at_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      [b.name, b.templateId, b.trigger, b.audience, b.delayMin, b.sendAt, b.quietHours ? 1 : 0, b.subjectB, b.active ? 1 : 0, Date.now(), b.days.join(',') || null, b.atTime || null]);
+    // "hemen gönder" ise bir dakika beklemeden kuyruğu çalıştır
+    if (b.active && b.trigger === 'once' && b.sendAt <= Date.now() + 60e3) setImmediate(() => M.mailTick().catch(() => null));
     res.status(201).json({ id: r.insertId });
   } catch (err) { fail(res, err); }
 });
@@ -182,8 +196,8 @@ admin.patch('/rules/:id', async (req, res) => {
       (Number(new Date(p.sendAt || cur.send_at)) !== Number(cur.send_at) || (p.audience || cur.audience) !== cur.audience || Number(p.templateId || cur.template_id) !== cur.template_id)) {
       return res.status(409).json({ error: 'Bu kampanya gönderildi; değiştirmek yerine yeni bir görev oluştur' });
     }
-    await M.q('UPDATE mail_rules SET name = ?, template_id = ?, trigger_key = ?, audience = ?, delay_min = ?, send_at = ?, quiet_hours = ?, subject_b = ?, active = ? WHERE id = ?',
-      [b.name, b.templateId, b.trigger, b.audience, b.delayMin, b.sendAt, b.quietHours ? 1 : 0, b.subjectB, b.active ? 1 : 0, id]);
+    await M.q('UPDATE mail_rules SET name = ?, template_id = ?, trigger_key = ?, audience = ?, delay_min = ?, send_at = ?, quiet_hours = ?, subject_b = ?, active = ?, days = ?, at_time = ? WHERE id = ?',
+      [b.name, b.templateId, b.trigger, b.audience, b.delayMin, b.sendAt, b.quietHours ? 1 : 0, b.subjectB, b.active ? 1 : 0, b.days.join(',') || null, b.atTime || null, id]);
     res.json({ ok: true });
   } catch (err) { fail(res, err); }
 });
@@ -196,6 +210,74 @@ admin.delete('/rules/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+/* ---- kişi listeleri (Excel'den yüklenen e-postalar) ---- */
+async function listSummaries() {
+  const rows = await M.q(`SELECT l.id, l.name, l.created_at, COUNT(c.id) AS total, SUM(c.id IS NOT NULL AND c.unsubscribed_at IS NULL) AS active
+    FROM mail_lists l LEFT JOIN mail_list_members lm ON lm.list_id = l.id LEFT JOIN mail_contacts c ON c.id = lm.contact_id
+    GROUP BY l.id ORDER BY l.created_at DESC`);
+  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: Number(r.created_at), total: Number(r.total || 0), active: Number(r.active || 0) }));
+}
+admin.get('/lists', async (req, res) => res.json({ lists: await listSummaries() }));
+
+// yeni liste oluştur ya da var olana ekle: { name, listId?, contacts: [{ email, name }] }
+admin.post('/lists', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const seen = new Set(); const contacts = [];
+    for (const c of Array.isArray(b.contacts) ? b.contacts.slice(0, 20000) : []) {
+      const email = String((c && c.email) || '').trim().toLowerCase();
+      if (!M.validEmail(email) || seen.has(email)) continue;
+      seen.add(email); contacts.push([email, String((c && c.name) || '').trim().slice(0, 120)]);
+    }
+    if (!contacts.length) return res.status(400).json({ error: 'Seçili geçerli e-posta adresi yok' });
+    let listId = Number(b.listId) || 0;
+    if (listId) {
+      if (!(await M.q('SELECT id FROM mail_lists WHERE id = ?', [listId])).length) return res.status(404).json({ error: 'Liste bulunamadı' });
+    } else {
+      const name = String(b.name || '').trim().slice(0, 120) || 'Excel listesi';
+      listId = (await M.q('INSERT INTO mail_lists (name, created_at) VALUES (?, ?)', [name, Date.now()])).insertId;
+    }
+    const now = Date.now();
+    for (let i = 0; i < contacts.length; i += 500) {
+      const part = contacts.slice(i, i + 500);
+      await M.q("INSERT INTO mail_contacts (email, name, created_at) VALUES ? ON DUPLICATE KEY UPDATE name = IF(VALUES(name) <> '', VALUES(name), name)", [part.map(([e, n]) => [e, n, now])]);
+      const ids = await M.q('SELECT id FROM mail_contacts WHERE email IN (?)', [part.map(([e]) => e)]);
+      if (ids.length) await M.q('INSERT IGNORE INTO mail_list_members (list_id, contact_id) VALUES ?', [ids.map((r) => [listId, r.id])]);
+    }
+    const [u] = await M.q(`SELECT COUNT(*) AS n FROM mail_contacts WHERE unsubscribed_at IS NOT NULL AND email IN (?)`, [contacts.map(([e]) => e)]);
+    res.status(201).json({ id: listId, added: contacts.length, unsubscribed: Number(u.n || 0) });
+  } catch (err) { fail(res, err); }
+});
+
+admin.get('/lists/:id', async (req, res) => {
+  const id = idParam(req);
+  const [l] = await M.q('SELECT id, name, created_at FROM mail_lists WHERE id = ?', [id]);
+  if (!l) return res.status(404).json({ error: 'Liste bulunamadı' });
+  const rows = await M.q(`SELECT c.id, c.email, c.name, c.unsubscribed_at FROM mail_list_members lm JOIN mail_contacts c ON c.id = lm.contact_id
+    WHERE lm.list_id = ? ORDER BY c.email LIMIT 20000`, [id]);
+  res.json({ list: { id: l.id, name: l.name, createdAt: Number(l.created_at) }, contacts: rows.map((r) => ({ id: r.id, email: r.email, name: r.name, unsubscribed: !!r.unsubscribed_at })) });
+});
+admin.put('/lists/:id', async (req, res) => {
+  const name = String((req.body && req.body.name) || '').trim().slice(0, 120);
+  if (!name) return res.status(400).json({ error: 'Liste adı boş olamaz' });
+  await M.q('UPDATE mail_lists SET name = ? WHERE id = ?', [name, idParam(req)]);
+  res.json({ ok: true });
+});
+// listeden kişi çıkar: { contactIds: [] }
+admin.post('/lists/:id/remove', async (req, res) => {
+  const ids = (Array.isArray(req.body && req.body.contactIds) ? req.body.contactIds : []).map(Number).filter((n) => n > 0);
+  if (ids.length) await M.q('DELETE FROM mail_list_members WHERE list_id = ? AND contact_id IN (?)', [idParam(req), ids]);
+  res.json({ ok: true, removed: ids.length });
+});
+admin.delete('/lists/:id', async (req, res) => {
+  const id = idParam(req);
+  const used = await M.q('SELECT name FROM mail_rules WHERE audience = ?', ['list:' + id]);
+  if (used.length) return res.status(409).json({ error: `Bu liste şu görevlerde kullanılıyor: ${used.map((u) => u.name).join(', ')}. Önce görevleri sil ya da kitlesini değiştir.` });
+  await M.q('DELETE FROM mail_list_members WHERE list_id = ?', [id]);
+  await M.q('DELETE FROM mail_lists WHERE id = ?', [id]);
+  res.json({ ok: true });
+});
+
 admin.get('/sends', async (req, res) => {
   const where = []; const params = [];
   if (Number(req.query.rule) > 0) { where.push('s.rule_id = ?'); params.push(Number(req.query.rule)); }
@@ -204,7 +286,12 @@ admin.get('/sends', async (req, res) => {
     FROM mail_sends s JOIN mail_templates t ON t.id = s.template_id LEFT JOIN mail_rules r ON r.id = s.rule_id
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY s.id DESC LIMIT 150`, params);
   const customers = await customerAuth.loadCustomers();
-  const nameOf = (id) => { const c = id && customers.find((x) => x.id === id); return c ? c.name : null; };
+  const kIds = [...new Set(rows.filter((r) => String(r.customer_id || '').startsWith('k:')).map((r) => Number(r.customer_id.slice(2))))];
+  const ks = new Map((kIds.length ? await M.q('SELECT id, name FROM mail_contacts WHERE id IN (?)', [kIds]) : []).map((k) => [k.id, k.name]));
+  const nameOf = (id) => {
+    if (String(id || '').startsWith('k:')) return ks.get(Number(id.slice(2))) || '📋 Listeden';
+    const c = id && customers.find((x) => x.id === id); return c ? c.name : null;
+  };
   const n = (v) => (v ? Number(v) : null);
   res.json({ sends: rows.map((r) => ({ id: r.id, email: r.email, user: nameOf(r.customer_id), status: r.status, note: r.note, subject: r.subject, variant: r.variant, template: r.template, rule: r.rule,
     dueAt: n(r.due_at), sentAt: n(r.sent_at), openedAt: n(r.opened_at), clickedAt: n(r.clicked_at) })) });
@@ -245,13 +332,17 @@ async function findByTok(t) {
 pub.get('/u/:t', async (req, res) => {
   const s = await findByTok(req.params.t);
   res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-  if (!s || !s.customer_id) return res.send(page('Bağlantı geçersiz', '<p>Bu bağlantı geçersiz ya da süresi dolmuş.</p>'));
+  if (!s || !s.customer_id || s.customer_id === 'k:') return res.send(page('Bağlantı geçersiz', '<p>Bu bağlantı geçersiz ya da süresi dolmuş.</p>'));
   // bağlantı e-posta tarayıcıları tarafından önceden açılabilir; çıkış ancak düğmeyle olur
   res.send(page('Abonelikten çık', `<p style="line-height:1.6">${escH(s.email)} adresine kampanya e-postası gönderilmesin mi?</p><form method="post"><button style="margin-top:12px;background:#0d1b3d;color:#fff;border:0;border-radius:999px;padding:12px 24px;font-size:16px;font-weight:700;cursor:pointer">Abonelikten çık</button></form><p style="font-size:13px;color:#7a7e89;margin-top:18px">Sipariş ve üyelik bilgilendirmeleri gelmeye devam eder.</p>`));
 });
 pub.post('/u/:t', async (req, res) => {
   const s = await findByTok(req.params.t);
-  if (s && s.customer_id) {
+  if (s && String(s.customer_id || '').startsWith('k:')) {
+    await M.q('UPDATE mail_contacts SET unsubscribed_at = ? WHERE id = ? AND unsubscribed_at IS NULL', [Date.now(), Number(s.customer_id.slice(2))]);
+    await M.q(`UPDATE mail_sends x JOIN mail_templates y ON y.id = x.template_id SET x.status = 'skipped', x.note = 'Abonelikten çıktı'
+      WHERE x.customer_id = ? AND x.status = 'queued' AND y.kind = 'marketing'`, [s.customer_id]);
+  } else if (s && s.customer_id) {
     const all = await customerAuth.loadCustomers();
     const c = all.find((x) => x.id === s.customer_id);
     if (c && c.marketingConsentAt) { c.marketingConsentAt = null; await customerAuth.saveCustomers(all); }
