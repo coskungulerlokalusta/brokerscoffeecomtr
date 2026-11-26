@@ -15,8 +15,8 @@
   .sidebar-link:hover:not(.active-section) { background: #f4f3f1; }
   .member-filter-btn.active-filter { background: #0d1b3d; color: #fff; }
 </style>
-<link rel="stylesheet" href="/admin/studio.css?v=20261126d"/>
-<link rel="stylesheet" href="/admin/mail.css?v=20261126d"/>
+<link rel="stylesheet" href="/admin/studio.css?v=20261126e"/>
+<link rel="stylesheet" href="/admin/mail.css?v=20261126e"/>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
 
@@ -1207,7 +1207,7 @@ const INTEGRATION_CONFIG = {
       { key: 'port', label: 'Port', help: '(465 = SSL, önerilen)', type: 'select', options: [['465', '465 (SSL)'], ['587', '587 (STARTTLS)']] },
       { key: 'user', label: 'E-posta adresi', help: '(Hostinger Mail\'de oluşturduğun tam adres, örn. info@brokerscoffee.com.tr)', type: 'text' },
       { key: 'password', label: 'E-posta şifresi', help: '(o e-posta kutusunun şifresi)', type: 'secret' },
-      { key: 'from', label: 'Gönderen adı', help: '(isteğe bağlı, örn. Brokers Coffee <info@brokerscoffee.com.tr>; adres yukarıdakiyle aynı olmalı)', type: 'text' },
+      { key: 'from', label: 'Gönderen adı', help: '(alıcının göreceği ad, örn. Torium AVM Brokers Coffee)', type: 'text' },
     ],
   },
   resend: {
@@ -2514,7 +2514,7 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
   }
 })();
 </script>
-<script src="/admin/studio.js?v=20261126d"></script>
-<script src="/admin/mail.js?v=20261126d"></script>
+<script src="/admin/studio.js?v=20261126e"></script>
+<script src="/admin/mail.js?v=20261126e"></script>
 </body>
 </html>
