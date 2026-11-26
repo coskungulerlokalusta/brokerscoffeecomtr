@@ -29,8 +29,12 @@ function smtpTransport(c) {
 async function getConfig() {
   const s = await integrations.getProviderCredentials('smtp');
   if (s.host && s.user && s.password) {
-    const from = (s.from || '').trim() || `Brokers Coffee <${s.user}>`;
-    return { via: 'smtp', smtp: s, from, ready: true };
+    // "Gönderen adı" alanına sadece ad yazılabilir (ör. "Torium AVM Brokers Coffee"): adres her zaman
+    // giriş yapılan kutunun adresi olur; Hostinger başka adresten gönderime izin vermez.
+    const raw = (s.from || '').trim();
+    const name = (raw.includes('<') ? raw.slice(0, raw.indexOf('<')) : raw.includes('@') ? '' : raw).replace(/["<>]/g, '').trim() || 'Brokers Coffee';
+    const from = { name, address: s.user };
+    return { via: 'smtp', smtp: s, from, fromText: `${name} <${s.user}>`, ready: true };
   }
   const c = await integrations.getProviderCredentials('resend');
   return { via: 'resend', apiKey: c.apiKey || '', from: (c.from || '').trim() || DEFAULT_FROM, ready: !!c.apiKey };
@@ -45,7 +49,7 @@ async function sendMail(m) {
   }
   if (cfg.via === 'smtp') {
     try {
-      await smtpTransport(cfg.smtp).sendMail({ from: cfg.from, to: m.to, subject: m.subject, text: m.text, html: m.html, headers: m.headers });
+      await smtpTransport(cfg.smtp).sendMail({ from: cfg.from, envelope: { from: cfg.smtp.user, to: m.to }, to: m.to, subject: m.subject, text: m.text, html: m.html, headers: m.headers });
       return true;
     } catch (err) {
       console.error('E-posta gönderilemedi (SMTP):', err.message);

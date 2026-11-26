@@ -43,7 +43,7 @@ admin.get('/', async (req, res) => {
   const customers = (await customerAuth.loadCustomers()).filter((c) => c.active !== false);
   const cfg = await mailer.getConfig();
   res.json({
-    ready: cfg.ready, from: cfg.from,
+    ready: cfg.ready, from: cfg.fromText || cfg.from,
     totals: { sent: Number(week.sent || 0), opened: Number(week.opened || 0), clicked: Number(week.clicked || 0), queued: Number(week.queued || 0),
       users: customers.length, withEmail: customers.filter((c) => M.validEmail(c.email)).length, optin: customers.filter((c) => M.validEmail(c.email) && c.marketingConsentAt).length },
     templates: templates.map((t) => ({ ...outTpl(t), uses: rules.filter((r) => r.template_id === t.id).length })),
@@ -128,7 +128,7 @@ admin.post('/templates/:id/test', async (req, res) => {
     await M.q("INSERT INTO mail_sends (template_id, email, subject, status, note, token, due_at, sent_at, created_at) VALUES (?,?,?,'test',?,?,?,?,?)",
       [row.id, to, (r.subject || '').slice(0, 190), ok ? `Deneme (${cfg.via === 'smtp' ? 'SMTP' : 'Resend'})` : ('Gönderilemedi: ' + mailer.state.lastError).slice(0, 190), M.token(), now, now, now]);
     if (!ok) return res.status(502).json({ error: 'E-posta gönderilemedi. Sebep: ' + (mailer.state.lastError || 'bilinmiyor') });
-    res.json({ ok: true, to, via: cfg.via, from: cfg.from });
+    res.json({ ok: true, to, via: cfg.via, from: cfg.fromText || cfg.from });
   } catch (err) { fail(res, err); }
 });
 
