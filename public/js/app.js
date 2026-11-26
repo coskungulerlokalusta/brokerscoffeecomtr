@@ -443,7 +443,11 @@
       }, 5000);
     }
   };
-  BC.slide = (x) => `<div class="bc-slide ${esc(x.theme || 'navy')}">${BC.imgTag(x.image, x.title, 'bg')}<div class="bc-slide-in">${x.eyebrow ? `<span class="bc-eyebrow">${esc(x.eyebrow)}</span>` : ''}<h2>${esc(x.title)}</h2>${x.subtitle ? `<p>${esc(x.subtitle)}</p>` : ''}${x.ctaText ? `<a class="bc-btn ${x.theme === 'gold' ? 'bc-btn-navy' : 'bc-btn-gold'}" href="${esc(x.link || '/siparis.html')}">${esc(x.ctaText)} ${I.arrow}</a>` : ''}</div></div>`;
+  // Görselin kendi yazısı varsa (başlık, alt metin, buton boş): görsel kırpılmadan ve karartılmadan tam gösterilir, tamamı tıklanır
+  BC.slide = (x) => (x.image && !x.title && !x.subtitle && !x.ctaText && !x.eyebrow)
+    ? `<a class="bc-slide bare" href="${esc(x.link || '/siparis.html')}">${BC.imgTag(x.image, 'Brokers Coffee', 'bg')}</a>`
+    : BC.slideFull(x);
+  BC.slideFull = (x) => `<div class="bc-slide ${esc(x.theme || 'navy')}">${BC.imgTag(x.image, x.title, 'bg')}<div class="bc-slide-in">${x.eyebrow ? `<span class="bc-eyebrow">${esc(x.eyebrow)}</span>` : ''}<h2>${esc(x.title)}</h2>${x.subtitle ? `<p>${esc(x.subtitle)}</p>` : ''}${x.ctaText ? `<a class="bc-btn ${x.theme === 'gold' ? 'bc-btn-navy' : 'bc-btn-gold'}" href="${esc(x.link || '/siparis.html')}">${esc(x.ctaText)} ${I.arrow}</a>` : ''}</div></div>`;
 
   // Belirerek gelme efekti
   BC.reveal = (scope = document) => {

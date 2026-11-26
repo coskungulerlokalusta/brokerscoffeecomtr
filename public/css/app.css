@@ -352,9 +352,15 @@ label.bc-optbtn { position: relative; cursor: pointer; }
 body.bc-pd .bc-cartpill, body.bc-pd .bc-chat { display: none; }
 body.bc-pd { padding-bottom: calc(var(--bc-nav-h) + 110px + env(safe-area-inset-bottom)); }
 
+/* Yazısı görselin içinde olan afiş: oranı korunur, kırpılmaz, karartılmaz */
+.bc-slide.bare { display: block; min-height: 0; align-self: flex-start; background: var(--bc-navy); }
+.bc-slide.bare::before { display: none; }
+.bc-slide.bare img.bg { position: static; display: block; width: 100%; height: auto; transform: none; }
+
 /* Masaüstü */
 @media (min-width: 760px) {
   .bc-slide { flex-basis: 100%; min-height: 420px; }
+  .bc-slide.bare { min-height: 0; }
   .bc-slide-in { padding: 44px; }
   .bc-catgrid { grid-template-columns: repeat(3, 1fr); }
   .bc-cat.wide { grid-column: auto; }

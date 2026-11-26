@@ -218,7 +218,7 @@
     slides() {
       return `<div class="st-card"><h3>Ana slider</h3><p class="st-help">Anasayfa ve Sipariş Ver ekranının üstünde kayan büyük görseller. Sıralamayı oklarla değiştir, her slaytı müşteriye veya personele özel yapabilirsin.</p>
         ${listEditor('slides', { titleOf: (x) => x.title, subOf: (x) => x.link, thumbOf: (x) => imgThumb(x.image), addLabel: 'Slayt ekle',
-          body: (i) => `${fImage(['slides', i, 'image'], 'Görsel (yatay, en az 1200px)')}${fText(['slides', i, 'eyebrow'], 'Üst etiket', { ph: 'Torium AVM · Esenyurt' })}${fText(['slides', i, 'title'], 'Başlık', { max: 90 })}
+          body: (i) => `${fImage(['slides', i, 'image'], 'Görsel (yatay, en az 1200px)')}<div class="st-help full" style="grid-column:1/-1;margin:-4px 0 4px">💡 Görselin üzerinde kendi yazısı ve düğmesi varsa aşağıdaki yazı alanlarını <b>boş bırak</b>: görsel telefonda da kırpılmadan, karartılmadan tam görünür ve tamamı bağlantıya tıklanır.</div>${fText(['slides', i, 'eyebrow'], 'Üst etiket', { ph: 'Torium AVM · Esenyurt' })}${fText(['slides', i, 'title'], 'Başlık', { max: 90 })}
             ${fText(['slides', i, 'subtitle'], 'Alt metin', { full: true, max: 160 })}${fText(['slides', i, 'ctaText'], 'Buton yazısı', { ph: 'Sipariş Ver' })}${fLink(['slides', i, 'link'], 'Buton bağlantısı')}
             ${fSwatch(['slides', i, 'theme'], 'Renk teması', THEMES)}${fAudience(['slides', i, 'audience'])}` })}</div>`;
     },
