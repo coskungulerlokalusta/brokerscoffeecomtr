@@ -21,7 +21,7 @@ const outRule = (r) => ({ id: r.id, name: r.name, templateId: r.template_id, tri
   quietHours: !!r.quiet_hours, subjectB: r.subject_b, active: !!r.active, firedAt: r.fired_at ? Number(r.fired_at) : null,
   days: String(r.days || '').split(',').filter((x) => x !== '').map(Number), atTime: r.at_time || '' });
 // önizleme ve deneme için yöneticiye ait örnek kişi
-const sampleVars = () => M.varsOf({ name: 'Ayşe Yılmaz', email: 'ornek@brokerscoffee.com.tr', loyaltyPoints: 120 });
+const sampleVars = () => M.varsOf({ name: 'Ayşe Yılmaz', email: 'ornek@brokerscoffee.com.tr', loyaltyPoints: 120, company: 'Lizay Pırlanta' });
 
 admin.use(adminAuth.requireAuth);
 
@@ -227,7 +227,7 @@ admin.post('/lists', async (req, res) => {
     for (const c of Array.isArray(b.contacts) ? b.contacts.slice(0, 20000) : []) {
       const email = String((c && c.email) || '').trim().toLowerCase();
       if (!M.validEmail(email) || seen.has(email)) continue;
-      seen.add(email); contacts.push([email, String((c && c.name) || '').trim().slice(0, 120)]);
+      seen.add(email); contacts.push([email, String((c && c.name) || '').trim().slice(0, 120), String((c && c.company) || '').trim().slice(0, 120)]);
     }
     if (!contacts.length) return res.status(400).json({ error: 'Seçili geçerli e-posta adresi yok' });
     let listId = Number(b.listId) || 0;
@@ -240,7 +240,7 @@ admin.post('/lists', async (req, res) => {
     const now = Date.now();
     for (let i = 0; i < contacts.length; i += 500) {
       const part = contacts.slice(i, i + 500);
-      await M.q("INSERT INTO mail_contacts (email, name, created_at) VALUES ? ON DUPLICATE KEY UPDATE name = IF(VALUES(name) <> '', VALUES(name), name)", [part.map(([e, n]) => [e, n, now])]);
+      await M.q("INSERT INTO mail_contacts (email, name, company, created_at) VALUES ? ON DUPLICATE KEY UPDATE name = IF(VALUES(name) <> '', VALUES(name), name), company = IF(VALUES(company) <> '', VALUES(company), company)", [part.map(([e, n, co]) => [e, n, co, now])]);
       const ids = await M.q('SELECT id FROM mail_contacts WHERE email IN (?)', [part.map(([e]) => e)]);
       if (ids.length) await M.q('INSERT IGNORE INTO mail_list_members (list_id, contact_id) VALUES ?', [ids.map((r) => [listId, r.id])]);
     }
@@ -253,9 +253,9 @@ admin.get('/lists/:id', async (req, res) => {
   const id = idParam(req);
   const [l] = await M.q('SELECT id, name, created_at FROM mail_lists WHERE id = ?', [id]);
   if (!l) return res.status(404).json({ error: 'Liste bulunamadı' });
-  const rows = await M.q(`SELECT c.id, c.email, c.name, c.unsubscribed_at FROM mail_list_members lm JOIN mail_contacts c ON c.id = lm.contact_id
+  const rows = await M.q(`SELECT c.id, c.email, c.name, c.company, c.unsubscribed_at FROM mail_list_members lm JOIN mail_contacts c ON c.id = lm.contact_id
     WHERE lm.list_id = ? ORDER BY c.email LIMIT 20000`, [id]);
-  res.json({ list: { id: l.id, name: l.name, createdAt: Number(l.created_at) }, contacts: rows.map((r) => ({ id: r.id, email: r.email, name: r.name, unsubscribed: !!r.unsubscribed_at })) });
+  res.json({ list: { id: l.id, name: l.name, createdAt: Number(l.created_at) }, contacts: rows.map((r) => ({ id: r.id, email: r.email, name: r.name, company: r.company, unsubscribed: !!r.unsubscribed_at })) });
 });
 admin.put('/lists/:id', async (req, res) => {
   const name = String((req.body && req.body.name) || '').trim().slice(0, 120);

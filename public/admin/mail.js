@@ -105,7 +105,7 @@
       [!!t.subject.trim(), 'Konu yazıldı'],
       [t.subject.length <= 60, `Konu kısa (${t.subject.length}/60): telefonda kesilmez`],
       [!!t.preheader.trim(), 'Ön izleme metni var (gelen kutusunda konunun yanında görünür)'],
-      [all.includes('{ad}'), 'Kişiselleştirme: {ad} kullanıldı'],
+      [/\{(ad|isyeri)[|}]/.test(all), 'Kişiselleştirme: {ad} ya da {isyeri} kullanıldı'],
       [t.blocks.some((b) => b.type === 'button' || (b.type === 'hero' && b.btnText)), 'En az bir düğme var'],
       [!t.blocks.some((b) => (b.type === 'image' && (!b.url || !b.alt)) || (b.type === 'imagetext' && !b.image)), 'Görsellerin hepsi seçili ve açıklamalı'],
       [!t.blocks.some((b) => b.type === 'products' && !(b.ids || []).length), 'Ürün bölümlerinde ürün seçildi'],
@@ -214,11 +214,13 @@
     const out = new Map();
     for (const sn of wb.SheetNames) {
       const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' });
-      let nameCol = -1; let surCol = -1;
+      let nameCol = -1; let surCol = -1; let coCol = -1;
       const head = (rows[0] || []).map((h) => String(h).toLocaleLowerCase('tr').trim());
       if (!head.some((h) => EMAIL_RE.test(h))) {
-        nameCol = head.findIndex((h) => /^(ad|adı|ad soyad|adı soyadı|ad-soyad|isim|isim soyisim|name|full name|müşteri|müşteri adı|firma|firma adı|unvan|kişi)$/.test(h));
-        if (nameCol < 0) nameCol = head.findIndex((h) => /(ad soyad|isim|name|müşteri|firma|unvan)/.test(h) && !/mail/.test(h));
+        // iş yeri sütunu: "Mağaza / Not", "Firma", "İşyeri", "Şirket"…  → {isyeri}
+        coCol = head.findIndex((h) => /(mağaza|magaza|firma|şirket|sirket|işyeri|isyeri|iş yeri|is yeri|kurum|unvan|ünvan|dükkan|store|company)/.test(h) && !/mail/.test(h));
+        nameCol = head.findIndex((h, i) => i !== coCol && /^(ad|adı|ad soyad|adı soyadı|ad-soyad|isim|isim soyisim|name|full name|müşteri|müşteri adı|yetkili|kişi)$/.test(h));
+        if (nameCol < 0) nameCol = head.findIndex((h, i) => i !== coCol && /(ad soyad|isim|name|müşteri|yetkili)/.test(h) && !/mail/.test(h));
         surCol = head.findIndex((h) => /^(soyad|soyadı|surname|last name)$/.test(h));
       }
       for (const r of rows) {
@@ -230,14 +232,16 @@
             let name = nameCol >= 0 ? String(r[nameCol] || '').trim() : '';
             if (surCol >= 0 && r[surCol]) name = (name + ' ' + String(r[surCol]).trim()).trim();
             if (EMAIL_RE.test(name)) name = '';
-            out.set(email, { email, name: name.slice(0, 120), on: true });
+            let company = coCol >= 0 ? String(r[coCol] || '').trim() : '';
+            if (EMAIL_RE.test(company)) company = '';
+            out.set(email, { email, name: name.slice(0, 120), company: company.slice(0, 120), on: true });
           });
         });
       }
     }
     return [...out.values()];
   }
-  const upShown = () => { const q = (S.up.q || '').toLocaleLowerCase('tr'); return S.up.rows.filter((r) => !q || (r.email + ' ' + r.name).toLocaleLowerCase('tr').includes(q)); };
+  const upShown = () => { const q = (S.up.q || '').toLocaleLowerCase('tr'); return S.up.rows.filter((r) => !q || (r.email + ' ' + r.name + ' ' + r.company).toLocaleLowerCase('tr').includes(q)); };
   function listsHtml(d) {
     const lists = d.lists || [];
     let up = '';
@@ -252,8 +256,8 @@
         </div>
         <div class="ms-row" style="margin-bottom:8px"><input class="ms-in" id="ms-upq" style="max-width:320px" placeholder="🔍 Ara" value="${esc(S.up.q || '')}"/>
           <button class="ms-btn sm" data-a="upall">☑ Tümünü seç</button><button class="ms-btn sm" data-a="upnone">☐ Hiçbirini seçme</button></div>
-        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>Ad</th></tr></thead><tbody>
-          ${shown.slice(0, 1500).map((r) => `<tr><td><input type="checkbox" data-ui="${esc(r.email)}" ${r.on ? 'checked' : ''}/></td><td>${esc(r.email)}</td><td>${esc(r.name)}</td></tr>`).join('')}
+        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>İş yeri <small>{isyeri}</small></th><th>Ad <small>{ad}</small></th></tr></thead><tbody>
+          ${shown.slice(0, 1500).map((r) => `<tr><td><input type="checkbox" data-ui="${esc(r.email)}" ${r.on ? 'checked' : ''}/></td><td>${esc(r.email)}</td><td>${esc(r.company)}</td><td>${esc(r.name)}</td></tr>`).join('')}
         </tbody></table>${shown.length > 1500 ? `<p class="ms-help" style="padding:10px">İlk 1500 kayıt gösteriliyor (${shown.length} kayıt). Aramayla daraltabilirsin; gizli olanların seçimi korunur.</p>` : ''}</div>
         <div class="ms-row" style="margin-top:12px;justify-content:flex-end">
           <button class="ms-btn" data-a="upsave" data-then="">💾 Listeyi kaydet</button>
@@ -269,8 +273,8 @@
         <div class="ms-row" style="justify-content:space-between"><h3>📋 ${esc(L.list.name)} <small class="ms-help">${L.contacts.length} kişi</small></h3><button class="ms-btn sm ghost" data-a="lvclose">✕ Kapat</button></div>
         <div class="ms-row" style="margin:8px 0"><input class="ms-in" id="ms-lvq" style="max-width:320px" placeholder="🔍 Ara" value="${esc(L.q || '')}"/>
           <button class="ms-btn sm danger" data-a="lvremove">🗑 Seçilenleri listeden çıkar (<span id="ms-lvn">${L.sel.size}</span>)</button></div>
-        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>Ad</th><th>Durum</th></tr></thead><tbody>
-          ${shown.slice(0, 1500).map((c) => `<tr><td><input type="checkbox" data-lv="${c.id}" ${L.sel.has(c.id) ? 'checked' : ''}/></td><td>${esc(c.email)}</td><td>${esc(c.name)}</td><td>${c.unsubscribed ? '<span class="ms-badge">⤼ Abonelikten çıktı</span>' : '<span class="ms-badge ok">Aktif</span>'}</td></tr>`).join('')}
+        <div class="ms-tbl-wrap" style="max-height:420px;overflow:auto"><table class="ms-tbl"><thead><tr><th style="width:40px"></th><th>E-posta</th><th>İş yeri</th><th>Ad</th><th>Durum</th></tr></thead><tbody>
+          ${shown.slice(0, 1500).map((c) => `<tr><td><input type="checkbox" data-lv="${c.id}" ${L.sel.has(c.id) ? 'checked' : ''}/></td><td>${esc(c.email)}</td><td>${esc(c.company || '')}</td><td>${esc(c.name)}</td><td>${c.unsubscribed ? '<span class="ms-badge">⤼ Abonelikten çıktı</span>' : '<span class="ms-badge ok">Aktif</span>'}</td></tr>`).join('')}
         </tbody></table></div></div>`;
     }
     return `${up}${view}
@@ -300,7 +304,7 @@
     if (!sel.length) return toast('En az bir e-posta seç', true);
     const nameEl = root.querySelector('#ms-upname'); if (nameEl) S.up.name = nameEl.value;
     try {
-      const r = await api('/api/admin/mail/lists', { method: 'POST', body: { name: S.up.name, listId: S.up.target || undefined, contacts: sel.map((x) => ({ email: x.email, name: x.name })) } });
+      const r = await api('/api/admin/mail/lists', { method: 'POST', body: { name: S.up.name, listId: S.up.target || undefined, contacts: sel.map((x) => ({ email: x.email, name: x.name, company: x.company })) } });
       S.up = null; toast(`${r.added} e-posta listeye kaydedildi${r.unsubscribed ? ` (${r.unsubscribed} kişi daha önce abonelikten çıkmış, onlara gönderilmez)` : ''} ✓`);
       await loadHome();
       if (then === 'send') ruleModal({ trigger: 'once', audience: 'list:' + r.id, sendNow: true });
@@ -368,7 +372,7 @@
               <div class="ms-f"><span>Kart</span><input type="color" data-th="card" value="${esc(th.card || '#ffffff')}"/></div>
             </div>
             <label class="ms-row" style="font-size:13px"><input type="checkbox" data-th="logo" ${th.logo !== false ? 'checked' : ''}/> Üstte Brokers Coffee logosu</label>
-            <p class="ms-help" style="margin-top:8px">Değişkenler: <b>{ad}</b>, <b>{adsoyad}</b>, <b>{puan}</b>, <b>{eposta}</b>. Metinde <b>**kalın**</b>, <i>*italik*</i>, [yazı](/adres) kullanılabilir.</p>
+            <p class="ms-help" style="margin-top:8px">Değişkenler: <b>{ad}</b>, <b>{adsoyad}</b>, <b>{isyeri}</b> (Excel'deki mağaza/firma adı), <b>{puan}</b>, <b>{eposta}</b>. Boş kalırsa yedek yazı: <b>{isyeri|komşumuz}</b>. Önizlemede örnek iş yeri: Lizay Pırlanta. Metinde <b>**kalın**</b>, <i>*italik*</i>, [yazı](/adres) kullanılabilir.</p>
           </div>
           <div class="ms-panel"><h3>🧱 Bölümler</h3>
             <div class="ms-blocks" id="ms-blocks">${blocksListHtml()}</div>
