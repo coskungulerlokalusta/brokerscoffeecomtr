@@ -71,6 +71,31 @@ function ensureMailSchema() {
         UNIQUE KEY uniq_once (rule_id, customer_id, ref),
         INDEX (status, due_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+      // Excel'den yüklenen kişiler ve listeleri (üye olmayan e-posta adresleri)
+      await db.query(`CREATE TABLE IF NOT EXISTS mail_contacts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(190) NOT NULL,
+        name VARCHAR(120) NOT NULL DEFAULT '',
+        unsubscribed_at BIGINT NULL,
+        created_at BIGINT NOT NULL,
+        UNIQUE KEY uniq_email (email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+      await db.query(`CREATE TABLE IF NOT EXISTS mail_lists (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(120) NOT NULL,
+        created_at BIGINT NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+      await db.query(`CREATE TABLE IF NOT EXISTS mail_list_members (
+        list_id INT NOT NULL,
+        contact_id INT NOT NULL,
+        PRIMARY KEY (list_id, contact_id),
+        INDEX (contact_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+      // düzenli plan için sonradan eklenen sütunlar (eski kurulumlarda tablo zaten var)
+      const [cols] = await db.query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_rules'");
+      const have = new Set(cols.map((c) => c.COLUMN_NAME));
+      if (!have.has('days')) await db.query('ALTER TABLE mail_rules ADD COLUMN days VARCHAR(20) NULL');
+      if (!have.has('at_time')) await db.query('ALTER TABLE mail_rules ADD COLUMN at_time VARCHAR(5) NULL');
     })().catch((err) => { schemaReady = null; throw err; });
   }
   return schemaReady;
@@ -138,8 +163,10 @@ function cleanTemplate(t) {
   };
 }
 
-const TRIGGERS = ['signup', 'order_delivered', 'inactive', 'once'];
+const TRIGGERS = ['signup', 'order_delivered', 'inactive', 'once', 'schedule'];
 const AUDIENCES = ['all', 'customers', 'staff'];
+// kitle: üye grupları ya da "list:<id>" (Excel'den yüklenen kişi listesi)
+const isAudience = (a) => AUDIENCES.includes(a) || /^list:\d{1,9}$/.test(String(a));
 
 /* ---------------- çizim ---------------- */
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -315,12 +342,33 @@ function quietShift(ms) {
   return local.getTime() - 3 * 3600e3;
 }
 const token = () => crypto.randomBytes(18).toString('base64url');
+// İstanbul (UTC+3) takvim günü ve dakikası
+const istDay = (ms) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
+function planDue(r, now) {
+  const days = String(r.days || '').split(',').filter((x) => x !== '').map(Number);
+  const m = /^(\d{2}):(\d{2})$/.exec(r.at_time || '');
+  if (!days.length || !m) return false;
+  const local = new Date(now + 3 * 3600e3);
+  if (!days.includes(local.getUTCDay())) return false;
+  const mins = local.getUTCHours() * 60 + local.getUTCMinutes();
+  const at = Number(m[1]) * 60 + Number(m[2]);
+  if (mins < at || mins > at + 60) return false; // saatinden sonraki 1 saat içinde (sunucu kısa süre kapalı kaldıysa)
+  return !r.fired_at || istDay(Number(r.fired_at)) !== istDay(now);
+}
 const sign = (tok, u) => crypto.createHmac('sha256', SECRET()).update(tok + '\n' + u).digest('base64url').slice(0, 22);
 const validEmail = (e) => typeof e === 'string' && e.length <= 190 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 
 async function enqueue({ ruleId, templateId, customerId, email, ref = '', dueAt }) {
   await q('INSERT IGNORE INTO mail_sends (rule_id, template_id, customer_id, ref, email, token, due_at, created_at) VALUES (?,?,?,?,?,?,?,?)',
     [ruleId, templateId, customerId, ref, email, token(), dueAt, Date.now()]);
+}
+// bir kitleyi topluca sıraya alır (binlerce kişi için tek tek sorgu yerine 500'lük paketler)
+async function enqueueMany(ruleId, templateId, people, ref, dueAt) {
+  const now = Date.now();
+  for (let i = 0; i < people.length; i += 500) {
+    const rows = people.slice(i, i + 500).map((p) => [ruleId, templateId, String(p.id), ref || '', p.email, token(), dueAt, now]);
+    await q('INSERT IGNORE INTO mail_sends (rule_id, template_id, customer_id, ref, email, token, due_at, created_at) VALUES ?', [rows]);
+  }
 }
 
 // Olay olunca (üye oldu, sipariş teslim edildi) o olaya bağlı etkin görevler için gönderim sıraya girer.
@@ -342,8 +390,15 @@ async function mailEvent(trigger, customerId, ref = '') {
   }
 }
 
-// Bir kitlenin üyeleri (kampanya şablonu yalnızca izin verenlere)
+// Bir kitlenin üyeleri (kampanya şablonu yalnızca izin verenlere).
+// Kişi listesindekiler "k:<id>" kimliğiyle döner; abonelikten çıkanlar hariç.
 async function audienceList(audience, marketing) {
+  const m = /^list:(\d+)$/.exec(String(audience));
+  if (m) {
+    const rows = await q(`SELECT c.id, c.email, c.name FROM mail_list_members lm JOIN mail_contacts c ON c.id = lm.contact_id
+      WHERE lm.list_id = ? AND c.unsubscribed_at IS NULL`, [Number(m[1])]);
+    return rows.filter((r) => validEmail(r.email)).map((r) => ({ id: 'k:' + r.id, email: r.email, name: r.name }));
+  }
   const all = await customerAuth.loadCustomers();
   return all.filter((c) => c.active !== false && validEmail(c.email)
     && (!marketing || !!c.marketingConsentAt)
@@ -366,7 +421,17 @@ async function mailTick() {
       if (!upd.affectedRows) continue;
       const due = r.quiet_hours ? quietShift(now) : now;
       const people = await audienceList(r.audience, r.kind === 'marketing');
-      for (const p of people) await enqueue({ ruleId: r.id, templateId: r.template_id, customerId: p.id, email: p.email, dueAt: due });
+      await enqueueMany(r.id, r.template_id, people, '', due);
+    }
+    // 1b) düzenli plan: seçili günlerde, seçili saatte (İstanbul) kitleye; her gün için bir kez
+    const plans = await q(`SELECT r.id, r.template_id, r.audience, r.days, r.at_time, r.fired_at, t.kind FROM mail_rules r JOIN mail_templates t ON t.id = r.template_id
+      WHERE r.trigger_key = 'schedule' AND r.active = 1`);
+    for (const r of plans) {
+      if (!planDue(r, now)) continue;
+      const upd = await q('UPDATE mail_rules SET fired_at = ? WHERE id = ? AND (fired_at <=> ?)', [now, r.id, r.fired_at]);
+      if (!upd.affectedRows) continue;
+      const people = await audienceList(r.audience, r.kind === 'marketing');
+      await enqueueMany(r.id, r.template_id, people, istDay(now), now);
     }
     // 2) bir süredir sipariş vermeyenler: son siparişten bu yana görevdeki süre geçti (her "ara" için bir kez)
     const idle = await q("SELECT id, template_id, delay_min, quiet_hours FROM mail_rules WHERE trigger_key = 'inactive' AND active = 1");
@@ -398,15 +463,31 @@ async function mailTick() {
     let sent = 0, skipped = 0, failed = 0, later = 0;
     if (!due.length) return { sent, skipped, failed, later };
     const customers = await customerAuth.loadCustomers();
+    const kIds = [...new Set(due.filter((s) => String(s.customer_id || '').startsWith('k:')).map((s) => Number(s.customer_id.slice(2))))];
+    const contacts = new Map((kIds.length ? await q('SELECT id, email, name, unsubscribed_at FROM mail_contacts WHERE id IN (?)', [kIds]) : []).map((c) => [c.id, c]));
     const prodCache = new Map();
+    let lastSend = 0;
     for (const s of due) {
       const skip = async (note) => { skipped++; await q("UPDATE mail_sends SET status = 'skipped', note = ? WHERE id = ?", [note, s.id]); };
-      const cust = s.customer_id ? customers.find((c) => c.id === s.customer_id) : null;
+      if (String(s.customer_id || '').startsWith('k:')) {
+        // Excel listesinden gelen kişi: üye değil; abonelikten çıkmadıysa kampanya alabilir
+        const k = contacts.get(Number(s.customer_id.slice(2)));
+        if (s.rule_id && (s.rid == null || !s.ractive)) { await skip('Görev durduruldu'); continue; }
+        if (!k) { await skip('Kişi silinmiş'); continue; }
+        if (k.unsubscribed_at) { await skip('Abonelikten çıktı'); continue; }
+        if (s.kind === 'marketing') {
+          const recent = await q(`SELECT x.id FROM mail_sends x JOIN mail_templates y ON y.id = x.template_id
+            WHERE x.customer_id = ? AND x.status = 'sent' AND y.kind = 'marketing' AND x.sent_at > ? LIMIT 1`, [s.customer_id, now - 20 * 3600e3]);
+          if (recent.length) { later++; await q('UPDATE mail_sends SET due_at = ? WHERE id = ?', [now + 20 * 3600e3, s.id]); continue; }
+        }
+        s.person = { name: k.name, email: k.email, loyaltyPoints: '' };
+      }
+      const cust = s.customer_id && !s.person ? customers.find((c) => c.id === s.customer_id) : null;
       if (s.rule_id && (s.rid == null || !s.ractive)) { await skip('Görev durduruldu'); continue; }
-      if (s.customer_id && !cust) { await skip('Üye silinmiş'); continue; }
+      if (s.customer_id && !cust && !s.person) { await skip('Üye silinmiş'); continue; }
       if (cust && cust.active === false) { await skip('Üye pasif'); continue; }
       if (cust && cust.email !== s.email) { await skip('E-posta adresi değişti'); continue; }
-      if (s.kind === 'marketing' && (!cust || !cust.marketingConsentAt)) { await skip('Kampanya izni yok'); continue; }
+      if (s.kind === 'marketing' && !s.person && (!cust || !cust.marketingConsentAt)) { await skip('Kampanya izni yok'); continue; }
       if (s.kind === 'marketing' && cust) {
         // yorgunluk koruması: aynı kişiye 20 saat içinde ikinci kampanya e-postası gitmez, sonraya kayar
         const recent = await q(`SELECT x.id FROM mail_sends x JOIN mail_templates y ON y.id = x.template_id
@@ -421,11 +502,14 @@ async function mailTick() {
       const unsub = `${o}/api/m/u/${s.token}`;
       const r = renderMail(tpl, {
         origin: o, kind: tpl.kind, products: prodCache.get(pk),
-        vars: varsOf(cust || { name: '', email: s.email }),
+        vars: varsOf(s.person || cust || { name: '', email: s.email }),
         link: (u) => `${o}/api/m/c/${s.token}?u=${encodeURIComponent(u)}&s=${sign(s.token, u)}`,
         pixel: `${o}/api/m/o/${s.token}`,
         unsub,
       });
+      // Resend saniyede en fazla 2 isteğe izin verir: gönderimler arasında en az 0,55 sn
+      const wait = lastSend + 550 - Date.now(); if (wait > 0) await new Promise((res) => setTimeout(res, wait));
+      lastSend = Date.now();
       const ok = await sendMail({ to: s.email, subject: r.subject || tpl.name, text: r.text, html: r.html, ...(tpl.kind === 'marketing' ? { headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}) });
       if (ok) { sent++; await q("UPDATE mail_sends SET status = 'sent', sent_at = ?, subject = ?, variant = ? WHERE id = ?", [Date.now(), r.subject.slice(0, 190), variant, s.id]); }
       else { failed++; await q("UPDATE mail_sends SET status = 'failed', note = ?, subject = ?, variant = ? WHERE id = ?", ['E-posta servisi kabul etmedi ya da bağlı değil', r.subject.slice(0, 190), variant, s.id]); }
@@ -470,5 +554,5 @@ const STARTERS = [
 
 module.exports = {
   ensureMailSchema, q, cleanTemplate, cleanBlock, renderMail, loadProducts, varsOf, quietShift, token, sign,
-  mailEvent, mailTick, audienceList, validEmail, origin, STARTERS, TRIGGERS, AUDIENCES, B,
+  mailEvent, mailTick, audienceList, validEmail, origin, STARTERS, TRIGGERS, AUDIENCES, isAudience, B, planDue, istDay,
 };

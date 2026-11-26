@@ -32,7 +32,7 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1); // Hostinger reverse proxy arkasında doğru IP/protokol algılama için
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '5mb' })); // Excel'den yüklenen e-posta listeleri büyük olabilir
 app.use(express.urlencoded({ extended: true })); // Paynet'in 3D geri dönüşü form-post olarak gelir
 app.use(cookieParser());
 // Android uygulamasının (TWA) adres çubuksuz tam ekran açılabilmesi için Digital Asset Links dosyası.
