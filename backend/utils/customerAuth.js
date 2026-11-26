@@ -22,6 +22,12 @@ async function saveSessions(sessions) {
   return kv.setJSON(SESSIONS_KEY, sessions);
 }
 
+// E-posta isteğe bağlıdır; geçersizse boş bırakılır
+function cleanEmail(email) {
+  const e = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  return e && e.length <= 190 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) ? e : null;
+}
+
 function normalizePhone(phone) {
   return phone.replace(/\D/g, '');
 }
@@ -37,7 +43,7 @@ async function findById(id) {
   return customers.find((c) => c.id === id);
 }
 
-async function registerOrLogin({ phone, name, isStaff, storeName, keepLoggedIn }) {
+async function registerOrLogin({ phone, name, isStaff, storeName, keepLoggedIn, email, marketingConsent }) {
   const normalized = normalizePhone(phone);
   const customers = await loadCustomers();
   let customer = customers.find((c) => c.phone === normalized);
@@ -51,6 +57,8 @@ async function registerOrLogin({ phone, name, isStaff, storeName, keepLoggedIn }
       isStaff: !!isStaff,
       storeName: isStaff ? (storeName || null) : null,
       loyaltyPoints: 0,
+      email: cleanEmail(email),
+      marketingConsentAt: cleanEmail(email) && marketingConsent ? new Date().toISOString() : null,
       createdAt: new Date().toISOString(),
     };
     customers.push(customer);
@@ -133,6 +141,26 @@ async function setCustomerActive(customerId, active) {
   return customer;
 }
 
+// Üyenin e-posta adresini ve kampanya e-postası iznini günceller.
+// Dönüş: { customer, emailAdded } — emailAdded: daha önce e-postası yokken ilk kez eklendi mi
+async function updateProfile(customerId, { email, marketingConsent }) {
+  const customers = await loadCustomers();
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return null;
+  const hadEmail = !!customer.email;
+  if (email !== undefined) {
+    const e = cleanEmail(email);
+    if (email && !e) throw new Error('Geçerli bir e-posta adresi girin');
+    if (e !== customer.email) customer.marketingConsentAt = null; // adres değişince izin yeniden alınır
+    customer.email = e;
+  }
+  if (marketingConsent !== undefined) {
+    customer.marketingConsentAt = customer.email && marketingConsent ? (customer.marketingConsentAt || new Date().toISOString()) : null;
+  }
+  await saveCustomers(customers);
+  return { customer, emailAdded: !hadEmail && !!customer.email };
+}
+
 // Üyeyi tamamen siler — geri alınamaz.
 async function deleteCustomer(customerId) {
   const customers = await loadCustomers();
@@ -157,4 +185,6 @@ module.exports = {
   setCustomerActive,
   deleteCustomer,
   normalizePhone,
+  cleanEmail,
+  updateProfile,
 };

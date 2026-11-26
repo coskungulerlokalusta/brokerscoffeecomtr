@@ -16,6 +16,7 @@
   .member-filter-btn.active-filter { background: #0d1b3d; color: #fff; }
 </style>
 <link rel="stylesheet" href="/admin/studio.css"/>
+<link rel="stylesheet" href="/admin/mail.css"/>
 </head>
 <body class="bg-[#faf9f6] min-h-screen">
 
@@ -56,6 +57,7 @@
 <button data-section="loyalty" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🎁 Sadakat Programı</button>
 <button data-section="campaigns" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">📣 Kampanyalar</button>
 <button data-section="site-content" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🖼️ Site Görselleri</button>
+<button data-section="mail" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">✉️ E-posta Stüdyosu<span class="st-new">YENİ</span></button>
 <button data-section="members" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">👤 Üyeler &amp; Mesajlaşma</button>
 <button data-section="order-settings" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">⚙️ Sipariş Ayarları</button>
 <button data-section="ai-assistant" class="sidebar-link text-left px-4 py-2.5 rounded whitespace-nowrap text-sm font-semibold">🤖 AI Asistan Talimatları</button>
@@ -534,6 +536,8 @@
 </div>
 
 <div id="section-studio" class="admin-panel hidden"></div>
+
+<div id="section-mail" class="admin-panel hidden"></div>
 
 <div id="section-site-content" class="admin-panel hidden">
 <h2 class="text-2xl text-[#0d1b3d] mb-4">Site Görselleri</h2>
@@ -1191,6 +1195,16 @@ const INTEGRATION_CONFIG = {
     fields: [
       { key: 'merchantId', label: 'Üye İşyeri No', type: 'text' },
       { key: 'apiKey', label: 'API Anahtarı', type: 'secret' },
+    ],
+  },
+  resend: {
+    title: 'Resend',
+    subtitle: 'E-posta Gönderimi (E-posta Stüdyosu)',
+    icon: 'rs',
+    color: '#fef3c7', textColor: '#0d1b3d',
+    fields: [
+      { key: 'apiKey', label: 'API Anahtarı', help: '(resend.com > API Keys, "re_" ile başlar)', type: 'secret' },
+      { key: 'from', label: 'Gönderen', help: '(örn. Brokers Coffee <bildirim@brokerscoffee.com.tr>; alan adı Resend\'de doğrulanmış olmalı)', type: 'text' },
     ],
   },
 };
@@ -2271,6 +2285,7 @@ function renderMembers() {
         <div class="flex-1 min-w-0">
           <span class="font-semibold text-[#0d1b3d]">${m.name}</span>
           <span class="text-[#827472]"> — ${m.phone}</span>
+          ${m.email ? `<span class="text-[#827472]"> · ${m.email.replace(/[<>&"]/g, '')}${m.marketingConsent ? ' ✉️' : ''}</span>` : ''}
           ${m.active === false ? '<span class="text-xs text-red-500 font-semibold"> (Pasif)</span>' : ''}
         </div>
       </label>
@@ -2482,9 +2497,11 @@ document.getElementById('refresh-btn').addEventListener('click', loadOrders);
     loadAiInstructions();
     loadOrderSettings();
     if (window.loadStudio) loadStudio();
+    if (window.loadMailStudio) loadMailStudio();
   }
 })();
 </script>
 <script src="/admin/studio.js"></script>
+<script src="/admin/mail.js"></script>
 </body>
 </html>

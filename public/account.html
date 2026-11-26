@@ -41,6 +41,17 @@
 <span id="staff-tag" class="hidden inline-block mt-2 bg-[#0d1b3d] text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">Personel</span>
 </div>
 
+<div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+<h2 class="text-lg text-[#0d1b3d] mb-1">E-posta</h2>
+<p class="text-xs text-[#827472] mb-3">Sipariş bilgilendirmeleri ve (izin verirsen) kampanyalar bu adrese gelir.</p>
+<form id="email-form" class="flex flex-col gap-3">
+<input id="email-input" type="email" autocomplete="email" placeholder="ornek@eposta.com" class="border border-[#d3c3c0] rounded px-4 py-2.5"/>
+<label class="flex items-start gap-2 text-sm text-[#504442]"><input type="checkbox" id="marketing-check" class="mt-1"/> <span>Kampanya ve fırsatlardan e-posta ile haberdar olmak istiyorum.</span></label>
+<p id="email-msg" class="text-sm hidden"></p>
+<button type="submit" class="border border-[#0d1b3d] text-[#0d1b3d] rounded py-2.5 text-sm font-semibold">Kaydet</button>
+</form>
+</div>
+
 <a href="/loyalty.html" class="block text-center bg-[#0d1b3d] text-white rounded py-3 text-sm font-semibold mb-3">Sadakat Programı — Puanlarım</a>
 <a href="/orders.html" class="block text-center border border-[#d3c3c0] rounded py-3 text-sm font-semibold text-[#0d1b3d] mb-3">📦 Siparişlerim</a>
 <button id="notif-btn" class="w-full border border-[#d3c3c0] rounded py-3 text-sm font-semibold text-[#0d1b3d] mb-3">🔔 Bildirimleri Aç</button>
@@ -128,6 +139,8 @@ async function init() {
     const data = await res.json();
     document.getElementById('customer-name').textContent = data.name;
     document.getElementById('customer-phone').textContent = data.phone;
+    document.getElementById('email-input').value = data.email || '';
+    document.getElementById('marketing-check').checked = !!data.marketingConsent;
     if (data.isStaff) {
       document.getElementById('staff-tag').classList.remove('hidden');
       const banner = document.getElementById('staff-banner');
@@ -147,6 +160,25 @@ async function init() {
     document.getElementById('unauth').classList.remove('hidden');
   }
 }
+
+document.getElementById('email-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('email-msg');
+  msg.className = 'text-sm text-[#827472]'; msg.textContent = 'Kaydediliyor…';
+  const res = await fetch('/api/account/profile', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('email-input').value.trim(), marketingConsent: document.getElementById('marketing-check').checked }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (res.ok) {
+    document.getElementById('email-input').value = d.email || '';
+    document.getElementById('marketing-check').checked = !!d.marketingConsent;
+    msg.className = 'text-sm text-emerald-600'; msg.textContent = 'Kaydedildi ✓';
+  } else {
+    msg.className = 'text-sm text-red-600'; msg.textContent = d.error || 'Kaydedilemedi';
+  }
+});
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await fetch('/api/account/logout', { method: 'POST' });
