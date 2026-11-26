@@ -16,7 +16,7 @@
   body { font-family: 'Plus Jakarta Sans', sans-serif; background:#faf9f6; }
   h1 { font-family: 'Playfair Display', serif; }
 </style>
-<link rel="stylesheet" href="/css/app.css"/>
+<link rel="stylesheet" href="/css/app.css?v=20261126"/>
 </head>
 <body class="min-h-screen flex items-center justify-center px-6">
 <div class="max-w-sm w-full bg-white rounded-lg shadow-sm p-8 text-center">
@@ -26,7 +26,7 @@
 <a href="/" class="inline-block bg-[#0d1b3d] text-white font-semibold uppercase tracking-widest text-sm py-3 px-6 rounded hover:bg-[#16285c] transition-colors">Ana Sayfaya Dön</a>
 </div>
 
-<script src="/js/push.js"></script>
+<script src="/js/push.js?v=20261126"></script>
 <script>
 const params = new URLSearchParams(window.location.search);
 const status = params.get('status');
@@ -45,7 +45,7 @@ if (status === 'success') {
   document.getElementById('message').textContent = message || 'Ödeme tamamlanamadı, lütfen tekrar deneyin.';
 }
 </script>
-<script src="/js/cart.js"></script>
-<script src="/js/app.js"></script>
+<script src="/js/cart.js?v=20261126"></script>
+<script src="/js/app.js?v=20261126"></script>
 </body>
 </html>
